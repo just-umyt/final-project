@@ -1,0 +1,13 @@
+# Server configurations
+server:
+  host: "localhost"
+  port: 8081
+
+# Database credentials
+database:
+  dbhost: "localhost"
+  dbport: 5432
+  dbuser: "postgres"
+  dbname: "homework"
+  dbsslmode: "disable"
+  timeout: 30

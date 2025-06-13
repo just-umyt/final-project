@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS sku;
+
+DROP TABLE IF EXISTS cart_sku;
