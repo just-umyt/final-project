@@ -1,5 +1,5 @@
 CREATE TABLE sku(
-    sku_id TEXT PRIMARY KEY,
+    sku_id BIGINT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     type TEXT,
     price INT,
@@ -9,23 +9,23 @@ CREATE TABLE sku(
 );
 
 CREATE TABLE cart_sku(
-    cart_id INT NOT NULL,
-    sku_id TEXT NOT NULL,
+    cart_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
 
-    PRIMARY KEY (sku_id)
+    PRIMARY KEY (sku_id, cart_id)
 );
 ALTER TABLE cart_sku
-ADD FOREIGN KEY (sku_id) REFERENCES cart_sku(sku_id)
+ADD FOREIGN KEY (sku_id) REFERENCES sku(sku_id)
 ON UPDATE CASCADE ON DELETE CASCADE;
 
 INSERT INTO sku (sku_id, name, type) VALUES
-('SKU001', 't-shirt', 'apparel'),
-('SKU002', 'cup', 'accessory'),
-('SKU003', 'book', 'stationery'),
-('SKU004', 'pen', 'stationery'),
-('SKU005', 'powerbank', 'electronics'),
-('SKU006', 'hoody', 'apparel'),
-('SKU007', 'umbrella', 'accessory'),
-('SKU008', 'socks', 'apparel'),
-('SKU009', 'wallet', 'accessory'),
-('SKU010', 'pink-hoody', 'apparel');
+(1001, 't-shirt', 'apparel'),
+(2020, 'cup', 'accessory'),
+(3033, 'book', 'stationery'),
+(4044, 'pen', 'stationery'),
+(5055, 'powerbank', 'electronics'),
+(6066, 'hoody', 'apparel'),
+(7077, 'umbrella', 'accessory'),
+(8088, 'socks', 'apparel'),
+(9099, 'wallet', 'accessory'),
+(10101, 'pink-hoody', 'apparel');

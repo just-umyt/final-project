@@ -2,6 +2,7 @@
 server:
   host: "localhost"
   port: 8081
+  readheadertimeout: 10
 
 # Database credentials
 database:

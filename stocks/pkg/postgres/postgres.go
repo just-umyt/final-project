@@ -22,7 +22,7 @@ type PostgresConfig struct {
 	SSLMode  string
 }
 
-func NewDB(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
+func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
 
 	//sql db for migration
