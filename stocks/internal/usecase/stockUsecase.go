@@ -2,9 +2,16 @@ package usecase
 
 import (
 	"context"
+	"errors"
+	"stocks/internal/dto"
 	"stocks/internal/models"
 	"stocks/internal/repository"
 )
+
+type StockUsecaseInterface interface {
+	AddSkuUsecase(ctx context.Context, item models.SKU) error
+	GetSkuBySkuIdUsecase(ctx context.Context, id models.SKUID) (*dto.GetSkuDto, error)
+}
 
 type StockUsecase struct {
 	tx repository.PgTxManagerInterface
@@ -14,16 +21,24 @@ func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
 }
 
-func (u *StockUsecase) AddItemUsecase(ctx context.Context, item models.SKU) error {
+func (u *StockUsecase) AddSkuUsecase(ctx context.Context, item models.SKU) error {
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		_, err := sri.GetBySku(ctx, item.ID)
+		repoModel, err := sri.GetSkuBySkuIdRepo(ctx, item.SkuId)
 		if err != nil {
-			return err
-		}
+			err = sri.AddSkuRepo(ctx, item)
+			if err != nil {
+				return err
+			}
+		} else {
+			if repoModel.UserId != item.UserId {
+				return errors.New("user_id mismatch")
+			}
 
-		err = sri.AddItem(ctx, item)
-		if err != nil {
-			return err
+			//update
+			err := sri.UpdateSkuBySkuIdRepo(ctx, item)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -36,18 +51,19 @@ func (u *StockUsecase) AddItemUsecase(ctx context.Context, item models.SKU) erro
 	return nil
 }
 
-func (u *StockUsecase) GetBySku(ctx context.Context, id models.SKUID) (*GetSKU, error) {
-	var model *GetSKU
+func (u *StockUsecase) GetSkuBySkuIdUsecase(ctx context.Context, id models.SKUID) (*dto.GetSkuDto, error) {
+	newDto := new(dto.GetSkuDto)
 
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		resp, err := sri.GetBySku(ctx, id)
+		repoModel, err := sri.GetSkuBySkuIdRepo(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		model.Count = resp.Count
-		model.Name = resp.Name
-		model.Price = resp.Price
+		newDto.Count = repoModel.Count
+		newDto.Name = repoModel.Name
+		newDto.Price = repoModel.Price
+		newDto.Type = repoModel.Type
 
 		return nil
 	})
@@ -55,5 +71,5 @@ func (u *StockUsecase) GetBySku(ctx context.Context, id models.SKUID) (*GetSKU, 
 		return nil, err
 	}
 
-	return model, nil
+	return newDto, nil
 }

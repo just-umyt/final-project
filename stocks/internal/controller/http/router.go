@@ -12,9 +12,9 @@ type SeverConfig struct {
 }
 
 func NewServer(serverConfig *SeverConfig) *http.Server {
-
 	server := &http.Server{
 		Addr:              serverConfig.Addr,
+		Handler:           serverConfig.Handler,
 		ReadHeaderTimeout: serverConfig.ReadHeaderTimeout,
 	}
 

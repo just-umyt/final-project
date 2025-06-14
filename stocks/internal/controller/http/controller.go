@@ -1,12 +1,13 @@
 package http
 
-// func InitControllers() *http.ServeMux {
-// 	mux := http.NewServeMux()
+import (
+	"stocks/internal/usecase"
+)
 
-// 	mux.HandleFunc("POST /stocks/item/add", CreateStockHander)
-// 	mux.HandleFunc("POST /stocks/item/delete")
-// 	mux.HandleFunc("POST /stocks/item/location")
-// 	mux.HandleFunc("POST /stocks/item/get")
+type StockController struct {
+	usecase usecase.StockUsecaseInterface
+}
 
-// 	return mux
-// }
+func NewStockController(stUsecase usecase.StockUsecaseInterface) *StockController {
+	return &StockController{usecase: stUsecase}
+}

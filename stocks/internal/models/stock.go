@@ -1,7 +1,7 @@
 package models
 
 type SKU struct {
-	ID       SKUID
+	SkuId    SKUID
 	Name     string
 	Count    uint16
 	Type     string

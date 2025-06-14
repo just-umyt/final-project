@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"stocks/internal/config"
+	myHttp "stocks/internal/controller/http"
 	"stocks/internal/repository"
 	"stocks/internal/usecase"
 	"stocks/pkg/logger"
@@ -58,31 +62,36 @@ func main() {
 	stockUsecase := usecase.NewStockUsecase(*transaction)
 
 	// item := models.SKU{
-	// 	ID:       00021,
-	// 	Name:     "new item",
+	// 	SkuId:    2,
+	// 	Name:     "new item2",
 	// 	Price:    100,
 	// 	Count:    34,
 	// 	Type:     "item",
 	// 	Location: "Aisle 3",
-	// 	UserId:   1,
+	// 	UserId:   2,
 	// }
 
 	//controllers
-	// newMux := myHttp.InitControllers()
+	controller := myHttp.NewStockController(stockUsecase)
+
+	newMux := http.NewServeMux()
+	newMux.HandleFunc("POST /stocks/item/add", controller.AddSkuController)
+	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuBySkuIdControlller)
 
 	//server
+	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
+	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
 
-	// serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
+	serverConfig := &myHttp.SeverConfig{
+		Addr:              serverAddr,
+		Handler:           newMux,
+		ReadHeaderTimeout: readHeaderTimeOut,
+	}
+	fmt.Println(serverAddr)
 
-	// readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
+	server := myHttp.NewServer(serverConfig)
 
-	// serverConfig := &myHttp.SeverConfig{
-	// 	Addr:              serverAddr,
-	// 	Handler:           newMux,
-	// 	ReadHeaderTimeout: readHeaderTimeOut,
-	// }
-
-	// server := myHttp.NewServer(serverConfig)
+	logger.Log.Fatal(server.ListenAndServe())
 
 	logger.Log.Info("Starting stocks server")
 }
