@@ -10,6 +10,10 @@ type PgTxManager struct {
 	pool *pgxpool.Pool
 }
 
+type PgTxManagerInterface interface {
+	WithTx(ctx context.Context, fn func(StockRepoInterface) error) error
+}
+
 func NewPgTxManager(pool *pgxpool.Pool) *PgTxManager {
 	return &PgTxManager{pool: pool}
 }

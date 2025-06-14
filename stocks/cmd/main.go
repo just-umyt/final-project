@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"stocks/internal/config"
-	"stocks/internal/models"
 	"stocks/internal/repository"
+	"stocks/internal/usecase"
 	"stocks/pkg/logger"
 	"stocks/pkg/postgres"
 
@@ -55,6 +55,17 @@ func main() {
 	transaction := repository.NewPgTxManager(dbPool)
 
 	//usecase
+	stockUsecase := usecase.NewStockUsecase(*transaction)
+
+	// item := models.SKU{
+	// 	ID:       00021,
+	// 	Name:     "new item",
+	// 	Price:    100,
+	// 	Count:    34,
+	// 	Type:     "item",
+	// 	Location: "Aisle 3",
+	// 	UserId:   1,
+	// }
 
 	//controllers
 	// newMux := myHttp.InitControllers()
