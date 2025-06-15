@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"stocks/internal/config"
@@ -20,8 +22,8 @@ import (
 
 func main() {
 	//context
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	//logger
 	logger.InitLogger()
@@ -61,22 +63,14 @@ func main() {
 	//usecase
 	stockUsecase := usecase.NewStockUsecase(*transaction)
 
-	// item := models.SKU{
-	// 	SkuId:    2,
-	// 	Name:     "new item2",
-	// 	Price:    100,
-	// 	Count:    34,
-	// 	Type:     "item",
-	// 	Location: "Aisle 3",
-	// 	UserId:   2,
-	// }
-
 	//controllers
 	controller := myHttp.NewStockController(stockUsecase)
 
 	newMux := http.NewServeMux()
 	newMux.HandleFunc("POST /stocks/item/add", controller.AddSkuController)
 	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuBySkuIdControlller)
+	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteSkuBySkuIdController)
+	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocationController)
 
 	//server
 	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
@@ -87,11 +81,27 @@ func main() {
 		Handler:           newMux,
 		ReadHeaderTimeout: readHeaderTimeOut,
 	}
-	fmt.Println(serverAddr)
 
 	server := myHttp.NewServer(serverConfig)
 
-	logger.Log.Fatal(server.ListenAndServe())
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Log.Fatalf("listen and serve: %v", err)
+		}
+	}()
 
-	logger.Log.Info("Starting stocks server")
+	logger.Log.Infof("listening in  %s", serverAddr)
+
+	<-ctx.Done()
+
+	logger.Log.Info("shutting down server gracefully...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(viper.GetInt("server.shutdowntimeout"))*time.Second)
+	defer cancel()
+
+	if err = server.Shutdown(shutdownCtx); err != nil {
+		logger.Log.Warnf("shutdown: %v", err)
+	} else {
+		logger.Log.Info("shutdown succes!")
+	}
 }

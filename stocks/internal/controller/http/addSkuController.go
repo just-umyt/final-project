@@ -15,17 +15,19 @@ func (c *StockController) AddSkuController(w http.ResponseWriter, r *http.Reques
 	}
 
 	newSku := models.SKU{
-		SkuId:    models.SKUID(addItemDto.SkuId),
+		SkuId:    addItemDto.SkuId,
 		Name:     addItemDto.Name,
 		Count:    addItemDto.Count,
 		Type:     addItemDto.Type,
 		Price:    addItemDto.Price,
 		Location: addItemDto.Location,
-		UserId:   models.UserID(addItemDto.UserId),
+		UserId:   addItemDto.UserId,
 	}
 
 	if err := c.usecase.AddSkuUsecase(r.Context(), newSku); err != nil {
 		utils.Error(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	utils.SuccesResponse(w, "", http.StatusOK)
