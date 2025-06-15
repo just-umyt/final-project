@@ -2,8 +2,8 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"stocks/pkg/logger"
 )
 
 type errorResponse struct {
@@ -22,6 +22,6 @@ func Error(w http.ResponseWriter, err error, code int) {
 
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error(err)
 	}
 }

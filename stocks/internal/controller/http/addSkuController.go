@@ -26,7 +26,6 @@ func (c *StockController) AddSkuController(w http.ResponseWriter, r *http.Reques
 
 	if err := c.usecase.AddSkuUsecase(r.Context(), newSku); err != nil {
 		utils.Error(w, err, http.StatusInternalServerError)
-
 		return
 	}
 

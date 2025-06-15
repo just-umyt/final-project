@@ -54,10 +54,12 @@ func (u *StockUsecase) GetSkuBySkuIdUsecase(ctx context.Context, id models.SKUID
 			return err
 		}
 
+		newDto.Sku = repoModel.Sku
 		newDto.Count = repoModel.Count
 		newDto.Name = repoModel.Name
 		newDto.Price = repoModel.Price
 		newDto.Type = repoModel.Type
+		newDto.Location = repoModel.Location
 
 		return nil
 	})

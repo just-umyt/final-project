@@ -50,11 +50,11 @@ func (r *StockRepo) GetUserIdBySkuIdRepo(ctx context.Context, skuId models.SKUID
 
 // Get sku by sku(sku_id).
 func (r *StockRepo) GetSkuBySkuIdRepo(ctx context.Context, skuId models.SKUID) (*GetSKU, error) {
-	query := `SELECT name, price, count, type, user_id FROM sku WHERE sku_id = $1`
+	query := `SELECT sku_id, name, price, count, type, location FROM sku WHERE sku_id = $1`
 
 	var item GetSKU
 
-	err := r.tx.QueryRow(ctx, query, skuId).Scan(&item.Name, &item.Price, &item.Count, &item.Type, &item.UserId)
+	err := r.tx.QueryRow(ctx, query, skuId).Scan(&item.Sku, &item.Name, &item.Price, &item.Count, &item.Type, &item.Location)
 	if err != nil {
 		return nil, err
 	}
