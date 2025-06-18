@@ -17,4 +17,6 @@ func InitLogger() {
 		FullTimestamp: true,
 		ForceColors:   true,
 	})
+
+	Log.SetLevel(logrus.TraceLevel)
 }

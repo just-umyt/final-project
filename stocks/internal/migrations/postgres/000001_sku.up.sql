@@ -1,20 +1,19 @@
 CREATE TABLE sku(
     sku_id BIGINT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    type TEXT,
-    price INT,
-    location TEXT,
-    count INT,
-    user_id INT
+    type TEXT
 );
 
-CREATE TABLE cart_sku(
-    cart_id BIGINT NOT NULL,
-    sku_id BIGINT NOT NULL,
-
-    PRIMARY KEY (sku_id, cart_id)
+CREATE TABLE stock(
+    id  SERIAL NOT NULL PRIMARY KEY,
+    sku_id BIGINT UNIQUE, 
+    price INT NOT NULL,
+    location VARCHAR(255),
+    count INT NOT NULL,
+    user_id BIGINT
 );
-ALTER TABLE cart_sku
+
+ALTER TABLE stock
 ADD FOREIGN KEY (sku_id) REFERENCES sku(sku_id)
 ON UPDATE CASCADE ON DELETE CASCADE;
 

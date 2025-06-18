@@ -67,9 +67,9 @@ func main() {
 	controller := myHttp.NewStockController(stockUsecase)
 
 	newMux := http.NewServeMux()
-	newMux.HandleFunc("POST /stocks/item/add", controller.AddSkuController)
-	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuBySkuIdControlller)
-	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteSkuBySkuIdController)
+	newMux.HandleFunc("POST /stocks/item/add", controller.AddStockController)
+	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuStocksBySkuIdControlller)
+	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuIdController)
 	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocationController)
 
 	//server

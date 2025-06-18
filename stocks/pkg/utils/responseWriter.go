@@ -11,7 +11,7 @@ type response struct {
 	Code    int
 }
 
-func SuccesResponse(w http.ResponseWriter, msg any, code int) {
+func SuccessResponse(w http.ResponseWriter, msg any, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 

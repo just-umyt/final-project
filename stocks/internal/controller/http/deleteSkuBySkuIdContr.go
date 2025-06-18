@@ -4,21 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"stocks/internal/dto"
+	"stocks/pkg/logger"
 	"stocks/pkg/utils"
 )
 
-func (c *StockController) DeleteSkuBySkuIdController(w http.ResponseWriter, r *http.Request) {
-	var deleteSkuDto dto.DeleteSkuDto
+func (c *StockController) DeleteStockBySkuIdController(w http.ResponseWriter, r *http.Request) {
+	var deleteSkuDto dto.DeleteStockDto
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteSkuDto); err != nil {
+		logger.Log.Errorf("Failed to decode request body: %v", err)
 		utils.Error(w, err, http.StatusBadRequest)
+
 		return
 	}
 
-	if err := c.usecase.DeleteSkuBySkuIdUsecase(r.Context(), deleteSkuDto); err != nil {
-		utils.Error(w, err, http.StatusNotFound)
+	if err := c.usecase.DeleteStockBySkuIdUsecase(r.Context(), deleteSkuDto); err.Message != nil {
+		logger.Log.Errorf("Failed to delete stock: %v", err)
+		utils.Error(w, err.Message, err.Code)
+
 		return
 	}
 
-	utils.SuccesResponse(w, "", http.StatusOK)
+	logger.Log.Debugf("Stock deleted successfully: %v", deleteSkuDto)
+	utils.SuccessResponse(w, "", http.StatusOK)
 }

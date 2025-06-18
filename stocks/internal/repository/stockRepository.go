@@ -2,71 +2,66 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"stocks/internal/models"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type StockRepoInterface interface {
-	AddSkuRepo(ctx context.Context, item models.SKU) error
-	GetSkuBySkuIdRepo(ctx context.Context, skuId models.SKUID) (*GetSKU, error)
-	GetUserIdBySkuIdRepo(ctx context.Context, skuId models.SKUID) (*models.UserID, error)
-	UpdateSkuBySkuIdRepo(ctx context.Context, newItem models.SKU) error
-	DeleteSkuBySkuIdRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) error
-	GetSkusByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]GetSkuByLocation, error)
+	GetSkuStockBySkuIdRepo(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error)
+	AddStockRepo(ctx context.Context, newStock models.Stock) error
+	UpdateStockRepo(ctx context.Context, item models.Stock) error
+	DeleteStockRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error)
+	GetStocksByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error)
 }
 
 type StockRepo struct {
 	tx pgx.Tx
 }
 
-func NewRepository(tx pgx.Tx) *StockRepo {
+func NewStockRepository(tx pgx.Tx) *StockRepo {
 	return &StockRepo{tx: tx}
 }
 
-// Add new item to stock storage.
-func (r *StockRepo) AddSkuRepo(ctx context.Context, item models.SKU) error {
-	query := `INSERT INTO sku (sku_id, name, type, price, location, count, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+func (r *StockRepo) GetSkuStockBySkuIdRepo(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error) {
+	query := `SELECT * FROM sku l LEFT JOIN stock r ON r.sku_id = l.sku_id WHERE l.sku_id = $1`
 
-	_, err := r.tx.Exec(ctx, query, item.SkuId, item.Name, item.Type, item.Price, item.Location, item.Count, item.UserId)
+	var repoSku SKU
+	var repoStock Stock
 
-	return err
-}
+	var sku models.SKU
+	var stock models.Stock
 
-// Get user_id by sku(sku_id).
-func (r *StockRepo) GetUserIdBySkuIdRepo(ctx context.Context, skuId models.SKUID) (*models.UserID, error) {
-	query := `SELECT user_id FROM sku WHERE sku_id = $1`
-
-	var userId models.UserID
-
-	err := r.tx.QueryRow(ctx, query, skuId).Scan(&userId)
+	err := r.tx.QueryRow(ctx, query, skuId).Scan(&repoSku.SkuId, &repoSku.Name, &repoSku.Type, &repoStock.Id, &repoStock.SkuId, &repoStock.Price, &repoStock.Location, &repoStock.Count, &repoStock.UserId)
 	if err != nil {
-		return nil, err
+		return sku, stock, err
 	}
 
-	return &userId, nil
-}
-
-// Get sku by sku(sku_id).
-func (r *StockRepo) GetSkuBySkuIdRepo(ctx context.Context, skuId models.SKUID) (*GetSKU, error) {
-	query := `SELECT sku_id, name, price, count, type, location FROM sku WHERE sku_id = $1`
-
-	var item GetSKU
-
-	err := r.tx.QueryRow(ctx, query, skuId).Scan(&item.Sku, &item.Name, &item.Price, &item.Count, &item.Type, &item.Location)
-	if err != nil {
-		return nil, err
+	sku = models.SKU{
+		SkuID: repoSku.SkuId,
+		Name:  repoSku.Name,
+		Type:  repoSku.Type,
 	}
 
-	return &item, nil
+	if repoStock.UserId == nil {
+		return sku, stock, nil
+	}
+
+	stock.Id = *repoStock.Id
+	stock.SkuId = *repoStock.SkuId
+	stock.Count = *repoStock.Count
+	stock.Price = *repoStock.Price
+	stock.Count = *repoStock.Count
+	stock.Location = *repoStock.Location
+	stock.UserId = *repoStock.UserId
+
+	return sku, stock, nil
 }
 
-// Update sku by sku(sku_id).
-func (r *StockRepo) UpdateSkuBySkuIdRepo(ctx context.Context, newItem models.SKU) error {
-	query := `UPDATE sku SET name = $1, type = $2, price = $3, location = $4, count = $5 WHERE sku_id = $6`
+func (r *StockRepo) AddStockRepo(ctx context.Context, newStock models.Stock) error {
+	query := `INSERT INTO stock (price, location, count, user_id, sku_id) VALUES ($1, $2, $3, $4, $5)`
 
-	_, err := r.tx.Exec(ctx, query, newItem.Name, newItem.Type, newItem.Price, newItem.Location, newItem.Count, newItem.SkuId)
+	_, err := r.tx.Exec(ctx, query, newStock.Price, newStock.Location, newStock.Count, newStock.UserId, newStock.SkuId)
 	if err != nil {
 		return err
 	}
@@ -74,40 +69,63 @@ func (r *StockRepo) UpdateSkuBySkuIdRepo(ctx context.Context, newItem models.SKU
 	return nil
 }
 
-// Delete sku by sku(sku_id).
-func (r *StockRepo) DeleteSkuBySkuIdRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) error {
-	query := `DELETE FROM sku WHERE sku_id = $1 AND user_id = $2`
+func (r *StockRepo) UpdateStockRepo(ctx context.Context, item models.Stock) error {
+	query := `UPDATE stock SET price = $1, location = $2, count = $3 WHERE sku_id = $4`
+
+	_, err := r.tx.Exec(ctx, query, item.Price, item.Location, item.Count, item.SkuId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *StockRepo) DeleteStockRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error) {
+	query := `DELETE FROM stock WHERE sku_id = $1 AND user_id = $2`
 
 	row, err := r.tx.Exec(ctx, query, skuId, userId)
-	if err != nil {
-		return err
-	}
 
-	if row.RowsAffected() == 0 {
-		return fmt.Errorf("there is no sku with sku_id = %d & user_id = %d", skuId, userId)
-	}
-
-	return nil
+	return row.RowsAffected(), err
 }
 
-// Get skus by location.
-func (r *StockRepo) GetSkusByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]GetSkuByLocation, error) {
-	var items []GetSkuByLocation
+func (r *StockRepo) GetStocksByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error) {
+	var items []models.FullStock
 	var err error
 
-	query := `SELECT sku_id, name, type, price, location, count FROM sku WHERE location = $1 AND user_id = $2 ORDER BY sku_id LIMIT $3 OFFSET $4`
+	query := `SELECT * FROM sku l INNER JOIN stock r ON r.sku_id = l.sku_id WHERE r.location = $1 AND r.user_id = $2 LIMIT $3 OFFSET $4`
 
 	rows, err := r.tx.Query(ctx, query, parameter.Location, parameter.User_id, parameter.Limit, parameter.Offset)
 	if err != nil {
-		return items, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var item GetSkuByLocation
-		err = rows.Scan(&item.Sku, &item.Name, &item.Type, &item.Price, &item.Location, &item.Count)
-		items = append(items, item)
+		var repoSku SKU
+		var repoStock Stock
+
+		err = rows.Scan(&repoSku.SkuId, &repoSku.Name, &repoSku.Type, &repoStock.Id, &repoStock.SkuId, &repoStock.Price, &repoStock.Location, &repoStock.Count, &repoStock.UserId)
+		if err != nil {
+			return nil, err
+		}
+
+		fullStock := models.FullStock{
+			SKU: models.SKU{
+				SkuID: repoSku.SkuId,
+				Name:  repoSku.Name,
+				Type:  repoSku.Type,
+			},
+			Stock: models.Stock{
+				Id:       *repoStock.Id,
+				Price:    *repoStock.Price,
+				Location: *repoStock.Location,
+				Count:    *repoStock.Count,
+				UserId:   *repoStock.UserId,
+			},
+		}
+
+		items = append(items, fullStock)
 	}
 
-	return items, err
+	return items, nil
 }

@@ -34,7 +34,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(StockRepoInterface) e
 		}
 	}()
 
-	factory := NewRepository(tx)
+	factory := NewStockRepository(tx)
 
 	if err := fn(factory); err != nil {
 		return err

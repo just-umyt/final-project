@@ -2,32 +2,42 @@ package dto
 
 import "stocks/internal/models"
 
-type AddSkuDto struct {
-	UserId   models.UserID `json:"user_id"`
+type SkuDto struct {
+	SkuId models.SKUID `json:"sku"`
+	Name  string       `json:"name"`
+	Type  string       `json:"type"`
+}
+
+type StockDto struct {
+	SkuDto
+	Count    uint16        `json:"count,omitempty"`
+	Price    uint32        `json:"price,omitempty"`
+	Location string        `json:"location,omitempty"`
+	UserId   models.UserID `json:"user_id,omitempty"`
+}
+
+type StockByLocDto struct {
+	Stocks     []StockDto `json:"stocks"`
+	TotalCount int        `json:"total_count"`
+	PageNumber int64      `json:"page_number"`
+}
+
+type AddStockDto struct {
 	SkuId    models.SKUID  `json:"sku"`
+	UserId   models.UserID `json:"user_id"`
 	Count    uint16        `json:"count"`
-	Name     string        `json:"name"`
-	Type     string        `json:"type"`
 	Price    uint32        `json:"price"`
 	Location string        `json:"location"`
 }
 
-type GetSkuDto struct {
-	Sku      models.SKUID `json:"sku_id"`
-	Name     string       `json:"name"`
-	Type     string       `json:"type"`
-	Price    uint32       `json:"price"`
-	Count    int          `json:"count"`
-	Location string       `json:"location"`
-}
-
-type GetSkuBySkuIdDto struct {
-	SkuId models.SKUID `json:"sku"`
-}
-
-type DeleteSkuDto struct {
+type DeleteStockDto struct {
 	UserId models.UserID `json:"user_id"`
 	SkuId  models.SKUID  `json:"sku"`
+}
+
+type ErrorResponse struct {
+	Message error `json:"message"`
+	Code    int   `json:"code"`
 }
 
 type GetSkuByLocationParamsDto struct {
@@ -37,7 +47,6 @@ type GetSkuByLocationParamsDto struct {
 	CurrentPage int64         `json:"current_page"`
 }
 
-type PaginationResonse struct {
-	Items []GetSkuDto `json:"items"`
-	Err   error       `json:"error"`
+type GetSkuBySkuIdDto struct {
+	SkuId models.SKUID `json:"sku"`
 }

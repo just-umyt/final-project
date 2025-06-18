@@ -3,16 +3,18 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"stocks/internal/dto"
 	"stocks/internal/models"
 	"stocks/internal/repository"
 )
 
 type StockUsecaseInterface interface {
-	AddSkuUsecase(ctx context.Context, item models.SKU) error
-	GetSkuBySkuIdUsecase(ctx context.Context, id models.SKUID) (*dto.GetSkuDto, error)
-	DeleteSkuBySkuIdUsecase(ctx context.Context, deleteDtp dto.DeleteSkuDto) error
-	GetSkuByLocationUsecase(ctx context.Context, locationDto dto.GetSkuByLocationParamsDto) ([]dto.GetSkuDto, error)
+	AddStockUsecase(ctx context.Context, stockDto dto.AddStockDto) dto.ErrorResponse
+	DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) dto.ErrorResponse
+	GetStocksByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) (dto.StockByLocDto, dto.ErrorResponse)
+	GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (dto.StockDto, dto.ErrorResponse)
 }
 
 type StockUsecase struct {
@@ -23,62 +25,70 @@ func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
 }
 
-func (u *StockUsecase) AddSkuUsecase(ctx context.Context, item models.SKU) error {
-	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		userId, err := sri.GetUserIdBySkuIdRepo(ctx, item.SkuId)
+func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStockDto) dto.ErrorResponse {
+	var errorRes dto.ErrorResponse
+	errorRes.Message = u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
+		sku, stock, err := sri.GetSkuStockBySkuIdRepo(ctx, stockDto.SkuId)
 		if err != nil {
-			return sri.AddSkuRepo(ctx, item)
+			if sku.SkuID == 0 {
+				errorRes.Code = http.StatusNotFound
+				return fmt.Errorf("not found: error is: %v", err.Error())
+			} else {
+				return err
+			}
 		}
 
-		if *userId != item.UserId {
-			return errors.New("user_id mismatch")
+		newItem := models.Stock{
+			Count:    stockDto.Count,
+			Price:    stockDto.Price,
+			Location: stockDto.Location,
+			UserId:   stockDto.UserId,
+			SkuId:    stockDto.SkuId,
 		}
 
-		//update
-		return sri.UpdateSkuBySkuIdRepo(ctx, item)
+		switch stock.UserId {
+		case 0:
+			return sri.AddStockRepo(ctx, newItem)
+		case stockDto.UserId:
+			return sri.UpdateStockRepo(ctx, newItem)
+		default:
+			return errors.New("user id is not matched")
+		}
 	})
 
-	if err != nil {
-		return err
+	if errorRes.Message != nil && errorRes.Code == 0 {
+		errorRes.Code = http.StatusInternalServerError
 	}
 
-	return nil
+	return errorRes
 }
 
-func (u *StockUsecase) GetSkuBySkuIdUsecase(ctx context.Context, id models.SKUID) (*dto.GetSkuDto, error) {
-	newDto := new(dto.GetSkuDto)
-
-	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		repoModel, err := sri.GetSkuBySkuIdRepo(ctx, id)
+func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) dto.ErrorResponse {
+	var errorRes dto.ErrorResponse
+	errorRes.Message = u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
+		rows, err := sri.DeleteStockRepo(ctx, deleteDto.SkuId, deleteDto.UserId)
 		if err != nil {
 			return err
 		}
 
-		newDto.Sku = repoModel.Sku
-		newDto.Count = repoModel.Count
-		newDto.Name = repoModel.Name
-		newDto.Price = repoModel.Price
-		newDto.Type = repoModel.Type
-		newDto.Location = repoModel.Location
+		if rows == 0 {
+			errorRes.Code = http.StatusNotFound
+			return errors.New("not found")
+		}
 
 		return nil
 	})
-	if err != nil {
-		return nil, err
+
+	if errorRes.Message != nil && errorRes.Code == 0 {
+		errorRes.Code = http.StatusInternalServerError
 	}
 
-	return newDto, nil
+	return errorRes
 }
 
-func (u *StockUsecase) DeleteSkuBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteSkuDto) error {
-	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		return sri.DeleteSkuBySkuIdRepo(ctx, deleteDto.SkuId, deleteDto.UserId)
-	})
-}
-
-func (u *StockUsecase) GetSkuByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) ([]dto.GetSkuDto, error) {
-	var items []dto.GetSkuDto
-	var err error
+func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) (dto.StockByLocDto, dto.ErrorResponse) {
+	var items dto.StockByLocDto
+	var errorRes dto.ErrorResponse
 
 	limit := paginationByLoc.PageSize
 	offset := limit * (paginationByLoc.CurrentPage - 1)
@@ -90,24 +100,74 @@ func (u *StockUsecase) GetSkuByLocationUsecase(ctx context.Context, paginationBy
 		Offset:   offset,
 	}
 
-	err = u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		itemsFromRepo, err := sri.GetSkusByLocationRepo(ctx, params)
-
-		for _, itemRepo := range itemsFromRepo {
-			item := dto.GetSkuDto{
-				Sku:      itemRepo.Sku,
-				Name:     itemRepo.Name,
-				Type:     itemRepo.Type,
-				Price:    itemRepo.Price,
-				Count:    itemRepo.Count,
-				Location: itemRepo.Location,
-			}
-
-			items = append(items, item)
+	errorRes.Message = u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
+		stocksFromRepo, err := sri.GetStocksByLocationRepo(ctx, params)
+		if err != nil {
+			return err
 		}
 
-		return err
+		for _, repoStock := range stocksFromRepo {
+			item := dto.StockDto{
+				SkuDto: dto.SkuDto{
+					SkuId: repoStock.SkuID,
+					Name:  repoStock.Name,
+					Type:  repoStock.Type,
+				},
+				Price:    repoStock.Price,
+				Count:    repoStock.Count,
+				Location: repoStock.Location,
+				UserId:   repoStock.UserId,
+			}
+
+			items.Stocks = append(items.Stocks, item)
+		}
+
+		return nil
 	})
 
-	return items, err
+	if errorRes.Message != nil && errorRes.Code == 0 {
+		errorRes.Code = http.StatusInternalServerError
+	}
+
+	items.TotalCount = len(items.Stocks)
+	items.PageNumber = paginationByLoc.CurrentPage
+
+	return items, errorRes
+}
+
+func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (dto.StockDto, dto.ErrorResponse) {
+	var stockDto dto.StockDto
+	var errorRes dto.ErrorResponse
+
+	errorRes.Message = u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
+		sku, stock, err := sri.GetSkuStockBySkuIdRepo(ctx, skuId)
+		if err != nil {
+			if sku.SkuID == 0 {
+				errorRes.Code = http.StatusNotFound
+				return fmt.Errorf("not found: error is: %v", err.Error())
+			} else {
+				return err
+			}
+		}
+
+		stockDto = dto.StockDto{
+			SkuDto: dto.SkuDto{
+				SkuId: sku.SkuID,
+				Name:  sku.Name,
+				Type:  sku.Type,
+			},
+			Price:    stock.Price,
+			Count:    stock.Count,
+			Location: stock.Location,
+			UserId:   stock.UserId,
+		}
+
+		return nil
+	})
+
+	if errorRes.Message != nil && errorRes.Code == 0 {
+		errorRes.Code = http.StatusInternalServerError
+	}
+
+	return stockDto, errorRes
 }

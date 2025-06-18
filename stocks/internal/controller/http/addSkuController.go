@@ -4,30 +4,26 @@ import (
 	"encoding/json"
 	"net/http"
 	"stocks/internal/dto"
-	"stocks/internal/models"
+	"stocks/pkg/logger"
 	"stocks/pkg/utils"
 )
 
-func (c *StockController) AddSkuController(w http.ResponseWriter, r *http.Request) {
-	var addItemDto dto.AddSkuDto
+func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Request) {
+	var addItemDto dto.AddStockDto
 	if err := json.NewDecoder(r.Body).Decode(&addItemDto); err != nil {
+		logger.Log.Errorf("Failed to decode request body: %v", err)
 		utils.Error(w, err, http.StatusBadRequest)
-	}
 
-	newSku := models.SKU{
-		SkuId:    addItemDto.SkuId,
-		Name:     addItemDto.Name,
-		Count:    addItemDto.Count,
-		Type:     addItemDto.Type,
-		Price:    addItemDto.Price,
-		Location: addItemDto.Location,
-		UserId:   addItemDto.UserId,
-	}
-
-	if err := c.usecase.AddSkuUsecase(r.Context(), newSku); err != nil {
-		utils.Error(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	utils.SuccesResponse(w, "", http.StatusOK)
+	if err := c.usecase.AddStockUsecase(r.Context(), addItemDto); err.Message != nil {
+		logger.Log.Errorf("Failed to add stock: %v", err)
+		utils.Error(w, err.Message, err.Code)
+
+		return
+	}
+
+	logger.Log.Debug("Stock added successfully")
+	utils.SuccessResponse(w, "", http.StatusOK)
 }
