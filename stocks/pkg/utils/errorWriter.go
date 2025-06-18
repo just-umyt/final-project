@@ -7,8 +7,7 @@ import (
 )
 
 type errorResponse struct {
-	Err  string
-	Code int
+	Err string `json:"error"`
 }
 
 func Error(w http.ResponseWriter, err error, code int) {
@@ -16,8 +15,7 @@ func Error(w http.ResponseWriter, err error, code int) {
 	w.WriteHeader(code)
 
 	res := errorResponse{
-		Err:  err.Error(),
-		Code: code,
+		Err: err.Error(),
 	}
 
 	err = json.NewEncoder(w).Encode(res)

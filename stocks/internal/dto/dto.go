@@ -3,50 +3,45 @@ package dto
 import "stocks/internal/models"
 
 type SkuDto struct {
-	SkuId models.SKUID `json:"sku"`
-	Name  string       `json:"name"`
-	Type  string       `json:"type"`
+	SkuId models.SKUID
+	Name  string
+	Type  string
 }
 
 type StockDto struct {
 	SkuDto
-	Count    uint16        `json:"count,omitempty"`
-	Price    uint32        `json:"price,omitempty"`
-	Location string        `json:"location,omitempty"`
-	UserId   models.UserID `json:"user_id,omitempty"`
+	Count    uint16
+	Price    uint32
+	Location string
+	UserId   models.UserID
 }
 
 type StockByLocDto struct {
-	Stocks     []StockDto `json:"stocks"`
-	TotalCount int        `json:"total_count"`
-	PageNumber int64      `json:"page_number"`
+	Stocks     []StockDto
+	TotalCount int
+	PageNumber int64
 }
 
 type AddStockDto struct {
-	SkuId    models.SKUID  `json:"sku"`
-	UserId   models.UserID `json:"user_id"`
-	Count    uint16        `json:"count"`
-	Price    uint32        `json:"price"`
-	Location string        `json:"location"`
+	SkuId    models.SKUID
+	UserId   models.UserID
+	Count    uint16
+	Price    uint32
+	Location string
 }
 
 type DeleteStockDto struct {
-	UserId models.UserID `json:"user_id"`
-	SkuId  models.SKUID  `json:"sku"`
-}
-
-type ErrorResponse struct {
-	Message error `json:"message"`
-	Code    int   `json:"code"`
+	UserId models.UserID
+	SkuId  models.SKUID
 }
 
 type GetSkuByLocationParamsDto struct {
-	User_id     models.UserID `json:"user_id"`
-	Location    string        `json:"location"`
-	PageSize    int64         `json:"page_size"`
-	CurrentPage int64         `json:"current_page"`
+	User_id     models.UserID
+	Location    string
+	PageSize    int64
+	CurrentPage int64
 }
 
 type GetSkuBySkuIdDto struct {
-	SkuId models.SKUID `json:"sku"`
+	SkuId models.SKUID
 }
