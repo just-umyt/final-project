@@ -1,0 +1,15 @@
+# Server configurations
+server:
+  host: "localhost"
+  port: 8080
+  readheadertimeout: 10
+  shutdowntimeout: 3
+
+# Database credentials
+database:
+  dbhost: "localhost"
+  dbport: 5432
+  dbuser: "postgres"
+  dbname: "homework"
+  dbsslmode: "disable"
+  timeout: 30
