@@ -4,6 +4,7 @@ import (
 	"cart/internal/dto"
 	"cart/internal/models"
 	"cart/internal/usecase"
+	"cart/pkg/logger"
 	"cart/pkg/utils"
 	"encoding/json"
 	"net/http"
@@ -19,7 +20,9 @@ func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Req
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
+
 		return
 	}
 
@@ -31,10 +34,12 @@ func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Req
 	err = c.usecase.CartDeleteItemUsecase(r.Context(), deleteItemDto)
 	if err != nil {
 		if err.Error() == usecase.NotFoundError {
+			logger.Log.Errorf("DELETE | Item %v not found: %v", deleteItemDto, err)
 			utils.Error(w, err, http.StatusNotFound)
 
 			return
 		} else {
+			logger.Log.Errorf("DELETE | Failed to delete item from cart: %v", err)
 			utils.Error(w, err, http.StatusInternalServerError)
 
 			return

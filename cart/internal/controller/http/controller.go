@@ -9,3 +9,5 @@ type CartController struct {
 func NewCartController(cartUsecase usecase.CartUsecaseInterface) *CartController {
 	return &CartController{usecase: cartUsecase}
 }
+
+const ErrBadRequest string = "Bad Request: Failed to decode request body"

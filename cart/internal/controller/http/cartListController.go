@@ -2,6 +2,7 @@ package http
 
 import (
 	"cart/internal/models"
+	"cart/pkg/logger"
 	"cart/pkg/utils"
 	"encoding/json"
 	"net/http"
@@ -16,7 +17,9 @@ func (c *CartController) CartListController(w http.ResponseWriter, r *http.Reque
 
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)
 	if err != nil {
+		logger.Log.Errorf("LIST | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
+
 		return
 	}
 
@@ -24,7 +27,9 @@ func (c *CartController) CartListController(w http.ResponseWriter, r *http.Reque
 
 	list, err := c.usecase.CartListByUserIdUsecase(r.Context(), userIdDto)
 	if err != nil {
+		logger.Log.Errorf("LIST | Failed to get list from cart: %v", err)
 		utils.Error(w, err, http.StatusInternalServerError)
+
 		return
 	}
 
