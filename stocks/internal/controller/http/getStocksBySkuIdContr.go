@@ -10,7 +10,7 @@ import (
 )
 
 type GetSkuBySkuIdRequest struct {
-	SkuId models.SKUID `json:"sku"`
+	SkuId uint32 `json:"sku"`
 }
 
 type Stocks struct {

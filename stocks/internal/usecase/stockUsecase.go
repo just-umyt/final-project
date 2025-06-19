@@ -56,7 +56,6 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStoc
 			return errors.New(UserIdError)
 		}
 	})
-
 }
 
 func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) error {
@@ -72,7 +71,6 @@ func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto 
 
 		return nil
 	})
-
 }
 
 func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) (dto.StockByLocDto, error) {
