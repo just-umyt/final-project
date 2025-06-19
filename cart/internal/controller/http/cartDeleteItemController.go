@@ -3,6 +3,7 @@ package http
 import (
 	"cart/internal/dto"
 	"cart/internal/models"
+	"cart/internal/usecase"
 	"cart/pkg/utils"
 	"encoding/json"
 	"net/http"
@@ -15,6 +16,7 @@ type DeleteItemRequest struct {
 
 func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Request) {
 	var req DeleteItemRequest
+
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utils.Error(w, err, http.StatusBadRequest)
@@ -28,8 +30,15 @@ func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Req
 
 	err = c.usecase.CartDeleteItemUsecase(r.Context(), deleteItemDto)
 	if err != nil {
-		utils.Error(w, err, http.StatusInternalServerError)
-		return
+		if err.Error() == usecase.NotFoundError {
+			utils.Error(w, err, http.StatusNotFound)
+
+			return
+		} else {
+			utils.Error(w, err, http.StatusInternalServerError)
+
+			return
+		}
 	}
 
 	utils.SuccessResponse(w, nil, http.StatusOK)

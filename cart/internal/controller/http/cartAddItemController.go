@@ -3,6 +3,7 @@ package http
 import (
 	"cart/internal/dto"
 	"cart/internal/models"
+	"cart/internal/usecase"
 	"cart/pkg/utils"
 	"encoding/json"
 	"net/http"
@@ -30,8 +31,12 @@ func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Re
 
 	err := c.usecase.CartAddItemUsecase(r.Context(), cartAddDto)
 	if err != nil {
-		utils.Error(w, err, http.StatusInternalServerError)
-		return
+		if err.Error() == usecase.NotEnoughStock {
+			utils.Error(w, err, http.StatusPreconditionFailed)
+		} else {
+			utils.Error(w, err, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	utils.SuccessResponse(w, "", http.StatusOK)

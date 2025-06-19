@@ -64,9 +64,9 @@ func main() {
 
 	//service
 	httpClient := http.Client{
-		Timeout: 2 * time.Second,
+		Timeout: viper.GetDuration("client.timeout") * time.Second,
 	}
-	getSkuService := services.NewSkuGetService(&httpClient, "http://127.0.0.1:8081/stocks/item/get")
+	getSkuService := services.NewSkuGetService(&httpClient, viper.GetString("client.url"))
 
 	//usecase
 	cartUsecase := usecase.NewCartUsecase(*transaction, getSkuService)

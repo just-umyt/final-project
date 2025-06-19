@@ -2,6 +2,7 @@ package http
 
 import (
 	"cart/internal/models"
+	"cart/internal/usecase"
 	"cart/pkg/utils"
 	"encoding/json"
 	"net/http"
@@ -9,9 +10,11 @@ import (
 
 func (c *CartController) CartClearController(w http.ResponseWriter, r *http.Request) {
 	var userIdReq UserIdRequest
+
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)
 	if err != nil {
 		utils.Error(w, err, http.StatusBadRequest)
+
 		return
 	}
 
@@ -19,10 +22,16 @@ func (c *CartController) CartClearController(w http.ResponseWriter, r *http.Requ
 
 	err = c.usecase.CartClearByUserIdUsecase(r.Context(), userIdDto)
 	if err != nil {
-		utils.Error(w, err, http.StatusInternalServerError)
-		return
+		if err.Error() == usecase.NotFoundError {
+			utils.Error(w, err, http.StatusNotFound)
+
+			return
+		} else {
+			utils.Error(w, err, http.StatusInternalServerError)
+
+			return
+		}
 	}
 
 	utils.SuccessResponse(w, "", http.StatusOK)
-
 }

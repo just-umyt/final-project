@@ -29,6 +29,7 @@ func (c *CartRepo) GetItemIdByUserIdRepo(ctx context.Context, userId models.User
 	query := `SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2 `
 
 	var cartId models.CartID
+
 	err := c.tx.QueryRow(ctx, query, userId, skuId).Scan(&cartId)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return 0, err
@@ -40,6 +41,7 @@ func (c *CartRepo) GetItemIdByUserIdRepo(ctx context.Context, userId models.User
 func (c *CartRepo) UpdateItemByUserIdRepo(ctx context.Context, cart models.Cart) error {
 	query := `UPDATE cart SET count = $1 WHERE user_id = $2 AND sku_id = $3`
 	_, err := c.tx.Exec(ctx, query, cart.Count, cart.UserId, cart.SKUId)
+
 	return err
 }
 
@@ -60,18 +62,22 @@ func (c *CartRepo) DeleteItemRepo(ctx context.Context, userId models.UserID, sku
 
 func (c *CartRepo) GetItemsSkuIdByCartId(ctx context.Context, userId models.UserID) ([]models.SKUID, error) {
 	query := `SELECT sku_id FROM cart WHERE user_id = $1`
+
 	rows, err := c.tx.Query(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	var skus []models.SKUID
+
 	for rows.Next() {
 		var skuId models.SKUID
 		if err := rows.Scan(&skuId); err != nil {
 			return nil, err
 		}
+
 		skus = append(skus, skuId)
 	}
 
@@ -80,6 +86,7 @@ func (c *CartRepo) GetItemsSkuIdByCartId(ctx context.Context, userId models.User
 
 func (c *CartRepo) ClearCartByUserIdRepo(ctx context.Context, userId models.UserID) (int64, error) {
 	query := `DELETE FROM cart WHERE user_id = $1`
+
 	tag, err := c.tx.Exec(ctx, query, userId)
 	if err != nil {
 		return 0, err

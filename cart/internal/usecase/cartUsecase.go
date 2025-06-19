@@ -21,6 +21,11 @@ type CartUsecase struct {
 	skuService services.SkuGetServiceInterface
 }
 
+const (
+	NotFoundError  = "not found"
+	NotEnoughStock = "not enough stock"
+)
+
 func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetServiceInterface) *CartUsecase {
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
@@ -34,7 +39,7 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAd
 
 	//validate counts
 	if sku.Count < 1 || sku.Count < cartDto.Count {
-		return errors.New("not enough stock")
+		return errors.New(NotEnoughStock)
 	}
 
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
@@ -65,7 +70,7 @@ func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item dto.Delete
 		}
 
 		if rowsAffect < 1 {
-			return errors.New("not found")
+			return errors.New(NotFoundError)
 		}
 
 		return nil
@@ -77,6 +82,7 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 
 	err := u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
 		var err error
+
 		skuIds, err = cri.GetItemsSkuIdByCartId(ctx, userId)
 		if err != nil {
 			return err
@@ -86,7 +92,6 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 	})
 
 	var list dto.ListDto
-	var skus []dto.SKU
 
 	for _, e := range skuIds {
 		sku, err := u.skuService.GetSku(ctx, e)
@@ -95,10 +100,8 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 		}
 
 		list.TotalPrice += sku.Price
-		skus = append(skus, sku)
+		list.SKUs = append(list.SKUs, sku)
 	}
-
-	list.SKUs = skus
 
 	return list, err
 }
@@ -107,11 +110,11 @@ func (u *CartUsecase) CartClearByUserIdUsecase(ctx context.Context, userId model
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
 		rowsAffect, err := cri.ClearCartByUserIdRepo(ctx, userId)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if rowsAffect < 1 {
-			return errors.New("not found")
+			return errors.New(NotFoundError)
 		}
 
 		return nil

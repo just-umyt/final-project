@@ -42,7 +42,6 @@ type StockResponse struct {
 }
 
 func (s *SkuGetService) GetSku(ctx context.Context, skuId models.SKUID) (dto.SKU, error) {
-
 	reqDto := GetSkuRequest{
 		SkuId: skuId,
 	}
@@ -55,7 +54,9 @@ func (s *SkuGetService) GetSku(ctx context.Context, skuId models.SKUID) (dto.SKU
 	responseBody := bytes.NewBuffer(body)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseUrl, responseBody)
+
 	req.Header.Set("Content-Type", "application/json")
+
 	if err != nil {
 		return dto.SKU{}, err
 	}
@@ -76,6 +77,7 @@ func (s *SkuGetService) GetSku(ctx context.Context, skuId models.SKUID) (dto.SKU
 	}
 
 	var response Response
+
 	err = json.Unmarshal(respBody, &response)
 	if err != nil {
 		return dto.SKU{}, err

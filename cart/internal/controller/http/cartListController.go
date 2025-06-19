@@ -13,6 +13,7 @@ type UserIdRequest struct {
 
 func (c *CartController) CartListController(w http.ResponseWriter, r *http.Request) {
 	var userIdReq UserIdRequest
+
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)
 	if err != nil {
 		utils.Error(w, err, http.StatusBadRequest)
