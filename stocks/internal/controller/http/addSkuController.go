@@ -21,7 +21,7 @@ type AddStockRequest struct {
 func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Request) {
 	var addItemReq AddStockRequest
 	if err := json.NewDecoder(r.Body).Decode(&addItemReq); err != nil {
-		logger.Log.Errorf("Failed to decode request body: %v", err)
+		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
 
 		return

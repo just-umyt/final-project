@@ -17,15 +17,15 @@ type GetSkuByLocationParamsRequest struct {
 }
 
 type StockByLocResponse struct {
-	Stocks     []Stocks `json:"stocks"`
-	TotalCount int      `json:"total_count"`
-	PageNumber int64    `json:"page_number"`
+	Stocks     []StockResponse `json:"stocks"`
+	TotalCount int             `json:"total_count"`
+	PageNumber int64           `json:"page_number"`
 }
 
 func (c *StockController) GetSkusByLocationController(w http.ResponseWriter, r *http.Request) {
 	var paginationReq GetSkuByLocationParamsRequest
 	if err := json.NewDecoder(r.Body).Decode(&paginationReq); err != nil {
-		logger.Log.Errorf("GET BY LOCATION | Failed to decode request body: %v", err)
+		logger.Log.Errorf("GET BY LOCATION | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
 
 		return
@@ -49,7 +49,7 @@ func (c *StockController) GetSkusByLocationController(w http.ResponseWriter, r *
 	var stocksRes StockByLocResponse
 
 	for _, stock := range stockByLoc.Stocks {
-		st := Stocks{
+		st := StockResponse{
 			SkuId:    uint32(stock.SkuId),
 			Name:     stock.Name,
 			Type:     stock.Type,

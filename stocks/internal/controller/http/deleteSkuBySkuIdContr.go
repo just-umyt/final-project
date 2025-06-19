@@ -19,7 +19,7 @@ func (c *StockController) DeleteStockBySkuIdController(w http.ResponseWriter, r 
 	var deleteStockReq DeleteStockRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteStockReq); err != nil {
-		logger.Log.Errorf("Failed to decode request body: %v", err)
+		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
 
 		return

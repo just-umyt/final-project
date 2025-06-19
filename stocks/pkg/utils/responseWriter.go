@@ -7,8 +7,7 @@ import (
 )
 
 type response struct {
-	Message any
-	Code    int
+	Message any `json:"message"`
 }
 
 func SuccessResponse(w http.ResponseWriter, msg any, code int) {
@@ -17,7 +16,6 @@ func SuccessResponse(w http.ResponseWriter, msg any, code int) {
 
 	res := response{
 		Message: msg,
-		Code:    http.StatusOK,
 	}
 
 	err := json.NewEncoder(w).Encode(res)

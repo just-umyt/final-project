@@ -13,7 +13,7 @@ type GetSkuBySkuIdRequest struct {
 	SkuId uint32 `json:"sku"`
 }
 
-type Stocks struct {
+type StockResponse struct {
 	SkuId    uint32 `json:"sku"`
 	Name     string `json:"name"`
 	Type     string `json:"type"`
@@ -26,7 +26,7 @@ type Stocks struct {
 func (c *StockController) GetSkuStocksBySkuIdControlller(w http.ResponseWriter, r *http.Request) {
 	var skuIdReq GetSkuBySkuIdRequest
 	if err := json.NewDecoder(r.Body).Decode(&skuIdReq); err != nil {
-		logger.Log.Errorf("Failed to decode request body: %v", err)
+		logger.Log.Errorf("GET | %s: %v", ErrBadRequest, err)
 		utils.Error(w, err, http.StatusBadRequest)
 
 		return
@@ -49,7 +49,7 @@ func (c *StockController) GetSkuStocksBySkuIdControlller(w http.ResponseWriter, 
 		}
 	}
 
-	stockRes := Stocks{
+	stockRes := StockResponse{
 		SkuId:    uint32(stock.SkuId),
 		Name:     stock.Name,
 		Type:     stock.Type,
