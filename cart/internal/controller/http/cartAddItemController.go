@@ -23,6 +23,7 @@ func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Re
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
 
 		utils.Error(w, err, http.StatusBadRequest)
+
 		return
 	}
 
