@@ -21,27 +21,22 @@ import (
 )
 
 func main() {
-	//context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	//logger
 	logger.InitLogger()
 
-	//config
 	err := config.InitConfig()
 	if err != nil {
 		logger.Log.Fatal("Error loading config:", err)
 		return
 	}
 
-	//env
 	err = godotenv.Load()
 	if err != nil {
 		logger.Log.Fatal("Error loading .env file:", err)
 	}
 
-	//database
 	dbConfig := &postgres.PostgresConfig{
 		Host:     viper.GetString("database.dbhost"),
 		Port:     viper.GetInt("database.dbport"),
@@ -57,13 +52,10 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	//transaction
 	transaction := repository.NewPgTxManager(dbPool)
 
-	//usecase
 	stockUsecase := usecase.NewStockUsecase(*transaction)
 
-	//controllers
 	controller := myHttp.NewStockController(stockUsecase)
 
 	newMux := http.NewServeMux()
@@ -72,7 +64,6 @@ func main() {
 	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuIdController)
 	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocationController)
 
-	//server
 	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
 	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
 

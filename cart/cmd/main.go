@@ -22,27 +22,22 @@ import (
 )
 
 func main() {
-	//context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	//logger
 	logger.InitLogger()
 
-	// config
 	err := config.InitConfig()
 	if err != nil {
 		logger.Log.Fatal("Error loading config:", err)
 		return
 	}
 
-	//env
 	err = godotenv.Load()
 	if err != nil {
 		logger.Log.Fatal("Error loading .env file:", err)
 	}
 
-	//database
 	dbConfig := &postgres.PostgresConfig{
 		Host:     viper.GetString("database.dbhost"),
 		Port:     viper.GetInt("database.dbport"),
@@ -52,26 +47,21 @@ func main() {
 		SSLMode:  viper.GetString("database.dbsslmode"),
 	}
 
-	//database pool
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		logger.Log.Fatal("Error connecting to database: ", err)
 	}
 	defer dbPool.Close()
 
-	//transaction
 	transaction := repository.NewPgTxManager(dbPool)
 
-	//service
 	httpClient := http.Client{
 		Timeout: viper.GetDuration("client.timeout") * time.Second,
 	}
 	getSkuService := services.NewSkuGetService(&httpClient, viper.GetString("client.url"))
 
-	//usecase
 	cartUsecase := usecase.NewCartUsecase(*transaction, getSkuService)
 
-	//controllers
 	controller := myHttp.NewCartController(cartUsecase)
 
 	newMux := http.NewServeMux()
@@ -80,7 +70,6 @@ func main() {
 	newMux.HandleFunc("POST /cart/list", controller.CartListController)
 	newMux.HandleFunc("POST /cart/clear", controller.CartClearController)
 
-	//server
 	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
 	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
 

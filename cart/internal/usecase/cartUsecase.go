@@ -18,7 +18,7 @@ type CartUsecaseInterface interface {
 
 type CartUsecase struct {
 	tx         repository.PgTxManagerInterface
-	skuService services.SkuGetServiceInterface
+	skuService services.SkuGetService
 }
 
 const (
@@ -26,13 +26,13 @@ const (
 	NotEnoughStock = "not enough stock"
 )
 
-func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetServiceInterface) *CartUsecase {
+func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetService) *CartUsecase {
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
 
 func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAddItemDto) error {
 	//get_sku
-	sku, err := u.skuService.GetSku(ctx, cartDto.SkuId)
+	sku, err := u.skuService.GetItemInfo(ctx, cartDto.SkuId)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 	var list dto.ListDto
 
 	for _, e := range skuIds {
-		sku, err := u.skuService.GetSku(ctx, e)
+		sku, err := u.skuService.GetItemInfo(ctx, e)
 		if err != nil {
 			return dto.ListDto{}, err
 		}
