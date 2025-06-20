@@ -8,11 +8,11 @@ import (
 )
 
 type StockRepoInterface interface {
-	GetSkuStockBySkuIdRepo(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error)
-	AddStockRepo(ctx context.Context, newStock models.Stock) error
-	UpdateStockRepo(ctx context.Context, item models.Stock) error
-	DeleteStockRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error)
-	GetStocksByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error)
+	GetSkuStockBySkuId(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error)
+	AddStock(ctx context.Context, newStock models.Stock) error
+	UpdateStock(ctx context.Context, item models.Stock) error
+	DeleteStock(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error)
+	GetStocksByLocation(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error)
 }
 
 type StockRepo struct {
@@ -23,7 +23,7 @@ func NewStockRepository(tx pgx.Tx) *StockRepo {
 	return &StockRepo{tx: tx}
 }
 
-func (r *StockRepo) GetSkuStockBySkuIdRepo(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error) {
+func (r *StockRepo) GetSkuStockBySkuId(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error) {
 	query := `SELECT * FROM sku l LEFT JOIN stock r ON r.sku_id = l.sku_id WHERE l.sku_id = $1`
 
 	var repoSku SKU
@@ -58,7 +58,7 @@ func (r *StockRepo) GetSkuStockBySkuIdRepo(ctx context.Context, skuId models.SKU
 	return sku, stock, nil
 }
 
-func (r *StockRepo) AddStockRepo(ctx context.Context, newStock models.Stock) error {
+func (r *StockRepo) AddStock(ctx context.Context, newStock models.Stock) error {
 	query := `INSERT INTO stock (price, location, count, user_id, sku_id) VALUES ($1, $2, $3, $4, $5)`
 
 	_, err := r.tx.Exec(ctx, query, newStock.Price, newStock.Location, newStock.Count, newStock.UserId, newStock.SkuId)
@@ -69,7 +69,7 @@ func (r *StockRepo) AddStockRepo(ctx context.Context, newStock models.Stock) err
 	return nil
 }
 
-func (r *StockRepo) UpdateStockRepo(ctx context.Context, item models.Stock) error {
+func (r *StockRepo) UpdateStock(ctx context.Context, item models.Stock) error {
 	query := `UPDATE stock SET price = $1, location = $2, count = $3 WHERE sku_id = $4`
 
 	_, err := r.tx.Exec(ctx, query, item.Price, item.Location, item.Count, item.SkuId)
@@ -80,7 +80,7 @@ func (r *StockRepo) UpdateStockRepo(ctx context.Context, item models.Stock) erro
 	return nil
 }
 
-func (r *StockRepo) DeleteStockRepo(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error) {
+func (r *StockRepo) DeleteStock(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error) {
 	query := `DELETE FROM stock WHERE sku_id = $1 AND user_id = $2`
 
 	row, err := r.tx.Exec(ctx, query, skuId, userId)
@@ -88,7 +88,7 @@ func (r *StockRepo) DeleteStockRepo(ctx context.Context, skuId models.SKUID, use
 	return row.RowsAffected(), err
 }
 
-func (r *StockRepo) GetStocksByLocationRepo(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error) {
+func (r *StockRepo) GetStocksByLocation(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error) {
 	var items []models.FullStock
 	var err error
 

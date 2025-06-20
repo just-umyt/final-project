@@ -43,7 +43,7 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAd
 	}
 
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		cartId, err := cri.GetItemIdByUserIdRepo(ctx, cartDto.UserId, cartDto.SkuId)
+		cartId, err := cri.GetItemIdByUserId(ctx, cartDto.UserId, cartDto.SkuId)
 		if err != nil {
 			return err
 		}
@@ -55,16 +55,16 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAd
 		}
 
 		if cartId > 0 {
-			return cri.UpdateItemByUserIdRepo(ctx, cart)
+			return cri.UpdateItemByUserId(ctx, cart)
 		}
 
-		return cri.AddItemRepo(ctx, cart)
+		return cri.AddItem(ctx, cart)
 	})
 }
 
 func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item dto.DeleteItemDto) error {
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		rowsAffect, err := cri.DeleteItemRepo(ctx, item.UserId, item.SkuId)
+		rowsAffect, err := cri.DeleteItem(ctx, item.UserId, item.SkuId)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 
 func (u *CartUsecase) CartClearByUserIdUsecase(ctx context.Context, userId models.UserID) error {
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		rowsAffect, err := cri.ClearCartByUserIdRepo(ctx, userId)
+		rowsAffect, err := cri.ClearCartByUserId(ctx, userId)
 		if err != nil {
 			return err
 		}

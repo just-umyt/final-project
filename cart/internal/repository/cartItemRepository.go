@@ -9,12 +9,12 @@ import (
 )
 
 type CartRepoInterface interface {
-	GetItemIdByUserIdRepo(ctx context.Context, userId models.UserID, skuId models.SKUID) (models.CartID, error)
-	UpdateItemByUserIdRepo(ctx context.Context, cart models.Cart) error
-	AddItemRepo(ctx context.Context, cart models.Cart) error
-	DeleteItemRepo(ctx context.Context, userId models.UserID, sku models.SKUID) (int64, error)
+	GetItemIdByUserId(ctx context.Context, userId models.UserID, skuId models.SKUID) (models.CartID, error)
+	UpdateItemByUserId(ctx context.Context, cart models.Cart) error
+	AddItem(ctx context.Context, cart models.Cart) error
+	DeleteItem(ctx context.Context, userId models.UserID, sku models.SKUID) (int64, error)
 	GetItemsSkuIdByCartId(ctx context.Context, userId models.UserID) ([]models.SKUID, error)
-	ClearCartByUserIdRepo(ctx context.Context, userId models.UserID) (int64, error)
+	ClearCartByUserId(ctx context.Context, userId models.UserID) (int64, error)
 }
 
 type CartRepo struct {
@@ -25,7 +25,7 @@ func NewCartRepository(tx pgx.Tx) *CartRepo {
 	return &CartRepo{tx: tx}
 }
 
-func (c *CartRepo) GetItemIdByUserIdRepo(ctx context.Context, userId models.UserID, skuId models.SKUID) (models.CartID, error) {
+func (c *CartRepo) GetItemIdByUserId(ctx context.Context, userId models.UserID, skuId models.SKUID) (models.CartID, error) {
 	query := `SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2 `
 
 	var cartId models.CartID
@@ -38,14 +38,14 @@ func (c *CartRepo) GetItemIdByUserIdRepo(ctx context.Context, userId models.User
 	return cartId, nil
 }
 
-func (c *CartRepo) UpdateItemByUserIdRepo(ctx context.Context, cart models.Cart) error {
+func (c *CartRepo) UpdateItemByUserId(ctx context.Context, cart models.Cart) error {
 	query := `UPDATE cart SET count = $1 WHERE user_id = $2 AND sku_id = $3`
 	_, err := c.tx.Exec(ctx, query, cart.Count, cart.UserId, cart.SKUId)
 
 	return err
 }
 
-func (c *CartRepo) AddItemRepo(ctx context.Context, cart models.Cart) error {
+func (c *CartRepo) AddItem(ctx context.Context, cart models.Cart) error {
 	query := `INSERT INTO cart (user_id, sku_id, count) VALUES ($1, $2, $3)`
 
 	_, err := c.tx.Exec(ctx, query, cart.UserId, cart.SKUId, cart.Count)
@@ -53,7 +53,7 @@ func (c *CartRepo) AddItemRepo(ctx context.Context, cart models.Cart) error {
 	return err
 }
 
-func (c *CartRepo) DeleteItemRepo(ctx context.Context, userId models.UserID, skuId models.SKUID) (int64, error) {
+func (c *CartRepo) DeleteItem(ctx context.Context, userId models.UserID, skuId models.SKUID) (int64, error) {
 	query := `DELETE FROM cart WHERE user_id = $1 AND sku_id = $2`
 	tag, err := c.tx.Exec(ctx, query, userId, skuId)
 
@@ -84,7 +84,7 @@ func (c *CartRepo) GetItemsSkuIdByCartId(ctx context.Context, userId models.User
 	return skus, nil
 }
 
-func (c *CartRepo) ClearCartByUserIdRepo(ctx context.Context, userId models.UserID) (int64, error) {
+func (c *CartRepo) ClearCartByUserId(ctx context.Context, userId models.UserID) (int64, error) {
 	query := `DELETE FROM cart WHERE user_id = $1`
 
 	tag, err := c.tx.Exec(ctx, query, userId)

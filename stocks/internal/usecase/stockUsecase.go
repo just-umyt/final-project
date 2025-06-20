@@ -30,7 +30,7 @@ func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 
 func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		sku, stock, err := sri.GetSkuStockBySkuIdRepo(ctx, stockDto.SkuId)
+		sku, stock, err := sri.GetSkuStockBySkuId(ctx, stockDto.SkuId)
 		if err != nil {
 			if sku.SkuID == 0 {
 				return errors.New(NotFoundError)
@@ -49,9 +49,9 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStoc
 
 		switch stock.UserId {
 		case 0:
-			return sri.AddStockRepo(ctx, newItem)
+			return sri.AddStock(ctx, newItem)
 		case stockDto.UserId:
-			return sri.UpdateStockRepo(ctx, newItem)
+			return sri.UpdateStock(ctx, newItem)
 		default:
 			return errors.New(UserIdError)
 		}
@@ -60,7 +60,7 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStoc
 
 func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		rows, err := sri.DeleteStockRepo(ctx, deleteDto.SkuId, deleteDto.UserId)
+		rows, err := sri.DeleteStock(ctx, deleteDto.SkuId, deleteDto.UserId)
 		if err != nil {
 			return err
 		}
@@ -87,7 +87,7 @@ func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginatio
 	}
 
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		stocksFromRepo, err := sri.GetStocksByLocationRepo(ctx, params)
+		stocksFromRepo, err := sri.GetStocksByLocation(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -120,7 +120,7 @@ func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginatio
 func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (dto.StockDto, error) {
 	var stockDto dto.StockDto
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		sku, stock, err := sri.GetSkuStockBySkuIdRepo(ctx, skuId)
+		sku, stock, err := sri.GetSkuStockBySkuId(ctx, skuId)
 		if err != nil {
 			if sku.SkuID == 0 {
 				return errors.New(NotFoundError)
