@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"cart/internal/dto"
 	"cart/internal/models"
 	"cart/internal/repository"
 	"cart/internal/services"
@@ -10,9 +9,9 @@ import (
 )
 
 type CartUsecaseInterface interface {
-	CartAddItemUsecase(ctx context.Context, cartDto dto.CartAddItemDto) error
-	CartDeleteItemUsecase(ctx context.Context, item dto.DeleteItemDto) error
-	CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (dto.ListDto, error)
+	CartAddItemUsecase(ctx context.Context, cartDto CartAddItemDto) error
+	CartDeleteItemUsecase(ctx context.Context, item DeleteItemDto) error
+	CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (ListDto, error)
 	CartClearByUserIdUsecase(ctx context.Context, userId models.UserID) error
 }
 
@@ -30,14 +29,12 @@ func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetService)
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
 
-func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAddItemDto) error {
-	//get_sku
+func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto CartAddItemDto) error {
 	sku, err := u.skuService.GetItemInfo(ctx, cartDto.SkuId)
 	if err != nil {
 		return err
 	}
 
-	//validate counts
 	if sku.Count < 1 || sku.Count < cartDto.Count {
 		return errors.New(NotEnoughStock)
 	}
@@ -62,7 +59,7 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto dto.CartAd
 	})
 }
 
-func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item dto.DeleteItemDto) error {
+func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item DeleteItemDto) error {
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
 		rowsAffect, err := cri.DeleteItem(ctx, item.UserId, item.SkuId)
 		if err != nil {
@@ -77,7 +74,7 @@ func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item dto.Delete
 	})
 }
 
-func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (dto.ListDto, error) {
+func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (ListDto, error) {
 	var skuIds []models.SKUID
 
 	err := u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
@@ -91,12 +88,12 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 		return nil
 	})
 
-	var list dto.ListDto
+	var list ListDto
 
 	for _, e := range skuIds {
 		sku, err := u.skuService.GetItemInfo(ctx, e)
 		if err != nil {
-			return dto.ListDto{}, err
+			return ListDto{}, err
 		}
 
 		list.TotalPrice += sku.Price

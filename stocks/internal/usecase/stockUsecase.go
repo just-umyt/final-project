@@ -3,16 +3,15 @@ package usecase
 import (
 	"context"
 	"errors"
-	"stocks/internal/dto"
 	"stocks/internal/models"
 	"stocks/internal/repository"
 )
 
 type StockUsecaseInterface interface {
-	AddStockUsecase(ctx context.Context, stockDto dto.AddStockDto) error
-	DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) error
-	GetStocksByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) (dto.StockByLocDto, error)
-	GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (dto.StockDto, error)
+	AddStockUsecase(ctx context.Context, stockDto AddStockDto) error
+	DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto DeleteStockDto) error
+	GetStocksByLocationUsecase(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error)
+	GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (StockDto, error)
 }
 
 type StockUsecase struct {
@@ -28,7 +27,7 @@ func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
 }
 
-func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStockDto) error {
+func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto AddStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, stockDto.SkuId)
 		if err != nil {
@@ -58,7 +57,7 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto dto.AddStoc
 	})
 }
 
-func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto dto.DeleteStockDto) error {
+func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto DeleteStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		rows, err := sri.DeleteStock(ctx, deleteDto.SkuId, deleteDto.UserId)
 		if err != nil {
@@ -73,8 +72,8 @@ func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto 
 	})
 }
 
-func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginationByLoc dto.GetSkuByLocationParamsDto) (dto.StockByLocDto, error) {
-	var items dto.StockByLocDto
+func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error) {
+	var items StockByLocDto
 
 	limit := paginationByLoc.PageSize
 	offset := limit * (paginationByLoc.CurrentPage - 1)
@@ -93,8 +92,8 @@ func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginatio
 		}
 
 		for _, repoStock := range stocksFromRepo {
-			item := dto.StockDto{
-				SkuDto: dto.SkuDto{
+			item := StockDto{
+				SkuDto: SkuDto{
 					SkuId: repoStock.SkuID,
 					Name:  repoStock.Name,
 					Type:  repoStock.Type,
@@ -117,8 +116,8 @@ func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginatio
 	return items, err
 }
 
-func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (dto.StockDto, error) {
-	var stockDto dto.StockDto
+func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (StockDto, error) {
+	var stockDto StockDto
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, skuId)
 		if err != nil {
@@ -129,8 +128,8 @@ func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId mod
 			}
 		}
 
-		stockDto = dto.StockDto{
-			SkuDto: dto.SkuDto{
+		stockDto = StockDto{
+			SkuDto: SkuDto{
 				SkuId: sku.SkuID,
 				Name:  sku.Name,
 				Type:  sku.Type,

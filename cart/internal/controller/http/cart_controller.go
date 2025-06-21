@@ -1,7 +1,6 @@
 package http
 
 import (
-	"cart/internal/dto"
 	"cart/internal/models"
 	"cart/internal/usecase"
 	"cart/pkg/logger"
@@ -9,6 +8,16 @@ import (
 	"encoding/json"
 	"net/http"
 )
+
+type CartController struct {
+	usecase usecase.CartUsecaseInterface
+}
+
+func NewCartController(cartUsecase usecase.CartUsecaseInterface) *CartController {
+	return &CartController{usecase: cartUsecase}
+}
+
+const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
 func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Request) {
 	var req CartAddItemRequest
@@ -21,7 +30,7 @@ func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	cartAddDto := dto.CartAddItemDto{
+	cartAddDto := usecase.CartAddItemDto{
 		UserId: models.UserID(req.UserId),
 		SkuId:  models.SKUID(req.SkuId),
 		Count:  req.Count,
@@ -88,7 +97,7 @@ func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	deleteItemDto := dto.DeleteItemDto{
+	deleteItemDto := usecase.DeleteItemDto{
 		UserId: models.UserID(req.UserId),
 		SkuId:  models.SKUID(req.SkuId),
 	}

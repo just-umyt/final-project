@@ -3,12 +3,21 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"stocks/internal/dto"
 	"stocks/internal/models"
 	"stocks/internal/usecase"
 	"stocks/pkg/logger"
 	"stocks/pkg/utils"
 )
+
+type StockController struct {
+	usecase usecase.StockUsecaseInterface
+}
+
+func NewStockController(stUsecase usecase.StockUsecaseInterface) *StockController {
+	return &StockController{usecase: stUsecase}
+}
+
+const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
 func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Request) {
 	var addItemReq AddStockRequest
@@ -19,7 +28,7 @@ func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	addItemDto := dto.AddStockDto{
+	addItemDto := usecase.AddStockDto{
 		SkuId:    models.SKUID(addItemReq.SkuId),
 		UserId:   models.UserID(addItemReq.UserId),
 		Count:    addItemReq.Count,
@@ -61,7 +70,7 @@ func (c *StockController) DeleteStockBySkuIdController(w http.ResponseWriter, r 
 		return
 	}
 
-	deleteStockDto := dto.DeleteStockDto{
+	deleteStockDto := usecase.DeleteStockDto{
 		UserId: models.UserID(deleteStockReq.UserId),
 		SkuId:  models.SKUID(deleteStockReq.SkuId),
 	}
@@ -93,7 +102,7 @@ func (c *StockController) GetSkusByLocationController(w http.ResponseWriter, r *
 		return
 	}
 
-	paginationDto := dto.GetSkuByLocationParamsDto{
+	paginationDto := usecase.GetSkuByLocationParamsDto{
 		User_id:     models.UserID(paginationReq.User_id),
 		Location:    paginationReq.Location,
 		PageSize:    paginationReq.PageSize,

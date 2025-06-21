@@ -1,26 +1,6 @@
-package dto
+package usecase
 
 import "stocks/internal/models"
-
-type SkuDto struct {
-	SkuId models.SKUID
-	Name  string
-	Type  string
-}
-
-type StockDto struct {
-	SkuDto
-	Count    uint16
-	Price    uint32
-	Location string
-	UserId   models.UserID
-}
-
-type StockByLocDto struct {
-	Stocks     []StockDto
-	TotalCount int
-	PageNumber int64
-}
 
 type AddStockDto struct {
 	SkuId    models.SKUID
@@ -42,6 +22,22 @@ type GetSkuByLocationParamsDto struct {
 	CurrentPage int64
 }
 
-type GetSkuBySkuIdDto struct {
+type SkuDto struct {
 	SkuId models.SKUID
+	Name  string
+	Type  string
+}
+
+type StockDto struct {
+	SkuDto
+	Count    uint16
+	Price    uint32
+	Location string
+	UserId   models.UserID
+}
+
+type StockByLocDto struct {
+	Stocks     []StockDto
+	TotalCount int
+	PageNumber int64
 }

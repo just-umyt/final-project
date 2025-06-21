@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"cart/internal/dto"
 	"cart/internal/models"
 	"context"
 	"encoding/json"
@@ -11,16 +10,16 @@ import (
 )
 
 type SkuGetService interface {
-	GetItemInfo(ctx context.Context, skuId models.SKUID) (dto.SKU, error)
+	GetItemInfo(ctx context.Context, skuId models.SKUID) (SKU, error)
 }
 
-type GetItemInfo struct {
+type GetItemInfoService struct {
 	httpClient *http.Client
 	baseUrl    string
 }
 
-func NewSkuGetService(client *http.Client, url string) *GetItemInfo {
-	return &GetItemInfo{httpClient: client, baseUrl: url}
+func NewSkuGetService(client *http.Client, url string) *GetItemInfoService {
+	return &GetItemInfoService{httpClient: client, baseUrl: url}
 }
 
 type GetSkuRequest struct {
@@ -41,14 +40,14 @@ type StockResponse struct {
 	UserId   int64  `json:"user_id,omitempty"`
 }
 
-func (s *GetItemInfo) GetItemInfo(ctx context.Context, skuId models.SKUID) (dto.SKU, error) {
+func (s *GetItemInfoService) GetItemInfo(ctx context.Context, skuId models.SKUID) (SKU, error) {
 	reqDto := GetSkuRequest{
 		SkuId: skuId,
 	}
 
 	body, err := json.Marshal(&reqDto)
 	if err != nil {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 
 	responseBody := bytes.NewBuffer(body)
@@ -58,34 +57,34 @@ func (s *GetItemInfo) GetItemInfo(ctx context.Context, skuId models.SKUID) (dto.
 	req.Header.Set("Content-Type", "application/json")
 
 	if err != nil {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 
 	var response Response
 
 	err = json.Unmarshal(respBody, &response)
 	if err != nil {
-		return dto.SKU{}, err
+		return SKU{}, err
 	}
 
 	stockRes := response.Message
 
-	sku := dto.SKU{
+	sku := SKU{
 		SkuId:    models.SKUID(stockRes.SkuId),
 		Name:     stockRes.Name,
 		Type:     stockRes.Type,
