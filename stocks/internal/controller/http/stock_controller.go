@@ -38,13 +38,13 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := c.usecase.AddStock(r.Context(), addItemDto); err != nil {
-		switch err {
-		case usecase.ErrNotFound:
+		switch {
+		case errors.Is(err, usecase.ErrNotFound):
 			logger.Log.Errorf("ADD | Sku %v not found: %v", addItemDto.SkuId, err)
 			utils.Error(w, err, http.StatusNotFound)
 
 			return
-		case usecase.ErrUserId:
+		case errors.Is(err, usecase.ErrUserId):
 			logger.Log.Errorf("ADD | User %v not found: %v", addItemDto.UserId, err)
 			utils.Error(w, err, http.StatusNotFound)
 
