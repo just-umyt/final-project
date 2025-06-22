@@ -19,7 +19,7 @@ func NewCartController(cartUsecase usecase.CartUsecaseInterface) *CartController
 
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
-func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Request) {
+func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 	var req CartAddItemRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -54,7 +54,7 @@ func (c *CartController) CartAddItemController(w http.ResponseWriter, r *http.Re
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *CartController) CartClearController(w http.ResponseWriter, r *http.Request) {
+func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 	var userIdReq UserIdRequest
 
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)
@@ -86,7 +86,7 @@ func (c *CartController) CartClearController(w http.ResponseWriter, r *http.Requ
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Request) {
+func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	var req DeleteItemRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -120,7 +120,7 @@ func (c *CartController) DeleteItemController(w http.ResponseWriter, r *http.Req
 	utils.SuccessResponse(w, nil, http.StatusOK)
 }
 
-func (c *CartController) CartListController(w http.ResponseWriter, r *http.Request) {
+func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 	var userIdReq UserIdRequest
 
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)

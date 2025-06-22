@@ -59,10 +59,10 @@ func main() {
 	controller := myHttp.NewStockController(stockUsecase)
 
 	newMux := http.NewServeMux()
-	newMux.HandleFunc("POST /stocks/item/add", controller.AddStockController)
-	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuStocksBySkuIdControlller)
-	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuIdController)
-	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocationController)
+	newMux.HandleFunc("POST /stocks/item/add", controller.AddStock)
+	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuStocksBySkuId)
+	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuId)
+	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocation)
 
 	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
 	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second

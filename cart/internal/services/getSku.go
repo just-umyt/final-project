@@ -10,7 +10,7 @@ import (
 )
 
 type SkuGetService interface {
-	GetItemInfo(ctx context.Context, skuId models.SKUID) (SKU, error)
+	GetItemInfo(ctx context.Context, skuId models.SKUID) (Item, error)
 }
 
 type GetItemInfoService struct {
@@ -40,14 +40,14 @@ type StockResponse struct {
 	UserId   int64  `json:"user_id,omitempty"`
 }
 
-func (s *GetItemInfoService) GetItemInfo(ctx context.Context, skuId models.SKUID) (SKU, error) {
+func (s *GetItemInfoService) GetItemInfo(ctx context.Context, skuId models.SKUID) (Item, error) {
 	reqDto := GetSkuRequest{
 		SkuId: skuId,
 	}
 
 	body, err := json.Marshal(&reqDto)
 	if err != nil {
-		return SKU{}, err
+		return Item{}, err
 	}
 
 	responseBody := bytes.NewBuffer(body)
@@ -57,34 +57,34 @@ func (s *GetItemInfoService) GetItemInfo(ctx context.Context, skuId models.SKUID
 	req.Header.Set("Content-Type", "application/json")
 
 	if err != nil {
-		return SKU{}, err
+		return Item{}, err
 	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return SKU{}, err
+		return Item{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return SKU{}, err
+		return Item{}, err
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return SKU{}, err
+		return Item{}, err
 	}
 
 	var response Response
 
 	err = json.Unmarshal(respBody, &response)
 	if err != nil {
-		return SKU{}, err
+		return Item{}, err
 	}
 
 	stockRes := response.Message
 
-	sku := SKU{
+	sku := Item{
 		SkuId:    models.SKUID(stockRes.SkuId),
 		Name:     stockRes.Name,
 		Type:     stockRes.Type,

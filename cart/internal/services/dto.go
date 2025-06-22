@@ -2,7 +2,7 @@ package services
 
 import "cart/internal/models"
 
-type SKU struct {
+type Item struct {
 	SkuId    models.SKUID
 	Name     string
 	Type     string

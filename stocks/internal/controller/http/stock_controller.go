@@ -19,7 +19,7 @@ func NewStockController(stUsecase usecase.StockUsecaseInterface) *StockControlle
 
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
-func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Request) {
+func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	var addItemReq AddStockRequest
 	if err := json.NewDecoder(r.Body).Decode(&addItemReq); err != nil {
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
@@ -60,7 +60,7 @@ func (c *StockController) AddStockController(w http.ResponseWriter, r *http.Requ
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *StockController) DeleteStockBySkuIdController(w http.ResponseWriter, r *http.Request) {
+func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Request) {
 	var deleteStockReq DeleteStockRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteStockReq); err != nil {
@@ -93,7 +93,7 @@ func (c *StockController) DeleteStockBySkuIdController(w http.ResponseWriter, r 
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *StockController) GetSkusByLocationController(w http.ResponseWriter, r *http.Request) {
+func (c *StockController) GetSkusByLocation(w http.ResponseWriter, r *http.Request) {
 	var paginationReq GetSkuByLocationParamsRequest
 	if err := json.NewDecoder(r.Body).Decode(&paginationReq); err != nil {
 		logger.Log.Errorf("GET BY LOCATION | %s: %v", ErrBadRequest, err)
@@ -139,7 +139,7 @@ func (c *StockController) GetSkusByLocationController(w http.ResponseWriter, r *
 	utils.SuccessResponse(w, stocksRes, http.StatusOK)
 }
 
-func (c *StockController) GetSkuStocksBySkuIdControlller(w http.ResponseWriter, r *http.Request) {
+func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Request) {
 	var skuIdReq GetSkuBySkuIdRequest
 	if err := json.NewDecoder(r.Body).Decode(&skuIdReq); err != nil {
 		logger.Log.Errorf("GET | %s: %v", ErrBadRequest, err)

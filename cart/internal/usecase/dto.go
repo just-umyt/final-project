@@ -17,6 +17,6 @@ type DeleteItemDto struct {
 }
 
 type ListDto struct {
-	SKUs       []services.SKU
+	SKUs       []services.Item
 	TotalPrice uint32
 }

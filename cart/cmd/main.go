@@ -65,10 +65,10 @@ func main() {
 	controller := myHttp.NewCartController(cartUsecase)
 
 	newMux := http.NewServeMux()
-	newMux.HandleFunc("POST /cart/item/add", controller.CartAddItemController)
-	newMux.HandleFunc("POST /cart/item/delete", controller.DeleteItemController)
-	newMux.HandleFunc("POST /cart/list", controller.CartListController)
-	newMux.HandleFunc("POST /cart/clear", controller.CartClearController)
+	newMux.HandleFunc("POST /cart/item/add", controller.CartAddItem)
+	newMux.HandleFunc("POST /cart/item/delete", controller.DeleteItem)
+	newMux.HandleFunc("POST /cart/list", controller.CartList)
+	newMux.HandleFunc("POST /cart/clear", controller.CartClear)
 
 	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
 	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
