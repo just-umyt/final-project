@@ -37,7 +37,7 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 		Location: addItemReq.Location,
 	}
 
-	if err := c.usecase.AddStockUsecase(r.Context(), addItemDto); err != nil {
+	if err := c.usecase.AddStock(r.Context(), addItemDto); err != nil {
 		switch err {
 		case usecase.ErrNotFound:
 			logger.Log.Errorf("ADD | Sku %v not found: %v", addItemDto.SkuId, err)
@@ -76,7 +76,7 @@ func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Requ
 		SkuId:  models.SKUID(deleteStockReq.SkuId),
 	}
 
-	if err := c.usecase.DeleteStockBySkuIdUsecase(r.Context(), deleteStockDto); err != nil {
+	if err := c.usecase.DeleteStockBySkuId(r.Context(), deleteStockDto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Sku %v not found: %v", deleteStockDto.SkuId, err)
 			utils.Error(w, err, http.StatusNotFound)
@@ -110,7 +110,7 @@ func (c *StockController) GetSkusByLocation(w http.ResponseWriter, r *http.Reque
 		CurrentPage: paginationReq.CurrentPage,
 	}
 
-	stockByLoc, err := c.usecase.GetStocksByLocationUsecase(r.Context(), paginationDto)
+	stockByLoc, err := c.usecase.GetStocksByLocation(r.Context(), paginationDto)
 	if err != nil {
 		logger.Log.Errorf("GET BY LOCATION | Failed to get stocks by location: %v", err)
 		utils.Error(w, err, http.StatusInternalServerError)
@@ -151,7 +151,7 @@ func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Req
 
 	skuId := models.SKUID(skuIdReq.SkuId)
 
-	stock, err := c.usecase.GetSkuStocksBySkuIdUsecase(r.Context(), skuId)
+	stock, err := c.usecase.GetSkuStocksBySkuId(r.Context(), skuId)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("GET | Sku %v not found: %v", skuId, err)

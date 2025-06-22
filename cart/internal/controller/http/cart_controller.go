@@ -37,7 +37,7 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 		Count:  req.Count,
 	}
 
-	err := c.usecase.CartAddItemUsecase(r.Context(), cartAddDto)
+	err := c.usecase.CartAddItem(r.Context(), cartAddDto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotEnoughStock) {
 			logger.Log.Errorf("ADD | Item %v not found: %v", cartAddDto, err)
@@ -69,7 +69,7 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 
 	userIdDto := models.UserID(userIdReq.UserId)
 
-	err = c.usecase.CartClearByUserIdUsecase(r.Context(), userIdDto)
+	err = c.usecase.CartClearByUserId(r.Context(), userIdDto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("CLEAR | User %v not found: %v", userIdDto, err)
@@ -103,7 +103,7 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		SkuId:  models.SKUID(req.SkuId),
 	}
 
-	err = c.usecase.CartDeleteItemUsecase(r.Context(), deleteItemDto)
+	err = c.usecase.CartDeleteItem(r.Context(), deleteItemDto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Item %v not found: %v", deleteItemDto, err)
@@ -134,7 +134,7 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 
 	userIdDto := models.UserID(userIdReq.UserId)
 
-	list, err := c.usecase.CartListByUserIdUsecase(r.Context(), userIdDto)
+	list, err := c.usecase.CartListByUserId(r.Context(), userIdDto)
 	if err != nil {
 		logger.Log.Errorf("LIST | Failed to get list from cart: %v", err)
 		utils.Error(w, err, http.StatusInternalServerError)

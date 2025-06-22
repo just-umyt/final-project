@@ -9,10 +9,10 @@ import (
 )
 
 type CartUsecaseInterface interface {
-	CartAddItemUsecase(ctx context.Context, cartDto CartAddItemDto) error
-	CartDeleteItemUsecase(ctx context.Context, item DeleteItemDto) error
-	CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (ListDto, error)
-	CartClearByUserIdUsecase(ctx context.Context, userId models.UserID) error
+	CartAddItem(ctx context.Context, cartDto CartAddItemDto) error
+	CartDeleteItem(ctx context.Context, item DeleteItemDto) error
+	CartListByUserId(ctx context.Context, userId models.UserID) (ListDto, error)
+	CartClearByUserId(ctx context.Context, userId models.UserID) error
 }
 
 type CartUsecase struct {
@@ -29,7 +29,7 @@ func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetService)
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
 
-func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto CartAddItemDto) error {
+func (u *CartUsecase) CartAddItem(ctx context.Context, cartDto CartAddItemDto) error {
 	sku, err := u.skuService.GetItemInfo(ctx, cartDto.SkuId)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto CartAddIte
 	})
 }
 
-func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item DeleteItemDto) error {
+func (u *CartUsecase) CartDeleteItem(ctx context.Context, item DeleteItemDto) error {
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
 		rowsAffect, err := cri.DeleteItem(ctx, item.UserId, item.SkuId)
 		if err != nil {
@@ -74,7 +74,7 @@ func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item DeleteItem
 	})
 }
 
-func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models.UserID) (ListDto, error) {
+func (u *CartUsecase) CartListByUserId(ctx context.Context, userId models.UserID) (ListDto, error) {
 	var skuIds []models.SKUID
 
 	err := u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
@@ -103,7 +103,7 @@ func (u *CartUsecase) CartListByUserIdUsecase(ctx context.Context, userId models
 	return list, err
 }
 
-func (u *CartUsecase) CartClearByUserIdUsecase(ctx context.Context, userId models.UserID) error {
+func (u *CartUsecase) CartClearByUserId(ctx context.Context, userId models.UserID) error {
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
 		rowsAffect, err := cri.ClearCartByUserId(ctx, userId)
 		if err != nil {

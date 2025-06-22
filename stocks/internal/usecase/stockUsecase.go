@@ -8,10 +8,10 @@ import (
 )
 
 type StockUsecaseInterface interface {
-	AddStockUsecase(ctx context.Context, stockDto AddStockDto) error
-	DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto DeleteStockDto) error
-	GetStocksByLocationUsecase(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error)
-	GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (StockDto, error)
+	AddStock(ctx context.Context, stockDto AddStockDto) error
+	DeleteStockBySkuId(ctx context.Context, deleteDto DeleteStockDto) error
+	GetStocksByLocation(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error)
+	GetSkuStocksBySkuId(ctx context.Context, skuId models.SKUID) (StockDto, error)
 }
 
 type StockUsecase struct {
@@ -23,16 +23,11 @@ var (
 	ErrUserId   error = errors.New("user id is not matched")
 )
 
-// const (
-// 	NotFoundError = "not found"
-// 	UserIdError   = "user id is not matched"
-// )
-
 func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
 }
 
-func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto AddStockDto) error {
+func (u *StockUsecase) AddStock(ctx context.Context, stockDto AddStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, stockDto.SkuId)
 		if err != nil {
@@ -62,7 +57,7 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto AddStockDto
 	})
 }
 
-func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto DeleteStockDto) error {
+func (u *StockUsecase) DeleteStockBySkuId(ctx context.Context, deleteDto DeleteStockDto) error {
 	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		rows, err := sri.DeleteStock(ctx, deleteDto.SkuId, deleteDto.UserId)
 		if err != nil {
@@ -77,7 +72,7 @@ func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto 
 	})
 }
 
-func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error) {
+func (u *StockUsecase) GetStocksByLocation(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error) {
 	var items StockByLocDto
 
 	limit := paginationByLoc.PageSize
@@ -121,7 +116,7 @@ func (u *StockUsecase) GetStocksByLocationUsecase(ctx context.Context, paginatio
 	return items, err
 }
 
-func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId models.SKUID) (StockDto, error) {
+func (u *StockUsecase) GetSkuStocksBySkuId(ctx context.Context, skuId models.SKUID) (StockDto, error) {
 	var stockDto StockDto
 	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, skuId)
