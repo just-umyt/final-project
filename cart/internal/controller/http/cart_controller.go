@@ -6,6 +6,7 @@ import (
 	"cart/pkg/logger"
 	"cart/pkg/utils"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -38,7 +39,7 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 
 	err := c.usecase.CartAddItemUsecase(r.Context(), cartAddDto)
 	if err != nil {
-		if err.Error() == usecase.NotEnoughStock {
+		if errors.Is(err, usecase.ErrNotEnoughStock) {
 			logger.Log.Errorf("ADD | Item %v not found: %v", cartAddDto, err)
 			utils.Error(w, err, http.StatusPreconditionFailed)
 
@@ -70,7 +71,7 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 
 	err = c.usecase.CartClearByUserIdUsecase(r.Context(), userIdDto)
 	if err != nil {
-		if err.Error() == usecase.NotFoundError {
+		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("CLEAR | User %v not found: %v", userIdDto, err)
 			utils.Error(w, err, http.StatusNotFound)
 
@@ -104,7 +105,7 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	err = c.usecase.CartDeleteItemUsecase(r.Context(), deleteItemDto)
 	if err != nil {
-		if err.Error() == usecase.NotFoundError {
+		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Item %v not found: %v", deleteItemDto, err)
 			utils.Error(w, err, http.StatusNotFound)
 

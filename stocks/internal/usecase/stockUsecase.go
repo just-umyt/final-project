@@ -18,10 +18,15 @@ type StockUsecase struct {
 	tx repository.PgTxManagerInterface
 }
 
-const (
-	NotFoundError = "not found"
-	UserIdError   = "user id is not matched"
+var (
+	ErrNotFound error = errors.New("not found")
+	ErrUserId   error = errors.New("user id is not matched")
 )
+
+// const (
+// 	NotFoundError = "not found"
+// 	UserIdError   = "user id is not matched"
+// )
 
 func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
@@ -32,7 +37,7 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto AddStockDto
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, stockDto.SkuId)
 		if err != nil {
 			if sku.SkuID == 0 {
-				return errors.New(NotFoundError)
+				return ErrNotFound
 			} else {
 				return err
 			}
@@ -52,7 +57,7 @@ func (u *StockUsecase) AddStockUsecase(ctx context.Context, stockDto AddStockDto
 		case stockDto.UserId:
 			return sri.UpdateStock(ctx, newItem)
 		default:
-			return errors.New(UserIdError)
+			return ErrUserId
 		}
 	})
 }
@@ -65,7 +70,7 @@ func (u *StockUsecase) DeleteStockBySkuIdUsecase(ctx context.Context, deleteDto 
 		}
 
 		if rows == 0 {
-			return errors.New(NotFoundError)
+			return ErrNotFound
 		}
 
 		return nil
@@ -122,7 +127,7 @@ func (u *StockUsecase) GetSkuStocksBySkuIdUsecase(ctx context.Context, skuId mod
 		sku, stock, err := sri.GetSkuStockBySkuId(ctx, skuId)
 		if err != nil {
 			if sku.SkuID == 0 {
-				return errors.New(NotFoundError)
+				return ErrNotFound
 			} else {
 				return err
 			}

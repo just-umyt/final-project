@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"stocks/internal/models"
 	"stocks/internal/usecase"
@@ -37,13 +38,13 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := c.usecase.AddStockUsecase(r.Context(), addItemDto); err != nil {
-		switch err.Error() {
-		case usecase.NotFoundError:
+		switch err {
+		case usecase.ErrNotFound:
 			logger.Log.Errorf("ADD | Sku %v not found: %v", addItemDto.SkuId, err)
 			utils.Error(w, err, http.StatusNotFound)
 
 			return
-		case usecase.UserIdError:
+		case usecase.ErrUserId:
 			logger.Log.Errorf("ADD | User %v not found: %v", addItemDto.UserId, err)
 			utils.Error(w, err, http.StatusNotFound)
 
@@ -76,7 +77,7 @@ func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := c.usecase.DeleteStockBySkuIdUsecase(r.Context(), deleteStockDto); err != nil {
-		if err.Error() == usecase.NotFoundError {
+		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Sku %v not found: %v", deleteStockDto.SkuId, err)
 			utils.Error(w, err, http.StatusNotFound)
 
@@ -152,7 +153,7 @@ func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Req
 
 	stock, err := c.usecase.GetSkuStocksBySkuIdUsecase(r.Context(), skuId)
 	if err != nil {
-		if err.Error() == usecase.NotFoundError {
+		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("GET | Sku %v not found: %v", skuId, err)
 			utils.Error(w, err, http.StatusNotFound)
 

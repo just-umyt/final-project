@@ -20,9 +20,9 @@ type CartUsecase struct {
 	skuService services.SkuGetService
 }
 
-const (
-	NotFoundError  = "not found"
-	NotEnoughStock = "not enough stock"
+var (
+	ErrNotFound       error = errors.New("not found")
+	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
 func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetService) *CartUsecase {
@@ -36,7 +36,7 @@ func (u *CartUsecase) CartAddItemUsecase(ctx context.Context, cartDto CartAddIte
 	}
 
 	if sku.Count < 1 || sku.Count < cartDto.Count {
-		return errors.New(NotEnoughStock)
+		return ErrNotEnoughStock
 	}
 
 	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
@@ -67,7 +67,7 @@ func (u *CartUsecase) CartDeleteItemUsecase(ctx context.Context, item DeleteItem
 		}
 
 		if rowsAffect < 1 {
-			return errors.New(NotFoundError)
+			return ErrNotFound
 		}
 
 		return nil
@@ -111,7 +111,7 @@ func (u *CartUsecase) CartClearByUserIdUsecase(ctx context.Context, userId model
 		}
 
 		if rowsAffect < 1 {
-			return errors.New(NotFoundError)
+			return ErrNotFound
 		}
 
 		return nil
