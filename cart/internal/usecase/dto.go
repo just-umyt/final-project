@@ -16,7 +16,7 @@ type DeleteItemDto struct {
 	SkuId  models.SKUID
 }
 
-type ListDto struct {
+type ListItemsDto struct {
 	SKUs       []services.Item
 	TotalPrice uint32
 }
