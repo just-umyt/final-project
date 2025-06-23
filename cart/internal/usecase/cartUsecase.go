@@ -17,7 +17,7 @@ type CartUsecaseInterface interface {
 
 type CartUsecase struct {
 	tx         repository.PgTxManagerInterface
-	skuService services.SkuGetService
+	skuService services.StockService
 }
 
 var (
@@ -25,7 +25,7 @@ var (
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(pgTx repository.PgTxManager, service services.SkuGetService) *CartUsecase {
+func NewCartUsecase(pgTx repository.PgTxManager, service services.StockService) *CartUsecase {
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
 

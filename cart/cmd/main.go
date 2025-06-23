@@ -39,12 +39,12 @@ func main() {
 	}
 
 	dbConfig := &postgres.PostgresConfig{
-		Host:     viper.GetString("database.dbhost"),
-		Port:     viper.GetInt("database.dbport"),
-		User:     viper.GetString("database.dbuser"),
+		Host:     viper.GetString("database.host"),
+		Port:     viper.GetInt("database.port"),
+		User:     viper.GetString("database.user"),
 		Password: os.Getenv("DB_PASSWORD"),
-		Dbname:   viper.GetString("database.dbname"),
-		SSLMode:  viper.GetString("database.dbsslmode"),
+		Dbname:   viper.GetString("database.name"),
+		SSLMode:  viper.GetString("database.sslmode"),
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
@@ -55,10 +55,8 @@ func main() {
 
 	transaction := repository.NewPgTxManager(dbPool)
 
-	httpClient := http.Client{
-		Timeout: viper.GetDuration("client.timeout") * time.Second,
-	}
-	getSkuService := services.NewSkuGetService(&httpClient, viper.GetString("client.url"))
+	clientTimeoutDur := viper.GetDuration("client.timeout") * time.Second
+	getSkuService := services.NewSkuGetService(clientTimeoutDur, viper.GetString("client.url"))
 
 	cartUsecase := usecase.NewCartUsecase(*transaction, getSkuService)
 

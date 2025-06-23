@@ -11,9 +11,9 @@ client:
 
 # Database credentials
 database:
-  dbhost: "localhost"
-  dbport: 5432
-  dbuser: "postgres"
-  dbname: "homework"
-  dbsslmode: "disable"
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  name: "cart"
+  sslmode: "disable"
   timeout: 30
