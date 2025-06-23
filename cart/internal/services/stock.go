@@ -23,6 +23,7 @@ func NewSkuGetService(timeoutDur time.Duration, url string) StockService {
 	httpClient := &http.Client{
 		Timeout: timeoutDur,
 	}
+
 	return &stockService{httpClient: httpClient, baseUrl: url}
 }
 
