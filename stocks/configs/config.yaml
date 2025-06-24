@@ -1,15 +1,6 @@
 # Server configurations
 server:
-  host: "localhost"
+  host: "0.0.0.0"
   port: 8081
   readheadertimeout: 10
   shutdowntimeout: 3
-
-# Database credentials
-database:
-  host: "localhost"
-  port: 5432
-  user: "postgres"
-  name: "stocks"
-  sslmode: "disable"
-  timeout: 30

@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  stocks_service:
+    build: .
+    depends_on:
+      stocks_db:
+        condition: service_healthy
+    environment:
+      DB_HOST: stocks_db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_NAME: stocks_service_db
+      DB_SSLMODE: disable
+      DB_PASSWORD: password
+    ports:
+      - "8081:8081"
+    container_name: umyt_stocks-service
+
+  stocks_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: stocks_service_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stocks_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "5434:5432"
+    container_name: umyt_stocks-db

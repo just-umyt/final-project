@@ -4,6 +4,7 @@ import (
 	"cart/internal/config"
 	myHttp "cart/internal/controller/http"
 	"fmt"
+	"strconv"
 
 	"cart/internal/repository"
 	"cart/internal/services"
@@ -17,7 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -33,18 +33,17 @@ func main() {
 		return
 	}
 
-	err = godotenv.Load()
+	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
-		logger.Log.Fatal("Error loading .env file:", err)
+		logger.Log.Fatal("Error load port of Database:", err)
 	}
-
 	dbConfig := &postgres.PostgresConfig{
-		Host:     viper.GetString("database.host"),
-		Port:     viper.GetInt("database.port"),
-		User:     viper.GetString("database.user"),
+		Host:     os.Getenv("DB_HOST"),
+		Port:     dbPort,
+		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
-		Dbname:   viper.GetString("database.name"),
-		SSLMode:  viper.GetString("database.sslmode"),
+		Dbname:   os.Getenv("DB_NAME"),
+		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)

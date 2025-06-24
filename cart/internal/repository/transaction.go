@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"cart/pkg/logger"
 	"context"
 	"errors"
-	"stocks/pkg/logger"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

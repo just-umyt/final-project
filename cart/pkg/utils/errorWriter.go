@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"cart/pkg/logger"
 	"encoding/json"
 	"net/http"
-	"stocks/pkg/logger"
 )
 
 type errorResponse struct {

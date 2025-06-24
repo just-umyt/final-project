@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  cart_service:
+    build: .
+    depends_on:
+      cart_db:
+        condition: service_healthy
+    environment:
+      DB_HOST: cart_db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_NAME: cart_service_db
+      DB_SSLMODE: disable
+      DB_PASSWORD: password
+    ports:
+      - "8080:8080"
+    container_name: umyt_cart-service
+
+  cart_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cart_service_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cart_service_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "5433:5432"
+    container_name: umyt_cart-db
