@@ -7,5 +7,5 @@ server:
 
 #Client configurations
 client:
-  url: "http://localhost:8081/stocks/item/get"
+  url: "http://stocks_service:8081/stocks/item/get"
   timeout: 2

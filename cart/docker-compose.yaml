@@ -16,6 +16,8 @@ services:
     ports:
       - "8080:8080"
     container_name: umyt_cart-service
+    networks:
+      - app-network
 
   cart_db:
     image: postgres:15-alpine
@@ -31,3 +33,10 @@ services:
     ports:
       - "5433:5432"
     container_name: umyt_cart-db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
+    name: app-network
