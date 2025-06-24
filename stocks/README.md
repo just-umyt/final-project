@@ -1,31 +1,58 @@
-# Stocks service
+# 📦 Stock Service
 
-## Dokcer image name is
+## 📦 Docker Image
 
 ```bash
 docker pull umyt/my-stock-app:hw7
 ```
 
-## App port is
+## 🚀 Application Ports
 
-These port should be able to reach
+Make sure the following ports are accessible:
 
-app port = 8081
-postgres port = 5434
+- App port: `8081`
+- PostgreSQL port: `5434`
 
-## Required environment variables
+---
 
-In the docker-compose up you should pass my image
+## ⚙️ Required Environment Variables
 
-```docker
-services:
-  stocks_service:
-    images: umyt/my-stock-app:hw7
+First, create a `.env` file and add the following variables:
+
+```env
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8081
+SERVER_READ_HEADER_TIMEOUT=10
+SERVER_SHUTDOWN_TIMEOUT=3
 ```
 
-## Sample Requests or endpoints
+---
 
-POST /stocks/item/add
+## 🧪 How to Test the Service
+
+### ✅ Docker Compose
+
+1. You need create a new docker network
+
+```bash
+docker network create app-network
+```
+
+2. Run:
+
+```bash
+docker compose up
+```
+
+---
+
+## 📬 Sample Requests (Endpoints)
+
+> All requests use the `POST` method.
+
+### ➕ Add Stock
+
+`POST /stocks/item/add`
 
 ```json
 {
@@ -37,25 +64,24 @@ POST /stocks/item/add
 }
 ```
 
-POST /stocks/item/get
+---
+
+### 📃 Get Item from Stock
+
+`POST /stocks/item/get`
 
 ```json
 {
-  "user_id": 2,
-  "sku": 7077
+  "user_id": 1,
+  "sku": 5055
 }
 ```
 
-POST /stocks/item/delete
+---
 
-```json
-{
-  "user_id": 123,
-  "sku": 4044
-}
-```
+### 📦 List Stock Items By Location
 
-POST /stocks/list/location
+`POST /stocks/list/location`
 
 ```json
 {
@@ -63,5 +89,18 @@ POST /stocks/list/location
   "location": "json loc",
   "page_size": 2,
   "current_page": 1
+}
+```
+
+---
+
+### ➖ Stock Delete
+
+`POST /stocks/item/delete`
+
+```json
+{
+  "user_id": 123,
+  "sku": 4044
 }
 ```

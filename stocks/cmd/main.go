@@ -10,14 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"stocks/internal/config"
 	myHttp "stocks/internal/controller/http"
 	"stocks/internal/repository"
 	"stocks/internal/usecase"
 	"stocks/pkg/logger"
 	"stocks/pkg/postgres"
 
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -26,10 +25,9 @@ func main() {
 
 	logger.InitLogger()
 
-	err := config.InitConfig()
+	err := godotenv.Load(".env")
 	if err != nil {
-		logger.Log.Fatal("Error loading config:", err)
-		return
+		logger.Log.Fatal("Error loading env file:", err)
 	}
 
 	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
@@ -63,13 +61,17 @@ func main() {
 	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuId)
 	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocation)
 
-	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
-	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
+	serverAddr := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 
-	serverConfig := &myHttp.SeverConfig{
+	readHeaderTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
+	if err != nil {
+		logger.Log.Fatal("Error loading SERVER_READ_HEADER_TIMEOUT: ", err)
+	}
+
+	serverConfig := &myHttp.ServerConfig{
 		Addr:              serverAddr,
 		Handler:           newMux,
-		ReadHeaderTimeout: readHeaderTimeOut,
+		ReadHeaderTimeout: time.Duration(readHeaderTimeOut) * time.Second,
 	}
 
 	server := myHttp.NewServer(serverConfig)
@@ -86,7 +88,11 @@ func main() {
 
 	logger.Log.Info("shutting down server gracefully...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(viper.GetInt("server.shutdowntimeout"))*time.Second)
+	shutdown, err := strconv.Atoi(os.Getenv("SERVER_SHUTDOWN_TIMEOUT"))
+	if err != nil {
+		logger.Log.Fatal("Error loading SERVER_SHUTDOWN_TIMEOUT: ", err)
+	}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdown)*time.Second)
 	defer cancel()
 
 	if err = server.Shutdown(shutdownCtx); err != nil {

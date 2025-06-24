@@ -1,31 +1,61 @@
-# Cart service
+# 🛒 Cart Service
 
-## Dokcer image name is
+## 📦 Docker Image
 
 ```bash
 docker pull umyt/my-cart-app:hw7
 ```
 
-## App port is
+## 🚀 Application Ports
 
-These port should be able to reach
+Make sure the following ports are accessible:
 
-app port = 8080
-postgres port = 5433
+- App port: `8080`
+- PostgreSQL port: `5433`
 
-## Required environment variables
+---
 
-In the docker-compose up you should pass my image
+## ⚙️ Required Environment Variables
 
-```docker
-services:
-  cart_service:
-    images: umyt/my-cart-app:hw7
+First, create a `.env` file and add the following variables:
+
+```env
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8080
+SERVER_READ_HEADER_TIMEOUT=10
+SERVER_SHUTDOWN_TIMEOUT=3
+
+CLIENT_URL=http://stocks_service:8081/stocks/item/get
+CLIENT_TIMEOUT=2
 ```
 
-## Sample Requests or endpoints
+---
 
-POST - /cart/item/add
+## 🧪 How to Test the Service
+
+### ✅ Docker Compose
+
+1. You need create a new docker network
+
+```bash
+docker network create app-network
+```
+
+2. Run:
+
+```bash
+docker compose up
+```
+
+---
+
+## 📬 Sample Requests (Endpoints)
+
+> All requests use the `POST` method.
+
+### ➕ Add Item to Cart
+
+`POST /cart/item/add`
 
 ```json
 {
@@ -35,7 +65,11 @@ POST - /cart/item/add
 }
 ```
 
-POST - /cart/item/delete
+---
+
+### ➖ Remove Item from Cart
+
+`POST /cart/item/delete`
 
 ```json
 {
@@ -44,7 +78,11 @@ POST - /cart/item/delete
 }
 ```
 
-POST /cart/list
+---
+
+### 📦 List Cart Items
+
+`POST /cart/list`
 
 ```json
 {
@@ -52,7 +90,11 @@ POST /cart/list
 }
 ```
 
-POST - /cart/clear
+---
+
+### 🧹 Clear Cart
+
+`POST /cart/clear`
 
 ```json
 {

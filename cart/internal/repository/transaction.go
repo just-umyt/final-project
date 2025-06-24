@@ -3,9 +3,7 @@ package repository
 import (
 	"cart/pkg/logger"
 	"context"
-	"errors"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,8 +26,9 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(CartRepoInterface) er
 	}
 
 	defer func() {
+		//if i will not handle error linter gives error
 		err := tx.Rollback(ctx)
-		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+		if err != nil {
 			logger.Log.Error(err)
 		}
 	}()

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cart/internal/config"
 	myHttp "cart/internal/controller/http"
 	"fmt"
 	"strconv"
@@ -18,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -27,10 +26,9 @@ func main() {
 
 	logger.InitLogger()
 
-	err := config.InitConfig()
+	err := godotenv.Load(".env")
 	if err != nil {
-		logger.Log.Fatal("Error loading config:", err)
-		return
+		logger.Log.Fatal("Error loading .env file:", err)
 	}
 
 	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
@@ -54,8 +52,12 @@ func main() {
 
 	transaction := repository.NewPgTxManager(dbPool)
 
-	clientTimeoutDur := viper.GetDuration("client.timeout") * time.Second
-	getSkuService := services.NewSkuGetService(clientTimeoutDur, viper.GetString("client.url"))
+	timeOut, err := strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
+	if err != nil {
+		logger.Log.Fatal("Error loading CLIENT_TIMEOUT: ", err)
+	}
+
+	getSkuService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
 
 	cartUsecase := usecase.NewCartUsecase(*transaction, getSkuService)
 
@@ -67,13 +69,17 @@ func main() {
 	newMux.HandleFunc("POST /cart/list", controller.CartList)
 	newMux.HandleFunc("POST /cart/clear", controller.CartClear)
 
-	serverAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
-	readHeaderTimeOut := time.Duration(viper.GetInt("server.readheadertimeout")) * time.Second
+	serverAddr := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 
-	serverConfig := &myHttp.SeverConfig{
+	serverTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
+	if err != nil {
+		logger.Log.Fatal("Error loading SERVER_READ_HEADER_TIMEOUT: ", err)
+	}
+
+	serverConfig := &myHttp.ServerConfig{
 		Addr:              serverAddr,
 		Handler:           newMux,
-		ReadHeaderTimeout: readHeaderTimeOut,
+		ReadHeaderTimeout: time.Duration(serverTimeOut) * time.Second,
 	}
 
 	server := myHttp.NewServer(serverConfig)
@@ -90,7 +96,12 @@ func main() {
 
 	logger.Log.Info("shutting down server gracefully...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(viper.GetInt("server.shutdowntimeout"))*time.Second)
+	shutdownTimer, err := strconv.Atoi(os.Getenv("SERVER_SHUTDOWN_TIMEOUT"))
+	if err != nil {
+		logger.Log.Fatal("Error loading SERVER_SHUTDOWN_TIMEOUT: ", err)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimer)*time.Second)
 	defer cancel()
 
 	if err = server.Shutdown(shutdownCtx); err != nil {

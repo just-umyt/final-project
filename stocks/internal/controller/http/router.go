@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-type SeverConfig struct {
+type ServerConfig struct {
 	Addr              string
 	Handler           http.Handler
 	ReadHeaderTimeout time.Duration
 }
 
-func NewServer(serverConfig *SeverConfig) *http.Server {
+func NewServer(serverConfig *ServerConfig) *http.Server {
 	server := &http.Server{
 		Addr:              serverConfig.Addr,
 		Handler:           serverConfig.Handler,

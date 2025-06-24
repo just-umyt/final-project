@@ -19,7 +19,7 @@ type stockService struct {
 	baseUrl    string
 }
 
-func NewSkuGetService(timeoutDur time.Duration, url string) StockService {
+func NewStockService(timeoutDur time.Duration, url string) StockService {
 	httpClient := &http.Client{
 		Timeout: timeoutDur,
 	}
