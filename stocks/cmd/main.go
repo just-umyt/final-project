@@ -93,6 +93,7 @@ func main() {
 		logger.Log.Fatal("Error loading SERVER_SHUTDOWN_TIMEOUT: ", err)
 	}
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdown)*time.Second)
+
 	defer cancel()
 
 	if err = server.Shutdown(shutdownCtx); err != nil {

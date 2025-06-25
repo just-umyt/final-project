@@ -2,10 +2,8 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"stocks/pkg/logger"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,15 +26,17 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(StockRepoInterface) e
 	}
 
 	defer func() {
-		err := tx.Rollback(ctx)
-		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			logger.Log.Error(err)
+		if err != nil {
+			rollBackErr := tx.Rollback(ctx)
+			if err != nil {
+				logger.Log.Error(rollBackErr)
+			}
 		}
 	}()
 
 	factory := NewStockRepository(tx)
 
-	if err := fn(factory); err != nil {
+	if err = fn(factory); err != nil {
 		return err
 	}
 

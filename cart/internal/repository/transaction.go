@@ -26,16 +26,17 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(CartRepoInterface) er
 	}
 
 	defer func() {
-		//if i will not handle error linter gives error
-		err := tx.Rollback(ctx)
 		if err != nil {
-			logger.Log.Error(err)
+			rollBackErr := tx.Rollback(ctx)
+			if err != nil {
+				logger.Log.Error(rollBackErr)
+			}
 		}
 	}()
 
 	factory := NewCartRepository(tx)
 
-	if err := fn(factory); err != nil {
+	if err = fn(factory); err != nil {
 		return err
 	}
 
