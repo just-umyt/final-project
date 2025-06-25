@@ -28,7 +28,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(CartRepoInterface) er
 	defer func() {
 		if err != nil {
 			rollBackErr := tx.Rollback(ctx)
-			if err != nil {
+			if rollBackErr != nil {
 				logger.Log.Error(rollBackErr)
 			}
 		}
