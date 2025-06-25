@@ -25,9 +25,24 @@ SERVER_PORT=8080
 SERVER_READ_HEADER_TIMEOUT=10
 SERVER_SHUTDOWN_TIMEOUT=3
 
+DB_HOST= "cart_db"
+DB_PORT= 5432
+DB_USER= "postgres"
+DB_NAME= "cart_service_db"
+DB_SSLMODE= "disable"
+DB_PASSWORD= "password"
+
 CLIENT_URL=http://stocks_service:8081/stocks/item/get
 CLIENT_TIMEOUT=2
 ```
+
+### ‼️ Don't Modify
+
+- SERVER_HOST
+- DB_HOST
+- CLIENT_URL
+
+Other things you can modify on your own info.
 
 ---
 

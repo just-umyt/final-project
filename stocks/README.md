@@ -24,7 +24,21 @@ SERVER_HOST=0.0.0.0
 SERVER_PORT=8081
 SERVER_READ_HEADER_TIMEOUT=10
 SERVER_SHUTDOWN_TIMEOUT=3
+
+DB_HOST= "stocks_db"
+DB_PORT= 5432
+DB_USER= "postgres"
+DB_PASSWORD= "password"
+DB_NAME= "stocks_service_db"
+DB_SSLMODE= "disable"
 ```
+
+### ‼️ Don't Modify
+
+- SERVER_HOST
+- DB_HOST
+
+Other things you can modify on your own info.
 
 ---
 
