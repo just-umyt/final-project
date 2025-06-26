@@ -24,7 +24,7 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	var addItemReq AddStockRequest
 	if err := json.NewDecoder(r.Body).Decode(&addItemReq); err != nil {
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -41,17 +41,17 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, usecase.ErrNotFound):
 			logger.Log.Errorf("ADD | Sku %v not found: %v", addItemDto.SkuId, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		case errors.Is(err, usecase.ErrUserId):
 			logger.Log.Errorf("ADD | User %v not found: %v", addItemDto.UserId, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		default:
 			logger.Log.Errorf("ADD | Failed to add stock: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
@@ -66,7 +66,7 @@ func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Requ
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteStockReq); err != nil {
 		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -79,12 +79,12 @@ func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Requ
 	if err := c.usecase.DeleteStockBySkuId(r.Context(), deleteStockDto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Sku %v not found: %v", deleteStockDto.SkuId, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
 			logger.Log.Errorf("DELETE | Failed to delete stock: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
@@ -98,7 +98,7 @@ func (c *StockController) GetSkusByLocation(w http.ResponseWriter, r *http.Reque
 	var paginationReq GetSkuByLocationParamsRequest
 	if err := json.NewDecoder(r.Body).Decode(&paginationReq); err != nil {
 		logger.Log.Errorf("GET BY LOCATION | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -113,7 +113,7 @@ func (c *StockController) GetSkusByLocation(w http.ResponseWriter, r *http.Reque
 	stockByLoc, err := c.usecase.GetStocksByLocation(r.Context(), paginationDto)
 	if err != nil {
 		logger.Log.Errorf("GET BY LOCATION | Failed to get stocks by location: %v", err)
-		utils.Error(w, err, http.StatusInternalServerError)
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -144,7 +144,7 @@ func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Req
 	var skuIdReq GetSkuBySkuIdRequest
 	if err := json.NewDecoder(r.Body).Decode(&skuIdReq); err != nil {
 		logger.Log.Errorf("GET | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -155,12 +155,12 @@ func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("GET | Sku %v not found: %v", skuId, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
 			logger.Log.Errorf("GET | Failed to get stock: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}

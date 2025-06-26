@@ -16,7 +16,7 @@ import (
 
 type PostgresConfig struct {
 	Host     string
-	Port     int
+	Port     string
 	User     string
 	Password string
 	Dbname   string
@@ -24,7 +24,7 @@ type PostgresConfig struct {
 }
 
 func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
 
 	//sql db for migration
 	db, err := sql.Open("postgres", dsn)

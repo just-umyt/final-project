@@ -26,7 +26,7 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
 
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -41,12 +41,12 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotEnoughStock) {
 			logger.Log.Errorf("ADD | Item %v not found: %v", cartAddDto, err)
-			utils.Error(w, err, http.StatusPreconditionFailed)
+			utils.ErrorResponse(w, err, http.StatusPreconditionFailed)
 
 			return
 		} else {
 			logger.Log.Errorf("ADD | Failed to add item to cart: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
@@ -62,7 +62,7 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Log.Errorf("CLEAR | %s: %v", ErrBadRequest, err)
 
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -73,12 +73,12 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("CLEAR | User %v not found: %v", userIdDto, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
 			logger.Log.Errorf("CLEAR | Failed to clear cart: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
@@ -93,7 +93,7 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -107,12 +107,12 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			logger.Log.Errorf("DELETE | Item %v not found: %v", deleteItemDto, err)
-			utils.Error(w, err, http.StatusNotFound)
+			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
 			logger.Log.Errorf("DELETE | Failed to delete item from cart: %v", err)
-			utils.Error(w, err, http.StatusInternalServerError)
+			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
@@ -127,7 +127,7 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&userIdReq)
 	if err != nil {
 		logger.Log.Errorf("LIST | %s: %v", ErrBadRequest, err)
-		utils.Error(w, err, http.StatusBadRequest)
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
@@ -137,7 +137,7 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 	list, err := c.usecase.CartListByUserId(r.Context(), userIdDto)
 	if err != nil {
 		logger.Log.Errorf("LIST | Failed to get list from cart: %v", err)
-		utils.Error(w, err, http.StatusInternalServerError)
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 		return
 	}

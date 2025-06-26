@@ -31,13 +31,9 @@ func main() {
 		logger.Log.Fatal("Error loading .env file:", err)
 	}
 
-	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
-	if err != nil {
-		logger.Log.Fatal("Error load port of Database:", err)
-	}
 	dbConfig := &postgres.PostgresConfig{
 		Host:     os.Getenv("DB_HOST"),
-		Port:     dbPort,
+		Port:     os.Getenv("DB_PORT"),
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
 		Dbname:   os.Getenv("DB_NAME"),
@@ -105,7 +101,7 @@ func main() {
 	defer cancel()
 
 	if err = server.Shutdown(shutdownCtx); err != nil {
-		logger.Log.Warnf("shutdown: %v", err)
+		logger.Log.Warnf("shutdown error: %v", err)
 	} else {
 		logger.Log.Info("shutdown succes!")
 	}

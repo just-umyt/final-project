@@ -6,7 +6,7 @@ import (
 	"stocks/pkg/logger"
 )
 
-type response struct {
+type succesResponse struct {
 	Message any `json:"message"`
 }
 
@@ -14,7 +14,7 @@ func SuccessResponse(w http.ResponseWriter, msg any, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
-	res := response{
+	res := succesResponse{
 		Message: msg,
 	}
 

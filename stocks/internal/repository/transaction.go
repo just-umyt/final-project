@@ -40,5 +40,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(StockRepoInterface) e
 		return err
 	}
 
-	return tx.Commit(ctx)
+	err = tx.Commit(ctx)
+
+	return err
 }
