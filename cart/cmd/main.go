@@ -60,12 +60,12 @@ func main() {
 	controller := myHttp.NewCartController(cartUsecase)
 
 	newMux := http.NewServeMux()
-	newMux.HandleFunc("POST /cart/item/add", controller.CartAddItem)
+	newMux.HandleFunc("POST /cart/item/add", controller.AddItem)
 	newMux.HandleFunc("POST /cart/item/delete", controller.DeleteItem)
 	newMux.HandleFunc("POST /cart/list", controller.CartList)
 	newMux.HandleFunc("POST /cart/clear", controller.CartClear)
 
-	serverAddr := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
+	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 
 	serverTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
 	if err != nil {
@@ -73,7 +73,7 @@ func main() {
 	}
 
 	serverConfig := &myHttp.ServerConfig{
-		Addr:              serverAddr,
+		Address:           serverAddress,
 		Handler:           newMux,
 		ReadHeaderTimeout: time.Duration(serverTimeOut) * time.Second,
 	}
@@ -82,11 +82,11 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Fatalf("listen and serve: %v", err)
+			logger.Log.Fatalf("Error listen and serve : %v", err)
 		}
 	}()
 
-	logger.Log.Infof("listening in  %s", serverAddr)
+	logger.Log.Infof("listening in  %s", serverAddress)
 
 	<-ctx.Done()
 

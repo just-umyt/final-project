@@ -20,8 +20,8 @@ func NewCartController(cartUsecase usecase.CartUsecaseInterface) *CartController
 
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
-func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
-	var req CartAddItemRequest
+func (c *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
+	var req AddItemRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
@@ -31,16 +31,16 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cartAddDto := usecase.CartAddItemDto{
-		UserId: models.UserID(req.UserId),
-		SkuId:  models.SKUID(req.SkuId),
+	dto := usecase.AddItemDTO{
+		UserID: models.UserID(req.UserID),
+		SKUID:  models.SKUID(req.SKUID),
 		Count:  req.Count,
 	}
 
-	err := c.usecase.CartAddItem(r.Context(), cartAddDto)
+	err := c.usecase.AddItem(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotEnoughStock) {
-			logger.Log.Errorf("ADD | Item %v not found: %v", cartAddDto, err)
+			logger.Log.Errorf("ADD | Item %v not found: %v", dto, err)
 			utils.ErrorResponse(w, err, http.StatusPreconditionFailed)
 
 			return
@@ -52,13 +52,14 @@ func (c *CartController) CartAddItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	logger.Log.Debug("ADD | succes")
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
 func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
-	var userIdReq UserIdRequest
+	var req UserIDRequest
 
-	err := json.NewDecoder(r.Body).Decode(&userIdReq)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Log.Errorf("CLEAR | %s: %v", ErrBadRequest, err)
 
@@ -67,12 +68,12 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdDto := models.UserID(userIdReq.UserId)
+	userID := models.UserID(req.UserID)
 
-	err = c.usecase.CartClearByUserId(r.Context(), userIdDto)
+	err = c.usecase.ClearCartByUserID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("CLEAR | User %v not found: %v", userIdDto, err)
+			logger.Log.Errorf("CLEAR | User %v not found: %v", userID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
@@ -84,6 +85,7 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	logger.Log.Debug("ClEAR | succes")
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
@@ -98,15 +100,15 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleteItemDto := usecase.DeleteItemDto{
-		UserId: models.UserID(req.UserId),
-		SkuId:  models.SKUID(req.SkuId),
+	dto := usecase.DeleteItemDTO{
+		UserID: models.UserID(req.UserID),
+		SKUID:  models.SKUID(req.SKUID),
 	}
 
-	err = c.usecase.CartDeleteItem(r.Context(), deleteItemDto)
+	err = c.usecase.DeleteItem(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("DELETE | Item %v not found: %v", deleteItemDto, err)
+			logger.Log.Errorf("DELETE | Item %v not found: %v", dto, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
@@ -118,13 +120,14 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	logger.Log.Debug("DELETE | succes")
 	utils.SuccessResponse(w, nil, http.StatusOK)
 }
 
 func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
-	var userIdReq UserIdRequest
+	var req UserIDRequest
 
-	err := json.NewDecoder(r.Body).Decode(&userIdReq)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Log.Errorf("LIST | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
@@ -132,9 +135,9 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdDto := models.UserID(userIdReq.UserId)
+	userID := models.UserID(req.UserID)
 
-	list, err := c.usecase.CartListByUserId(r.Context(), userIdDto)
+	resp, err := c.usecase.GetItemsByUserID(r.Context(), userID)
 	if err != nil {
 		logger.Log.Errorf("LIST | Failed to get list from cart: %v", err)
 		utils.ErrorResponse(w, err, http.StatusInternalServerError)
@@ -142,5 +145,6 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.SuccessResponse(w, list, http.StatusOK)
+	logger.Log.Debug("LIST | succes")
+	utils.SuccessResponse(w, resp, http.StatusOK)
 }

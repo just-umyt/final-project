@@ -2,42 +2,42 @@ package usecase
 
 import "stocks/internal/models"
 
-type AddStockDto struct {
-	SkuId    models.SKUID
-	UserId   models.UserID
+type AddStockDTO struct {
+	SKUID    models.SKUID
+	UserID   models.UserID
 	Count    uint16
 	Price    uint32
 	Location string
 }
 
-type DeleteStockDto struct {
-	UserId models.UserID
-	SkuId  models.SKUID
+type DeleteStockDTO struct {
+	UserID models.UserID
+	SKUID  models.SKUID
 }
 
-type GetSkuByLocationParamsDto struct {
-	User_id     models.UserID
+type GetItemByLocDTO struct {
+	UserID      models.UserID
 	Location    string
 	PageSize    int64
 	CurrentPage int64
 }
 
-type SkuDto struct {
-	SkuId models.SKUID
+type SKUDTO struct {
+	SKUID models.SKUID
 	Name  string
 	Type  string
 }
 
-type StockDto struct {
-	SkuDto
+type StockDTO struct {
+	SKU      SKUDTO
 	Count    uint16
 	Price    uint32
 	Location string
-	UserId   models.UserID
+	UserID   models.UserID
 }
 
-type StockByLocDto struct {
-	Stocks     []StockDto
+type ItemsByLocDTO struct {
+	Stocks     []StockDTO
 	TotalCount int
 	PageNumber int64
 }

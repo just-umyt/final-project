@@ -5,18 +5,18 @@ import (
 	"cart/internal/services"
 )
 
-type CartAddItemDto struct {
-	UserId models.UserID
-	SkuId  models.SKUID
+type AddItemDTO struct {
+	UserID models.UserID
+	SKUID  models.SKUID
 	Count  uint16
 }
 
-type DeleteItemDto struct {
-	UserId models.UserID
-	SkuId  models.SKUID
+type DeleteItemDTO struct {
+	UserID models.UserID
+	SKUID  models.SKUID
 }
 
-type ListItemsDto struct {
-	SKUs       []services.Item
+type ListItemsDTO struct {
+	Items      []services.ItemDTO
 	TotalPrice uint32
 }

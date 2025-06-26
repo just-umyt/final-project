@@ -11,7 +11,7 @@ import (
 )
 
 type StockService interface {
-	GetItemInfo(ctx context.Context, skuId models.SKUID) (Item, error)
+	GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error)
 }
 
 type stockService struct {
@@ -27,59 +27,57 @@ func NewStockService(timeoutDur time.Duration, url string) StockService {
 	return &stockService{httpClient: httpClient, baseUrl: url}
 }
 
-func (s *stockService) GetItemInfo(ctx context.Context, skuId models.SKUID) (Item, error) {
-	reqDto := GetSkuRequest{
-		SkuId: skuId,
+func (s *stockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error) {
+	reqData := getSKUIDRequest{
+		SKUID: skuID,
 	}
 
-	body, err := json.Marshal(&reqDto)
+	body, err := json.Marshal(&reqData)
 	if err != nil {
-		return Item{}, err
+		return ItemDTO{}, err
 	}
 
-	responseBody := bytes.NewBuffer(body)
+	reqBody := bytes.NewBuffer(body)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseUrl, responseBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseUrl, reqBody)
+	if err != nil {
+		return ItemDTO{}, err
+	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	if err != nil {
-		return Item{}, err
-	}
-
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return Item{}, err
+		return ItemDTO{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return Item{}, err
+		return ItemDTO{}, err
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return Item{}, err
+		return ItemDTO{}, err
 	}
 
-	var response Response
+	var respData httpResponse
 
-	err = json.Unmarshal(respBody, &response)
+	err = json.Unmarshal(respBody, &respData)
 	if err != nil {
-		return Item{}, err
+		return ItemDTO{}, err
 	}
 
-	stockRes := response.Message
-
-	sku := Item{
-		SkuId:    models.SKUID(stockRes.SkuId),
-		Name:     stockRes.Name,
-		Type:     stockRes.Type,
-		Count:    stockRes.Count,
-		Price:    stockRes.Price,
-		Location: stockRes.Location,
-		UserId:   models.UserID(stockRes.UserId),
+	stock := respData.Message
+	item := ItemDTO{
+		SKUID:    models.SKUID(stock.SKUID),
+		Name:     stock.Name,
+		Type:     stock.Type,
+		Count:    stock.Count,
+		Price:    stock.Price,
+		Location: stock.Location,
+		UserID:   models.UserID(stock.UserID),
 	}
 
-	return sku, nil
+	return item, nil
 }

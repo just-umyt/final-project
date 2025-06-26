@@ -74,8 +74,8 @@ docker compose up
 
 ```json
 {
-  "user_id": 10,
-  "sku": 7077,
+  "user_id": 1,
+  "sku": 1001,
   "count": 1
 }
 ```
@@ -88,8 +88,8 @@ docker compose up
 
 ```json
 {
-  "user_id": 2,
-  "sku": 7077
+  "user_id": 1,
+  "sku": 1001
 }
 ```
 
@@ -101,7 +101,7 @@ docker compose up
 
 ```json
 {
-  "user_id": 2
+  "user_id": 1
 }
 ```
 
@@ -113,6 +113,6 @@ docker compose up
 
 ```json
 {
-  "user_id": 2
+  "user_id": 1
 }
 ```

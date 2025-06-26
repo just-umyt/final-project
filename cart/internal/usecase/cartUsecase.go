@@ -9,10 +9,10 @@ import (
 )
 
 type CartUsecaseInterface interface {
-	CartAddItem(ctx context.Context, cartDto CartAddItemDto) error
-	CartDeleteItem(ctx context.Context, item DeleteItemDto) error
-	CartListByUserId(ctx context.Context, userId models.UserID) (ListItemsDto, error)
-	CartClearByUserId(ctx context.Context, userId models.UserID) error
+	AddItem(ctx context.Context, addItem AddItemDTO) error
+	DeleteItem(ctx context.Context, delItem DeleteItemDTO) error
+	GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error)
+	ClearCartByUserID(ctx context.Context, userID models.UserID) error
 }
 
 type CartUsecase struct {
@@ -29,39 +29,39 @@ func NewCartUsecase(pgTx repository.PgTxManager, service services.StockService) 
 	return &CartUsecase{tx: &pgTx, skuService: service}
 }
 
-func (u *CartUsecase) CartAddItem(ctx context.Context, cartDto CartAddItemDto) error {
-	sku, err := u.skuService.GetItemInfo(ctx, cartDto.SkuId)
+func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
+	item, err := u.skuService.GetItemInfo(ctx, addItem.SKUID)
 	if err != nil {
 		return err
 	}
 
-	if sku.Count < cartDto.Count {
+	if item.Count < addItem.Count {
 		return ErrNotEnoughStock
 	}
 
-	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		cartId, err := cri.GetItemIdByUserId(ctx, cartDto.UserId, cartDto.SkuId)
+	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
+		cartID, err := repo.GetCartIDByUserID(ctx, addItem.UserID, addItem.SKUID)
 		if err != nil {
 			return err
 		}
 
 		cart := models.Cart{
-			UserId: cartDto.UserId,
-			SKUId:  cartDto.SkuId,
-			Count:  cartDto.Count,
+			UserID: addItem.UserID,
+			SKUID:  addItem.SKUID,
+			Count:  addItem.Count,
 		}
 
-		if cartId > 0 {
-			return cri.UpdateItemByUserId(ctx, cart)
+		if cartID > 0 {
+			return repo.UpdateItemByUserID(ctx, cart)
 		}
 
-		return cri.AddItem(ctx, cart)
+		return repo.AddItem(ctx, cart)
 	})
 }
 
-func (u *CartUsecase) CartDeleteItem(ctx context.Context, item DeleteItemDto) error {
-	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		rowsAffect, err := cri.DeleteItem(ctx, item.UserId, item.SkuId)
+func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
+	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
+		rowsAffect, err := repo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
 		if err != nil {
 			return err
 		}
@@ -74,13 +74,13 @@ func (u *CartUsecase) CartDeleteItem(ctx context.Context, item DeleteItemDto) er
 	})
 }
 
-func (u *CartUsecase) CartListByUserId(ctx context.Context, userId models.UserID) (ListItemsDto, error) {
-	var skuIds []models.SKUID
+func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
+	var skuIDs []models.SKUID
 
-	err := u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
+	err := u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
 		var err error
 
-		skuIds, err = cri.GetItemsSkuIdByCartId(ctx, userId)
+		skuIDs, err = repo.GetSKUIDsByUserID(ctx, userID)
 		if err != nil {
 			return err
 		}
@@ -88,24 +88,24 @@ func (u *CartUsecase) CartListByUserId(ctx context.Context, userId models.UserID
 		return nil
 	})
 
-	var list ListItemsDto
+	var list ListItemsDTO
 
-	for _, e := range skuIds {
-		sku, err := u.skuService.GetItemInfo(ctx, e)
+	for _, id := range skuIDs {
+		sku, err := u.skuService.GetItemInfo(ctx, id)
 		if err != nil {
-			return ListItemsDto{}, err
+			return ListItemsDTO{}, err
 		}
 
+		list.Items = append(list.Items, sku)
 		list.TotalPrice += sku.Price
-		list.SKUs = append(list.SKUs, sku)
 	}
 
 	return list, err
 }
 
-func (u *CartUsecase) CartClearByUserId(ctx context.Context, userId models.UserID) error {
-	return u.tx.WithTx(ctx, func(cri repository.CartRepoInterface) error {
-		rowsAffect, err := cri.ClearCartByUserId(ctx, userId)
+func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
+	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
+		rowsAffect, err := repo.ClearCartByUserID(ctx, userID)
 		if err != nil {
 			return err
 		}

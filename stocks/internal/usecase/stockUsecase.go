@@ -8,10 +8,10 @@ import (
 )
 
 type StockUsecaseInterface interface {
-	AddStock(ctx context.Context, stockDto AddStockDto) error
-	DeleteStockBySkuId(ctx context.Context, deleteDto DeleteStockDto) error
-	GetStocksByLocation(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error)
-	GetSkuStocksBySkuId(ctx context.Context, skuId models.SKUID) (StockDto, error)
+	AddStock(ctx context.Context, stock AddStockDTO) error
+	DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error
+	GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error)
+	GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error)
 }
 
 type StockUsecase struct {
@@ -20,18 +20,18 @@ type StockUsecase struct {
 
 var (
 	ErrNotFound error = errors.New("not found")
-	ErrUserId   error = errors.New("user id is not matched")
+	ErrUserID   error = errors.New("user id is not matched")
 )
 
 func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 	return &StockUsecase{tx: &pgTx}
 }
 
-func (u *StockUsecase) AddStock(ctx context.Context, stockDto AddStockDto) error {
-	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		sku, stock, err := sri.GetSkuStockBySkuId(ctx, stockDto.SkuId)
+func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
+	return u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
-			if sku.SkuID == 0 {
+			if item.SKU.ID == 0 {
 				return ErrNotFound
 			} else {
 				return err
@@ -39,27 +39,27 @@ func (u *StockUsecase) AddStock(ctx context.Context, stockDto AddStockDto) error
 		}
 
 		newItem := models.Stock{
-			Count:    stockDto.Count,
-			Price:    stockDto.Price,
-			Location: stockDto.Location,
-			UserId:   stockDto.UserId,
-			SkuId:    stockDto.SkuId,
+			Count:    stock.Count,
+			Price:    stock.Price,
+			Location: stock.Location,
+			UserID:   stock.UserID,
+			SKUID:    stock.SKUID,
 		}
 
-		switch stock.UserId {
+		switch item.Stock.UserID {
 		case 0:
-			return sri.AddStock(ctx, newItem)
-		case stockDto.UserId:
-			return sri.UpdateStock(ctx, newItem)
+			return repo.AddStock(ctx, newItem)
+		case stock.UserID:
+			return repo.UpdateStock(ctx, newItem)
 		default:
-			return ErrUserId
+			return ErrUserID
 		}
 	})
 }
 
-func (u *StockUsecase) DeleteStockBySkuId(ctx context.Context, deleteDto DeleteStockDto) error {
-	return u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		rows, err := sri.DeleteStock(ctx, deleteDto.SkuId, deleteDto.UserId)
+func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {
+	return u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+		rows, err := repo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
 		if err != nil {
 			return err
 		}
@@ -72,36 +72,36 @@ func (u *StockUsecase) DeleteStockBySkuId(ctx context.Context, deleteDto DeleteS
 	})
 }
 
-func (u *StockUsecase) GetStocksByLocation(ctx context.Context, paginationByLoc GetSkuByLocationParamsDto) (StockByLocDto, error) {
-	var items StockByLocDto
+func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error) {
+	var items ItemsByLocDTO
 
-	limit := paginationByLoc.PageSize
-	offset := limit * (paginationByLoc.CurrentPage - 1)
+	limit := param.PageSize
+	offset := limit * (param.CurrentPage - 1)
 
-	params := repository.GetSkuByLocationParameter{
-		User_id:  paginationByLoc.User_id,
-		Location: paginationByLoc.Location,
+	params := repository.GetStockByLocation{
+		UserID:   param.UserID,
+		Location: param.Location,
 		Limit:    limit,
 		Offset:   offset,
 	}
 
-	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		stocksFromRepo, err := sri.GetStocksByLocation(ctx, params)
+	err := u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
 		}
 
-		for _, repoStock := range stocksFromRepo {
-			item := StockDto{
-				SkuDto: SkuDto{
-					SkuId: repoStock.SkuID,
-					Name:  repoStock.Name,
-					Type:  repoStock.Type,
+		for _, s := range stocksFromRepo {
+			item := StockDTO{
+				SKU: SKUDTO{
+					SKUID: s.SKU.ID,
+					Name:  s.SKU.Name,
+					Type:  s.SKU.Type,
 				},
-				Price:    repoStock.Price,
-				Count:    repoStock.Count,
-				Location: repoStock.Location,
-				UserId:   repoStock.UserId,
+				Price:    s.Stock.Price,
+				Count:    s.Stock.Count,
+				Location: s.Stock.Location,
+				UserID:   s.Stock.UserID,
 			}
 
 			items.Stocks = append(items.Stocks, item)
@@ -111,37 +111,37 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, paginationByLoc 
 	})
 
 	items.TotalCount = len(items.Stocks)
-	items.PageNumber = paginationByLoc.CurrentPage
+	items.PageNumber = param.CurrentPage
 
 	return items, err
 }
 
-func (u *StockUsecase) GetSkuStocksBySkuId(ctx context.Context, skuId models.SKUID) (StockDto, error) {
-	var stockDto StockDto
-	err := u.tx.WithTx(ctx, func(sri repository.StockRepoInterface) error {
-		sku, stock, err := sri.GetSkuStockBySkuId(ctx, skuId)
+func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
+	var stockDTO StockDTO
+	err := u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
-			if sku.SkuID == 0 {
+			if item.SKU.ID == 0 {
 				return ErrNotFound
 			} else {
 				return err
 			}
 		}
 
-		stockDto = StockDto{
-			SkuDto: SkuDto{
-				SkuId: sku.SkuID,
-				Name:  sku.Name,
-				Type:  sku.Type,
+		stockDTO = StockDTO{
+			SKU: SKUDTO{
+				SKUID: item.SKU.ID,
+				Name:  item.SKU.Name,
+				Type:  item.SKU.Type,
 			},
-			Price:    stock.Price,
-			Count:    stock.Count,
-			Location: stock.Location,
-			UserId:   stock.UserId,
+			Price:    item.Stock.Price,
+			Count:    item.Stock.Count,
+			Location: item.Stock.Location,
+			UserID:   item.Stock.UserID,
 		}
 
 		return nil
 	})
 
-	return stockDto, err
+	return stockDTO, err
 }

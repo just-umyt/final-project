@@ -21,31 +21,31 @@ func NewStockController(stUsecase usecase.StockUsecaseInterface) *StockControlle
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
 
 func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
-	var addItemReq AddStockRequest
-	if err := json.NewDecoder(r.Body).Decode(&addItemReq); err != nil {
+	var req AddStockRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
 
-	addItemDto := usecase.AddStockDto{
-		SkuId:    models.SKUID(addItemReq.SkuId),
-		UserId:   models.UserID(addItemReq.UserId),
-		Count:    addItemReq.Count,
-		Price:    addItemReq.Price,
-		Location: addItemReq.Location,
+	dto := usecase.AddStockDTO{
+		SKUID:    models.SKUID(req.SKUID),
+		UserID:   models.UserID(req.UserID),
+		Count:    req.Count,
+		Price:    req.Price,
+		Location: req.Location,
 	}
 
-	if err := c.usecase.AddStock(r.Context(), addItemDto); err != nil {
+	if err := c.usecase.AddStock(r.Context(), dto); err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrNotFound):
-			logger.Log.Errorf("ADD | Sku %v not found: %v", addItemDto.SkuId, err)
+			logger.Log.Errorf("ADD | SKU %v not found: %v", dto.SKUID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
-		case errors.Is(err, usecase.ErrUserId):
-			logger.Log.Errorf("ADD | User %v not found: %v", addItemDto.UserId, err)
+		case errors.Is(err, usecase.ErrUserID):
+			logger.Log.Errorf("ADD | User %v not found: %v", dto.UserID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
@@ -57,28 +57,28 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logger.Log.Debug("ADD STOCK SUCCES")
+	logger.Log.Debug("ADD | succes")
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Request) {
-	var deleteStockReq DeleteStockRequest
+func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Request) {
+	var req DeleteStockRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&deleteStockReq); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
 
-	deleteStockDto := usecase.DeleteStockDto{
-		UserId: models.UserID(deleteStockReq.UserId),
-		SkuId:  models.SKUID(deleteStockReq.SkuId),
+	dto := usecase.DeleteStockDTO{
+		UserID: models.UserID(req.UserID),
+		SKUID:  models.SKUID(req.SKUID),
 	}
 
-	if err := c.usecase.DeleteStockBySkuId(r.Context(), deleteStockDto); err != nil {
+	if err := c.usecase.DeleteStockBySKU(r.Context(), dto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("DELETE | Sku %v not found: %v", deleteStockDto.SkuId, err)
+			logger.Log.Errorf("DELETE | Sku %v not found: %v", dto.SKUID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
@@ -90,92 +90,92 @@ func (c *StockController) DeleteStockBySkuId(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	logger.Log.Debug("DELETE | STOCK SUCCES", deleteStockDto)
+	logger.Log.Debug("DELETE | succes", dto)
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
-func (c *StockController) GetSkusByLocation(w http.ResponseWriter, r *http.Request) {
-	var paginationReq GetSkuByLocationParamsRequest
-	if err := json.NewDecoder(r.Body).Decode(&paginationReq); err != nil {
-		logger.Log.Errorf("GET BY LOCATION | %s: %v", ErrBadRequest, err)
+func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Request) {
+	var req GetItemsByLocRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Log.Errorf("GET ITEMS | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
 
-	paginationDto := usecase.GetSkuByLocationParamsDto{
-		User_id:     models.UserID(paginationReq.User_id),
-		Location:    paginationReq.Location,
-		PageSize:    paginationReq.PageSize,
-		CurrentPage: paginationReq.CurrentPage,
+	dto := usecase.GetItemByLocDTO{
+		UserID:      models.UserID(req.UserID),
+		Location:    req.Location,
+		PageSize:    req.PageSize,
+		CurrentPage: req.CurrentPage,
 	}
 
-	stockByLoc, err := c.usecase.GetStocksByLocation(r.Context(), paginationDto)
+	items, err := c.usecase.GetStocksByLocation(r.Context(), dto)
 	if err != nil {
-		logger.Log.Errorf("GET BY LOCATION | Failed to get stocks by location: %v", err)
+		logger.Log.Errorf("GET ITEMS | Failed to get stocks by location: %v", err)
 		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 		return
 	}
 
-	var stocksRes StockByLocResponse
+	var resp StockByLocResponse
 
-	for _, stock := range stockByLoc.Stocks {
-		st := StockResponse{
-			SkuId:    uint32(stock.SkuId),
-			Name:     stock.Name,
-			Type:     stock.Type,
+	for _, stock := range items.Stocks {
+		item := ItemResponse{
+			SKU:      uint32(stock.SKU.SKUID),
+			Name:     stock.SKU.Name,
+			Type:     stock.SKU.Type,
 			Count:    stock.Count,
 			Price:    stock.Price,
 			Location: stock.Location,
-			UserId:   int64(stock.UserId),
+			UserID:   int64(stock.UserID),
 		}
-		stocksRes.Stocks = append(stocksRes.Stocks, st)
+		resp.Items = append(resp.Items, item)
 	}
 
-	stocksRes.TotalCount = stockByLoc.TotalCount
-	stocksRes.PageNumber = stockByLoc.PageNumber
+	resp.TotalCount = items.TotalCount
+	resp.PageNumber = items.PageNumber
 
-	logger.Log.Debug("GET | STOCKS BY LOCATION SUCCES")
-	utils.SuccessResponse(w, stocksRes, http.StatusOK)
+	logger.Log.Debug("GET ITEMS | succes")
+	utils.SuccessResponse(w, resp, http.StatusOK)
 }
 
-func (c *StockController) GetSkuStocksBySkuId(w http.ResponseWriter, r *http.Request) {
-	var skuIdReq GetSkuBySkuIdRequest
-	if err := json.NewDecoder(r.Body).Decode(&skuIdReq); err != nil {
+func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
+	var req GetItemBySKURequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.Errorf("GET | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
 	}
 
-	skuId := models.SKUID(skuIdReq.SkuId)
+	skuID := models.SKUID(req.SKU)
 
-	stock, err := c.usecase.GetSkuStocksBySkuId(r.Context(), skuId)
+	item, err := c.usecase.GetItemBySKU(r.Context(), skuID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("GET | Sku %v not found: %v", skuId, err)
+			logger.Log.Errorf("GET | SKU %v not found: %v", skuID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
-			logger.Log.Errorf("GET | Failed to get stock: %v", err)
+			logger.Log.Errorf("GET | Failed to get item: %v", err)
 			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
 	}
 
-	stockRes := StockResponse{
-		SkuId:    uint32(stock.SkuId),
-		Name:     stock.Name,
-		Type:     stock.Type,
-		Count:    stock.Count,
-		Price:    stock.Price,
-		Location: stock.Location,
-		UserId:   int64(stock.UserId),
+	resp := ItemResponse{
+		SKU:      uint32(item.SKU.SKUID),
+		Name:     item.SKU.Name,
+		Type:     item.SKU.Type,
+		Count:    item.Count,
+		Price:    item.Price,
+		Location: item.Location,
+		UserID:   int64(item.UserID),
 	}
 
-	logger.Log.Debugf("GET | Stock retrieved successfully: %v", stock)
-	utils.SuccessResponse(w, stockRes, http.StatusOK)
+	logger.Log.Debugf("GET | succes: %v", item)
+	utils.SuccessResponse(w, resp, http.StatusOK)
 }

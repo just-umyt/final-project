@@ -53,11 +53,11 @@ func main() {
 
 	newMux := http.NewServeMux()
 	newMux.HandleFunc("POST /stocks/item/add", controller.AddStock)
-	newMux.HandleFunc("POST /stocks/item/get", controller.GetSkuStocksBySkuId)
-	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySkuId)
-	newMux.HandleFunc("POST /stocks/list/location", controller.GetSkusByLocation)
+	newMux.HandleFunc("POST /stocks/item/get", controller.GetItemBySKU)
+	newMux.HandleFunc("POST /stocks/item/delete", controller.DeleteStockBySKU)
+	newMux.HandleFunc("POST /stocks/list/location", controller.GetItemsByLocation)
 
-	serverAddr := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
+	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 
 	readHeaderTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
 	if err != nil {
@@ -65,7 +65,7 @@ func main() {
 	}
 
 	serverConfig := &myHttp.ServerConfig{
-		Addr:              serverAddr,
+		Address:           serverAddress,
 		Handler:           newMux,
 		ReadHeaderTimeout: time.Duration(readHeaderTimeOut) * time.Second,
 	}
@@ -74,11 +74,11 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Fatalf("listen and serve: %v", err)
+			logger.Log.Fatalf("Error listen and serve: %v", err)
 		}
 	}()
 
-	logger.Log.Infof("listening in  %s", serverAddr)
+	logger.Log.Infof("listening in  %s", serverAddress)
 
 	<-ctx.Done()
 

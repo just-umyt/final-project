@@ -70,11 +70,11 @@ docker compose up
 
 ```json
 {
-  "sku": 7077,
-  "user_id": 2,
-  "count": 100,
-  "price": 2100,
-  "location": "json changed loc"
+  "sku": 1001,
+  "user_id": 1,
+  "count": 10,
+  "price": 100,
+  "location": "AG"
 }
 ```
 
@@ -87,7 +87,7 @@ docker compose up
 ```json
 {
   "user_id": 1,
-  "sku": 5055
+  "sku": 1001
 }
 ```
 
@@ -99,9 +99,9 @@ docker compose up
 
 ```json
 {
-  "user_id": 123,
-  "location": "json loc",
-  "page_size": 2,
+  "user_id": 1,
+  "location": "AG",
+  "page_size": 1,
   "current_page": 1
 }
 ```
@@ -114,7 +114,7 @@ docker compose up
 
 ```json
 {
-  "user_id": 123,
-  "sku": 4044
+  "user_id": 1,
+  "sku": 1001
 }
 ```

@@ -8,11 +8,11 @@ import (
 )
 
 type StockRepoInterface interface {
-	GetSkuStockBySkuId(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error)
-	AddStock(ctx context.Context, newStock models.Stock) error
-	UpdateStock(ctx context.Context, item models.Stock) error
-	DeleteStock(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error)
-	GetStocksByLocation(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error)
+	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
+	AddStock(ctx context.Context, stock models.Stock) error
+	UpdateStock(ctx context.Context, stock models.Stock) error
+	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (int64, error)
+	GetItemsByLocation(ctx context.Context, param GetStockByLocation) ([]models.Item, error)
 }
 
 type StockRepo struct {
@@ -23,45 +23,43 @@ func NewStockRepository(tx pgx.Tx) *StockRepo {
 	return &StockRepo{tx: tx}
 }
 
-func (r *StockRepo) GetSkuStockBySkuId(ctx context.Context, skuId models.SKUID) (models.SKU, models.Stock, error) {
+func (r *StockRepo) GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error) {
 	query := `SELECT * FROM sku l LEFT JOIN stock r ON r.sku_id = l.sku_id WHERE l.sku_id = $1`
 
-	var repoSku SKU
-	var repoStock Stock
+	var sku SKU
+	var stock Stock
 
-	var sku models.SKU
-	var stock models.Stock
+	var item models.Item
 
-	err := r.tx.QueryRow(ctx, query, skuId).Scan(&repoSku.SkuId, &repoSku.Name, &repoSku.Type, &repoStock.Id, &repoStock.SkuId, &repoStock.Price, &repoStock.Location, &repoStock.Count, &repoStock.UserId)
+	err := r.tx.QueryRow(ctx, query, skuID).Scan(&sku.ID, &sku.Name, &sku.Type, &stock.ID, &stock.SKUID, &stock.Price, &stock.Location, &stock.Count, &stock.UserID)
 	if err != nil {
-		return sku, stock, err
+		return item, err
 	}
 
-	sku = models.SKU{
-		SkuID: repoSku.SkuId,
-		Name:  repoSku.Name,
-		Type:  repoSku.Type,
+	item.SKU = models.SKU{
+		ID:   sku.ID,
+		Name: sku.Name,
+		Type: sku.Type,
 	}
 
-	if repoStock.UserId == nil {
-		return sku, stock, nil
+	if !stock.ID.Valid {
+		return item, nil
+	} else {
+		item.Stock.ID = models.StockID(stock.ID.Int64)
+		item.Stock.SKUID = models.SKUID(stock.SKUID.Uint32)
+		item.Stock.Count = uint16(float32(stock.Count.Uint32))
+		item.Stock.Price = stock.Price.Uint32
+		item.Stock.Location = stock.Location.String
+		item.Stock.UserID = models.UserID(stock.UserID.Int64)
+
+		return item, nil
 	}
-
-	stock.Id = *repoStock.Id
-	stock.SkuId = *repoStock.SkuId
-	stock.Count = *repoStock.Count
-	stock.Price = *repoStock.Price
-	stock.Count = *repoStock.Count
-	stock.Location = *repoStock.Location
-	stock.UserId = *repoStock.UserId
-
-	return sku, stock, nil
 }
 
-func (r *StockRepo) AddStock(ctx context.Context, newStock models.Stock) error {
+func (r *StockRepo) AddStock(ctx context.Context, stock models.Stock) error {
 	query := `INSERT INTO stock (price, location, count, user_id, sku_id) VALUES ($1, $2, $3, $4, $5)`
 
-	_, err := r.tx.Exec(ctx, query, newStock.Price, newStock.Location, newStock.Count, newStock.UserId, newStock.SkuId)
+	_, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.UserID, stock.SKUID)
 	if err != nil {
 		return err
 	}
@@ -69,10 +67,10 @@ func (r *StockRepo) AddStock(ctx context.Context, newStock models.Stock) error {
 	return nil
 }
 
-func (r *StockRepo) UpdateStock(ctx context.Context, item models.Stock) error {
+func (r *StockRepo) UpdateStock(ctx context.Context, stock models.Stock) error {
 	query := `UPDATE stock SET price = $1, location = $2, count = $3 WHERE sku_id = $4`
 
-	_, err := r.tx.Exec(ctx, query, item.Price, item.Location, item.Count, item.SkuId)
+	_, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.SKUID)
 	if err != nil {
 		return err
 	}
@@ -80,51 +78,50 @@ func (r *StockRepo) UpdateStock(ctx context.Context, item models.Stock) error {
 	return nil
 }
 
-func (r *StockRepo) DeleteStock(ctx context.Context, skuId models.SKUID, userId models.UserID) (int64, error) {
+func (r *StockRepo) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (int64, error) {
 	query := `DELETE FROM stock WHERE sku_id = $1 AND user_id = $2`
 
-	row, err := r.tx.Exec(ctx, query, skuId, userId)
+	row, err := r.tx.Exec(ctx, query, skuID, userID)
 
 	return row.RowsAffected(), err
 }
 
-func (r *StockRepo) GetStocksByLocation(ctx context.Context, parameter GetSkuByLocationParameter) ([]models.FullStock, error) {
-	var items []models.FullStock
-	var err error
+func (r *StockRepo) GetItemsByLocation(ctx context.Context, param GetStockByLocation) ([]models.Item, error) {
+	var items []models.Item
 
 	query := `SELECT * FROM sku l INNER JOIN stock r ON r.sku_id = l.sku_id WHERE r.location = $1 AND r.user_id = $2 LIMIT $3 OFFSET $4`
 
-	rows, err := r.tx.Query(ctx, query, parameter.Location, parameter.User_id, parameter.Limit, parameter.Offset)
+	rows, err := r.tx.Query(ctx, query, param.Location, param.UserID, param.Limit, param.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var repoSku SKU
-		var repoStock Stock
+		var sku SKU
+		var stock Stock
 
-		err = rows.Scan(&repoSku.SkuId, &repoSku.Name, &repoSku.Type, &repoStock.Id, &repoStock.SkuId, &repoStock.Price, &repoStock.Location, &repoStock.Count, &repoStock.UserId)
+		err = rows.Scan(&sku.ID, &sku.Name, &sku.Type, &stock.ID, &stock.SKUID, &stock.Price, &stock.Location, &stock.Count, &stock.UserID)
 		if err != nil {
 			return nil, err
 		}
 
-		fullStock := models.FullStock{
+		item := models.Item{
 			SKU: models.SKU{
-				SkuID: repoSku.SkuId,
-				Name:  repoSku.Name,
-				Type:  repoSku.Type,
+				ID:   sku.ID,
+				Name: sku.Name,
+				Type: sku.Type,
 			},
 			Stock: models.Stock{
-				Id:       *repoStock.Id,
-				Price:    *repoStock.Price,
-				Location: *repoStock.Location,
-				Count:    *repoStock.Count,
-				UserId:   *repoStock.UserId,
+				ID:       models.StockID(stock.ID.Int64),
+				Price:    stock.Price.Uint32,
+				Location: stock.Location.String,
+				Count:    uint16(float32(stock.Count.Uint32)),
+				UserID:   models.UserID(stock.UserID.Int64),
 			},
 		}
 
-		items = append(items, fullStock)
+		items = append(items, item)
 	}
 
 	return items, nil

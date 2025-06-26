@@ -1,8 +1,8 @@
 package models
 
 type Cart struct {
-	Id     CartID
-	UserId UserID
-	SKUId  SKUID
+	ID     CartID
+	UserID UserID
+	SKUID  SKUID
 	Count  uint16
 }
