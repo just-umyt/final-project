@@ -2,22 +2,25 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"stocks/internal/models"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type StockRepoInterface interface {
+type IStockRepo interface {
 	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
 	AddStock(ctx context.Context, stock models.Stock) error
 	UpdateStock(ctx context.Context, stock models.Stock) error
-	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (int64, error)
+	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error
 	GetItemsByLocation(ctx context.Context, param GetStockByLocation) ([]models.Item, error)
 }
 
 type StockRepo struct {
 	tx pgx.Tx
 }
+
+var ErrNotFound error = errors.New("not found")
 
 func NewStockRepository(tx pgx.Tx) *StockRepo {
 	return &StockRepo{tx: tx}
@@ -59,9 +62,13 @@ func (r *StockRepo) GetItemBySKU(ctx context.Context, skuID models.SKUID) (model
 func (r *StockRepo) AddStock(ctx context.Context, stock models.Stock) error {
 	query := `INSERT INTO stock (price, location, count, user_id, sku_id) VALUES ($1, $2, $3, $4, $5)`
 
-	_, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.UserID, stock.SKUID)
+	tag, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.UserID, stock.SKUID)
 	if err != nil {
 		return err
+	}
+
+	if tag.RowsAffected() < 1 {
+		return ErrNotFound
 	}
 
 	return nil
@@ -70,20 +77,31 @@ func (r *StockRepo) AddStock(ctx context.Context, stock models.Stock) error {
 func (r *StockRepo) UpdateStock(ctx context.Context, stock models.Stock) error {
 	query := `UPDATE stock SET price = $1, location = $2, count = $3 WHERE sku_id = $4`
 
-	_, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.SKUID)
+	tag, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.SKUID)
 	if err != nil {
 		return err
+	}
+
+	if tag.RowsAffected() < 1 {
+		return ErrNotFound
 	}
 
 	return nil
 }
 
-func (r *StockRepo) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (int64, error) {
+func (r *StockRepo) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error {
 	query := `DELETE FROM stock WHERE sku_id = $1 AND user_id = $2`
 
-	row, err := r.tx.Exec(ctx, query, skuID, userID)
+	tag, err := r.tx.Exec(ctx, query, skuID, userID)
+	if err != nil {
+		return err
+	}
 
-	return row.RowsAffected(), err
+	if tag.RowsAffected() < 1 {
+		return ErrNotFound
+	}
+
+	return err
 }
 
 func (r *StockRepo) GetItemsByLocation(ctx context.Context, param GetStockByLocation) ([]models.Item, error) {

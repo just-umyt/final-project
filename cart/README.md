@@ -53,7 +53,7 @@ Other things you can modify on your own info.
 1. You need create a new docker network
 
 ```bash
-docker network create app-network
+docker network create public-net
 ```
 
 2. Run:
@@ -74,7 +74,7 @@ docker compose up
 
 ```json
 {
-  "user_id": 1,
+  "userId": 1,
   "sku": 1001,
   "count": 1
 }
@@ -88,7 +88,7 @@ docker compose up
 
 ```json
 {
-  "user_id": 1,
+  "userId": 1,
   "sku": 1001
 }
 ```
@@ -101,7 +101,7 @@ docker compose up
 
 ```json
 {
-  "user_id": 1
+  "userId": 1
 }
 ```
 
@@ -113,6 +113,6 @@ docker compose up
 
 ```json
 {
-  "user_id": 1
+  "userId": 1
 }
 ```

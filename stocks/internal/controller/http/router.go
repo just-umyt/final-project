@@ -20,3 +20,14 @@ func NewServer(serverConfig *ServerConfig) *http.Server {
 
 	return server
 }
+
+func NewMux(c IStockController) *http.ServeMux {
+	newMux := http.NewServeMux()
+
+	newMux.HandleFunc("POST /stocks/item/add", c.AddStock)
+	newMux.HandleFunc("POST /stocks/item/get", c.GetItemBySKU)
+	newMux.HandleFunc("POST /stocks/item/delete", c.DeleteStockBySKU)
+	newMux.HandleFunc("POST /stocks/list/location", c.GetItemsByLocation)
+
+	return newMux
+}

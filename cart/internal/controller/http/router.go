@@ -20,3 +20,14 @@ func NewServer(serverConfig *ServerConfig) *http.Server {
 
 	return server
 }
+
+func NewMux(c ICartController) *http.ServeMux {
+	newMux := http.NewServeMux()
+
+	newMux.HandleFunc("POST /cart/item/add", c.AddItem)
+	newMux.HandleFunc("POST /cart/item/delete", c.DeleteItem)
+	newMux.HandleFunc("POST /cart/list", c.CartList)
+	newMux.HandleFunc("POST /cart/clear", c.CartClear)
+
+	return newMux
+}

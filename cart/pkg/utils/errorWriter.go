@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"cart/pkg/logger"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -18,8 +18,10 @@ func ErrorResponse(w http.ResponseWriter, err error, code int) {
 		Err: err.Error(),
 	}
 
+	log.Println(err)
+
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
-		logger.Log.Error(err)
+		log.Println(err)
 	}
 }

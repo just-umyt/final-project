@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   cart_service:
+    # image: umyt/my-cart-app:hw7
     build: .
     depends_on:
       cart_db:
@@ -17,7 +18,8 @@ services:
       - "8080:${SERVER_PORT}"
     container_name: umyt_cart-service
     networks:
-      - app-network
+      - public_net
+      - internal_net
 
   cart_db:
     image: postgres:15-alpine
@@ -26,7 +28,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cart_service_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -34,9 +36,11 @@ services:
       - "5433:${DB_PORT}"
     container_name: umyt_cart-db
     networks:
-      - app-network
+      - internal_net
 
 networks:
-  app-network:
+  public_net:
     external: true
-    name: app-network
+    name: public-net
+  internal_net:
+    driver: bridge

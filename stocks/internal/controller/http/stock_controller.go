@@ -3,18 +3,25 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"stocks/internal/models"
 	"stocks/internal/usecase"
-	"stocks/pkg/logger"
 	"stocks/pkg/utils"
 )
 
-type StockController struct {
-	usecase usecase.StockUsecaseInterface
+type IStockController interface {
+	AddStock(w http.ResponseWriter, r *http.Request)
+	DeleteStockBySKU(w http.ResponseWriter, r *http.Request)
+	GetItemsByLocation(w http.ResponseWriter, r *http.Request)
+	GetItemBySKU(w http.ResponseWriter, r *http.Request)
 }
 
-func NewStockController(stUsecase usecase.StockUsecaseInterface) *StockController {
+type StockController struct {
+	usecase usecase.IStockUsecase
+}
+
+func NewStockController(stUsecase usecase.IStockUsecase) *StockController {
 	return &StockController{usecase: stUsecase}
 }
 
@@ -23,7 +30,6 @@ const ErrBadRequest string = "Bad Request: Failed to decode request body"
 func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	var req AddStockRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.Errorf("ADD | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -38,26 +44,18 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := c.usecase.AddStock(r.Context(), dto); err != nil {
-		switch {
-		case errors.Is(err, usecase.ErrNotFound):
-			logger.Log.Errorf("ADD | SKU %v not found: %v", dto.SKUID, err)
+		if errors.Is(err, usecase.ErrNotFound) || errors.Is(err, usecase.ErrUserID) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
-
-			return
-		case errors.Is(err, usecase.ErrUserID):
-			logger.Log.Errorf("ADD | User %v not found: %v", dto.UserID, err)
-			utils.ErrorResponse(w, err, http.StatusNotFound)
-
-			return
-		default:
-			logger.Log.Errorf("ADD | Failed to add stock: %v", err)
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
-	logger.Log.Debug("ADD | succes")
+	log.Println("ADD | succes")
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
@@ -65,7 +63,6 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 	var req DeleteStockRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.Errorf("DELETE | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -78,26 +75,23 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 
 	if err := c.usecase.DeleteStockBySKU(r.Context(), dto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("DELETE | Sku %v not found: %v", dto.SKUID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
-			logger.Log.Errorf("DELETE | Failed to delete stock: %v", err)
 			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
 		}
 	}
 
-	logger.Log.Debug("DELETE | succes", dto)
+	log.Println("DELETE | succes", dto)
 	utils.SuccessResponse(w, "", http.StatusOK)
 }
 
 func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Request) {
 	var req GetItemsByLocRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.Errorf("GET ITEMS | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -112,7 +106,6 @@ func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Requ
 
 	items, err := c.usecase.GetStocksByLocation(r.Context(), dto)
 	if err != nil {
-		logger.Log.Errorf("GET ITEMS | Failed to get stocks by location: %v", err)
 		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 		return
@@ -136,14 +129,13 @@ func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Requ
 	resp.TotalCount = items.TotalCount
 	resp.PageNumber = items.PageNumber
 
-	logger.Log.Debug("GET ITEMS | succes")
+	log.Println("GET ITEMS | succes")
 	utils.SuccessResponse(w, resp, http.StatusOK)
 }
 
 func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 	var req GetItemBySKURequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.Errorf("GET | %s: %v", ErrBadRequest, err)
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -154,12 +146,10 @@ func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 	item, err := c.usecase.GetItemBySKU(r.Context(), skuID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
-			logger.Log.Errorf("GET | SKU %v not found: %v", skuID, err)
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
 		} else {
-			logger.Log.Errorf("GET | Failed to get item: %v", err)
 			utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
 			return
@@ -176,6 +166,6 @@ func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 		UserID:   int64(item.UserID),
 	}
 
-	logger.Log.Debugf("GET | succes: %v", item)
+	log.Printf("GET | succes: %v", item)
 	utils.SuccessResponse(w, resp, http.StatusOK)
 }

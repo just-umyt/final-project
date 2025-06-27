@@ -8,7 +8,7 @@ import (
 	"errors"
 )
 
-type CartUsecaseInterface interface {
+type ICartUsecase interface {
 	AddItem(ctx context.Context, addItem AddItemDTO) error
 	DeleteItem(ctx context.Context, delItem DeleteItemDTO) error
 	GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error)
@@ -39,7 +39,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return ErrNotEnoughStock
 	}
 
-	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
+	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
 		cartID, err := repo.GetCartIDByUserID(ctx, addItem.UserID, addItem.SKUID)
 		if err != nil {
 			return err
@@ -52,22 +52,24 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		}
 
 		if cartID > 0 {
-			return repo.UpdateItemByUserID(ctx, cart)
+			if err := repo.UpdateItemByUserID(ctx, cart); err != nil {
+				return err
+			}
+		} else {
+			if err := repo.AddItem(ctx, cart); err != nil {
+				return err
+			}
 		}
 
-		return repo.AddItem(ctx, cart)
+		return nil
 	})
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
-	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
-		rowsAffect, err := repo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
+	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
+		err := repo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
 		if err != nil {
 			return err
-		}
-
-		if rowsAffect < 1 {
-			return ErrNotFound
 		}
 
 		return nil
@@ -75,43 +77,38 @@ func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) err
 }
 
 func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
-	var skuIDs []models.SKUID
+	var cart map[models.SKUID]uint16
 
-	err := u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
+	err := u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
 		var err error
 
-		skuIDs, err = repo.GetSKUIDsByUserID(ctx, userID)
-		if err != nil {
-			return err
-		}
+		cart, err = repo.GetCartByUserID(ctx, userID)
 
-		return nil
+		return err
 	})
 
 	var list ListItemsDTO
 
-	for _, id := range skuIDs {
+	for id, c := range cart {
 		sku, err := u.skuService.GetItemInfo(ctx, id)
 		if err != nil {
 			return ListItemsDTO{}, err
 		}
 
-		list.Items = append(list.Items, sku)
-		list.TotalPrice += sku.Price
+		if c <= sku.Count {
+			list.Items = append(list.Items, sku)
+			list.TotalPrice += sku.Price
+		}
 	}
 
 	return list, err
 }
 
 func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
-	return u.tx.WithTx(ctx, func(repo repository.CartRepoInterface) error {
-		rowsAffect, err := repo.ClearCartByUserID(ctx, userID)
+	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
+		err := repo.ClearCartByUserID(ctx, userID)
 		if err != nil {
 			return err
-		}
-
-		if rowsAffect < 1 {
-			return ErrNotFound
 		}
 
 		return nil

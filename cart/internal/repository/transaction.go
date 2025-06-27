@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"cart/pkg/logger"
 	"context"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,14 +12,14 @@ type PgTxManager struct {
 }
 
 type PgTxManagerInterface interface {
-	WithTx(ctx context.Context, fn func(CartRepoInterface) error) error
+	WithTx(ctx context.Context, fn func(ICartRepo) error) error
 }
 
 func NewPgTxManager(pool *pgxpool.Pool) *PgTxManager {
 	return &PgTxManager{pool: pool}
 }
 
-func (tm *PgTxManager) WithTx(ctx context.Context, fn func(CartRepoInterface) error) error {
+func (tm *PgTxManager) WithTx(ctx context.Context, fn func(ICartRepo) error) error {
 	tx, err := tm.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(CartRepoInterface) er
 		if err != nil {
 			rollBackErr := tx.Rollback(ctx)
 			if rollBackErr != nil {
-				logger.Log.Error(rollBackErr)
+				log.Println(rollBackErr)
 			}
 		}
 	}()

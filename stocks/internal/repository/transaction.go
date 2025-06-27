@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"stocks/pkg/logger"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,14 +12,14 @@ type PgTxManager struct {
 }
 
 type PgTxManagerInterface interface {
-	WithTx(ctx context.Context, fn func(StockRepoInterface) error) error
+	WithTx(ctx context.Context, fn func(IStockRepo) error) error
 }
 
 func NewPgTxManager(pool *pgxpool.Pool) *PgTxManager {
 	return &PgTxManager{pool: pool}
 }
 
-func (tm *PgTxManager) WithTx(ctx context.Context, fn func(StockRepoInterface) error) error {
+func (tm *PgTxManager) WithTx(ctx context.Context, fn func(IStockRepo) error) error {
 	tx, err := tm.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(StockRepoInterface) e
 		if err != nil {
 			rollBackErr := tx.Rollback(ctx)
 			if rollBackErr != nil {
-				logger.Log.Error(rollBackErr)
+				log.Println(rollBackErr)
 			}
 		}
 	}()

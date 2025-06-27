@@ -26,13 +26,11 @@ type PostgresConfig struct {
 func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
 
-	//sql db for migration
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	//migration
 	migration, err := migration(db)
 	if err != nil {
 		return nil, err
@@ -46,7 +44,6 @@ func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, er
 		return nil, err
 	}
 
-	// pgx Pool
 	dbPool, err := pgxpool.New(context, dsn)
 	if err != nil {
 		return nil, err
@@ -60,13 +57,11 @@ func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, er
 }
 
 func migration(db *sql.DB) (*migrate.Migrate, error) {
-	//driver for migration
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	//migration
 	migrate, err := migrate.NewWithDatabaseInstance(
 		"file://internal/migrations/postgres",
 		"postgres",

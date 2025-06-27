@@ -7,7 +7,7 @@ import (
 	"stocks/internal/repository"
 )
 
-type StockUsecaseInterface interface {
+type IStockUsecase interface {
 	AddStock(ctx context.Context, stock AddStockDTO) error
 	DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error
 	GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error)
@@ -28,14 +28,14 @@ func NewStockUsecase(pgTx repository.PgTxManager) *StockUsecase {
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+	return u.tx.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
-			if item.SKU.ID == 0 {
+			if item.Stock.ID == 0 {
 				return ErrNotFound
-			} else {
-				return err
 			}
+
+			return err
 		}
 
 		newItem := models.Stock{
@@ -48,9 +48,23 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 
 		switch item.Stock.UserID {
 		case 0:
-			return repo.AddStock(ctx, newItem)
+			err := repo.AddStock(ctx, newItem)
+			if err != nil {
+				return ErrNotFound
+			}
+
+			return nil
 		case stock.UserID:
-			return repo.UpdateStock(ctx, newItem)
+			err := repo.UpdateStock(ctx, newItem)
+			if err != nil {
+				if errors.Is(err, repository.ErrNotFound) {
+					return ErrNotFound
+				}
+
+				return err
+			}
+
+			return nil
 		default:
 			return ErrUserID
 		}
@@ -58,14 +72,14 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 }
 
 func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {
-	return u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
-		rows, err := repo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
+	return u.tx.WithTx(ctx, func(repo repository.IStockRepo) error {
+		err := repo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
 		if err != nil {
-			return err
-		}
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
 
-		if rows == 0 {
-			return ErrNotFound
+			return err
 		}
 
 		return nil
@@ -85,7 +99,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 		Offset:   offset,
 	}
 
-	err := u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+	err := u.tx.WithTx(ctx, func(repo repository.IStockRepo) error {
 		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
@@ -118,7 +132,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
 	var stockDTO StockDTO
-	err := u.tx.WithTx(ctx, func(repo repository.StockRepoInterface) error {
+	err := u.tx.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
 			if item.SKU.ID == 0 {

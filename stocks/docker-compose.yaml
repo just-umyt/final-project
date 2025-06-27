@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   stocks_service:
+    # image: umyt/my-stock-app:hw7
     build: .
     depends_on:
       stocks_db:
@@ -14,10 +15,11 @@ services:
       DB_SSLMODE: ${DB_SSLMODE}
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "8081:8081"
+      - "8081:${SERVER_PORT}"
     container_name: umyt_stocks-service
     networks:
-      - app-network
+      - public_net
+      - internal_net
 
   stocks_db:
     image: postgres:15-alpine
@@ -26,7 +28,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d stocks_service_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -34,9 +36,11 @@ services:
       - "5434:${DB_PORT}"
     container_name: umyt_stocks-db
     networks:
-      - app-network
+      - internal_net
 
 networks:
-  app-network:
+  public_net:
     external: true
-    name: app-network
+    name: public-net
+  internal_net:
+    driver: bridge

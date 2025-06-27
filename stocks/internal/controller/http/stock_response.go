@@ -2,8 +2,8 @@ package http
 
 type StockByLocResponse struct {
 	Items      []ItemResponse `json:"stocks"`
-	TotalCount int            `json:"total_count"`
-	PageNumber int64          `json:"page_number"`
+	TotalCount int            `json:"totalCount"`
+	PageNumber int64          `json:"pageNumber"`
 }
 
 type ItemResponse struct {
@@ -13,5 +13,5 @@ type ItemResponse struct {
 	Count    uint16 `json:"count,omitempty"`
 	Price    uint32 `json:"price,omitempty"`
 	Location string `json:"location,omitempty"`
-	UserID   int64  `json:"user_id,omitempty"`
+	UserID   int64  `json:"userId,omitempty"`
 }
