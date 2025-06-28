@@ -11,7 +11,7 @@ type PgTxManager struct {
 	pool *pgxpool.Pool
 }
 
-type PgTxManagerInterface interface {
+type IPgTxManager interface {
 	WithTx(ctx context.Context, fn func(ICartRepo) error) error
 }
 

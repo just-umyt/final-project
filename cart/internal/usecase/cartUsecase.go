@@ -16,7 +16,7 @@ type ICartUsecase interface {
 }
 
 type CartUsecase struct {
-	tx         repository.PgTxManagerInterface
+	tx         repository.IPgTxManager
 	skuService services.StockService
 }
 
@@ -52,27 +52,31 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		}
 
 		if cartID > 0 {
-			if err := repo.UpdateItemByUserID(ctx, cart); err != nil {
-				return err
+			err := repo.UpdateItemByUserID(ctx, cart)
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
 			}
-		} else {
-			if err := repo.AddItem(ctx, cart); err != nil {
-				return err
-			}
+
+			return err
 		}
 
-		return nil
+		err = repo.AddItem(ctx, cart)
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
+		}
+
+		return err
 	})
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
 	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
 		err := repo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
-		if err != nil {
-			return err
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
 		}
 
-		return nil
+		return err
 	})
 }
 
@@ -107,10 +111,10 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
 	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
 		err := repo.ClearCartByUserID(ctx, userID)
-		if err != nil {
-			return err
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
 		}
 
-		return nil
+		return err
 	})
 }

@@ -78,11 +78,11 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
-		} else {
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
-
-			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	log.Println("DELETE | succes", dto)
@@ -149,11 +149,11 @@ func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
-		} else {
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
-
-			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	resp := ItemResponse{

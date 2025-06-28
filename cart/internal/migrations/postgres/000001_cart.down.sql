@@ -1,3 +1,1 @@
-DROP TABLE IF EXISTS cart_stock;
-
 DROP TABLE IF EXISTS cart;

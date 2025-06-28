@@ -49,22 +49,18 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 		switch item.Stock.UserID {
 		case 0:
 			err := repo.AddStock(ctx, newItem)
-			if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
 				return ErrNotFound
 			}
 
-			return nil
+			return err
 		case stock.UserID:
 			err := repo.UpdateStock(ctx, newItem)
-			if err != nil {
-				if errors.Is(err, repository.ErrNotFound) {
-					return ErrNotFound
-				}
-
-				return err
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
 			}
 
-			return nil
+			return err
 		default:
 			return ErrUserID
 		}
@@ -74,15 +70,12 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {
 	return u.tx.WithTx(ctx, func(repo repository.IStockRepo) error {
 		err := repo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
-		if err != nil {
-			if errors.Is(err, repository.ErrNotFound) {
-				return ErrNotFound
-			}
+		if errors.Is(err, repository.ErrNotFound) {
 
-			return err
+			return ErrNotFound
 		}
 
-		return nil
+		return err
 	})
 }
 

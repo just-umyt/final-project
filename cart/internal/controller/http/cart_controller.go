@@ -2,7 +2,6 @@ package http
 
 import (
 	"cart/internal/models"
-	"cart/internal/repository"
 	"cart/internal/usecase"
 	"cart/pkg/utils"
 	"encoding/json"
@@ -49,11 +48,11 @@ func (c *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 			utils.ErrorResponse(w, err, http.StatusPreconditionFailed)
 
 			return
-		} else {
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
-
-			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	log.Println("ADD | succes")
@@ -74,15 +73,15 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 
 	err = c.usecase.ClearCartByUserID(r.Context(), userID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
-		} else {
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
-
-			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	log.Println("ClEAR | succes")
@@ -106,15 +105,15 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	err = c.usecase.DeleteItem(r.Context(), dto)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
 			return
-		} else {
-			utils.ErrorResponse(w, err, http.StatusInternalServerError)
-
-			return
 		}
+
+		utils.ErrorResponse(w, err, http.StatusInternalServerError)
+
+		return
 	}
 
 	log.Println("DELETE | succes")

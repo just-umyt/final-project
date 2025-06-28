@@ -17,5 +17,5 @@ type stock struct {
 	Count    uint16 `json:"count,omitempty"`
 	Price    uint32 `json:"price,omitempty"`
 	Location string `json:"location,omitempty"`
-	UserID   int64  `json:"user_id,omitempty"`
+	UserID   int64  `json:"userId,omitempty"`
 }
