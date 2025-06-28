@@ -6,7 +6,14 @@ import (
 	"stocks/internal/models"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+type IDBQuery interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+}
 
 type IStockRepo interface {
 	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
@@ -17,13 +24,13 @@ type IStockRepo interface {
 }
 
 type StockRepo struct {
-	tx pgx.Tx
+	db IDBQuery
 }
 
 var ErrNotFound error = errors.New("not found")
 
-func NewStockRepository(tx pgx.Tx) *StockRepo {
-	return &StockRepo{tx: tx}
+func NewStockRepository(db IDBQuery) *StockRepo {
+	return &StockRepo{db: db}
 }
 
 func (r *StockRepo) GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error) {
@@ -34,7 +41,7 @@ func (r *StockRepo) GetItemBySKU(ctx context.Context, skuID models.SKUID) (model
 
 	var item models.Item
 
-	err := r.tx.QueryRow(ctx, query, skuID).Scan(&sku.ID, &sku.Name, &sku.Type, &stock.ID, &stock.SKUID, &stock.Price, &stock.Location, &stock.Count, &stock.UserID)
+	err := r.db.QueryRow(ctx, query, skuID).Scan(&sku.ID, &sku.Name, &sku.Type, &stock.ID, &stock.SKUID, &stock.Price, &stock.Location, &stock.Count, &stock.UserID)
 	if err != nil {
 		return item, err
 	}
@@ -62,7 +69,7 @@ func (r *StockRepo) GetItemBySKU(ctx context.Context, skuID models.SKUID) (model
 func (r *StockRepo) AddStock(ctx context.Context, stock models.Stock) error {
 	query := `INSERT INTO stock (price, location, count, user_id, sku_id) VALUES ($1, $2, $3, $4, $5)`
 
-	tag, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.UserID, stock.SKUID)
+	tag, err := r.db.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.UserID, stock.SKUID)
 	if err != nil {
 		return err
 	}
@@ -77,7 +84,7 @@ func (r *StockRepo) AddStock(ctx context.Context, stock models.Stock) error {
 func (r *StockRepo) UpdateStock(ctx context.Context, stock models.Stock) error {
 	query := `UPDATE stock SET price = $1, location = $2, count = $3 WHERE sku_id = $4`
 
-	tag, err := r.tx.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.SKUID)
+	tag, err := r.db.Exec(ctx, query, stock.Price, stock.Location, stock.Count, stock.SKUID)
 	if err != nil {
 		return err
 	}
@@ -92,7 +99,7 @@ func (r *StockRepo) UpdateStock(ctx context.Context, stock models.Stock) error {
 func (r *StockRepo) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error {
 	query := `DELETE FROM stock WHERE sku_id = $1 AND user_id = $2`
 
-	tag, err := r.tx.Exec(ctx, query, skuID, userID)
+	tag, err := r.db.Exec(ctx, query, skuID, userID)
 	if err != nil {
 		return err
 	}
@@ -109,7 +116,7 @@ func (r *StockRepo) GetItemsByLocation(ctx context.Context, param GetStockByLoca
 
 	query := `SELECT * FROM sku l INNER JOIN stock r ON r.sku_id = l.sku_id WHERE r.location = $1 AND r.user_id = $2 LIMIT $3 OFFSET $4`
 
-	rows, err := r.tx.Query(ctx, query, param.Location, param.UserID, param.Limit, param.Offset)
+	rows, err := r.db.Query(ctx, query, param.Location, param.UserID, param.Limit, param.Offset)
 	if err != nil {
 		return nil, err
 	}

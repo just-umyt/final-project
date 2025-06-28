@@ -51,11 +51,16 @@ func RunApp() error {
 	}
 	defer dbPool.Close()
 
-	transaction := repository.NewPgTxManager(dbPool)
+	trxManager := repository.NewPgTxManager(dbPool)
 
-	stockUsecase := usecase.NewStockUsecase(*transaction)
+	stockRepo := repository.NewStockRepository(dbPool)
 
-	controller := myHttp.NewStockController(stockUsecase)
+	stockUsecase := usecase.NewStockUsecase(usecase.Repository{
+		IStockRepo:   stockRepo,
+		IPgTxManager: trxManager,
+	})
+
+	controller := myHttp.NewStockController(myHttp.Usecases{IStockUsecase: stockUsecase})
 
 	newMux := myHttp.NewMux(controller)
 

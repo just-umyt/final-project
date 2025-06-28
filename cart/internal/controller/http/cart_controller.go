@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+type Usecases struct {
+	usecase.ICartUsecase
+}
+
 type ICartController interface {
 	AddItem(w http.ResponseWriter, r *http.Request)
 	CartClear(w http.ResponseWriter, r *http.Request)
@@ -18,11 +22,11 @@ type ICartController interface {
 }
 
 type CartController struct {
-	usecase usecase.ICartUsecase
+	Usecases
 }
 
-func NewCartController(cartUsecase usecase.ICartUsecase) *CartController {
-	return &CartController{usecase: cartUsecase}
+func NewCartController(us Usecases) *CartController {
+	return &CartController{Usecases: us}
 }
 
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
@@ -42,7 +46,7 @@ func (c *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 		Count:  req.Count,
 	}
 
-	err := c.usecase.AddItem(r.Context(), dto)
+	err := c.ICartUsecase.AddItem(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotEnoughStock) {
 			utils.ErrorResponse(w, err, http.StatusPreconditionFailed)
@@ -71,7 +75,7 @@ func (c *CartController) CartClear(w http.ResponseWriter, r *http.Request) {
 
 	userID := models.UserID(req.UserID)
 
-	err = c.usecase.ClearCartByUserID(r.Context(), userID)
+	err = c.ICartUsecase.ClearCartByUserID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
@@ -103,7 +107,7 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		SKUID:  models.SKUID(req.SKUID),
 	}
 
-	err = c.usecase.DeleteItem(r.Context(), dto)
+	err = c.ICartUsecase.DeleteItem(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
@@ -132,7 +136,7 @@ func (c *CartController) CartList(w http.ResponseWriter, r *http.Request) {
 
 	userID := models.UserID(req.UserID)
 
-	resp, err := c.usecase.GetItemsByUserID(r.Context(), userID)
+	resp, err := c.ICartUsecase.GetItemsByUserID(r.Context(), userID)
 	if err != nil {
 		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 

@@ -8,6 +8,11 @@ import (
 	"errors"
 )
 
+type Repository struct {
+	repository.ICartRepo
+	repository.IPgTxManager
+}
+
 type ICartUsecase interface {
 	AddItem(ctx context.Context, addItem AddItemDTO) error
 	DeleteItem(ctx context.Context, delItem DeleteItemDTO) error
@@ -16,8 +21,8 @@ type ICartUsecase interface {
 }
 
 type CartUsecase struct {
-	tx         repository.IPgTxManager
-	skuService services.StockService
+	Repository
+	skuService services.IStockService
 }
 
 var (
@@ -25,8 +30,8 @@ var (
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(pgTx repository.PgTxManager, service services.StockService) *CartUsecase {
-	return &CartUsecase{tx: &pgTx, skuService: service}
+func NewCartUsecase(repo Repository, service services.IStockService) *CartUsecase {
+	return &CartUsecase{Repository: repo, skuService: service}
 }
 
 func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
@@ -39,7 +44,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return ErrNotEnoughStock
 	}
 
-	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
+	return u.IPgTxManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		cartID, err := repo.GetCartIDByUserID(ctx, addItem.UserID, addItem.SKUID)
 		if err != nil {
 			return err
@@ -70,28 +75,21 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
-	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
-		err := repo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
-		if errors.Is(err, repository.ErrNotFound) {
-			return ErrNotFound
-		}
+	err := u.ICartRepo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return ErrNotFound
+	}
 
-		return err
-	})
+	return err
 }
 
 func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
-	var cart map[models.SKUID]uint16
-
-	err := u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
-		var err error
-
-		cart, err = repo.GetCartByUserID(ctx, userID)
-
-		return err
-	})
-
 	var list ListItemsDTO
+
+	cart, err := u.ICartRepo.GetCartByUserID(ctx, userID)
+	if err != nil {
+		return list, err
+	}
 
 	for id, c := range cart {
 		sku, err := u.skuService.GetItemInfo(ctx, id)
@@ -105,11 +103,11 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 		}
 	}
 
-	return list, err
+	return list, nil
 }
 
 func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
-	return u.tx.WithTx(ctx, func(repo repository.ICartRepo) error {
+	return u.IPgTxManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		err := repo.ClearCartByUserID(ctx, userID)
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrNotFound

@@ -10,6 +10,10 @@ import (
 	"stocks/pkg/utils"
 )
 
+type Usecases struct {
+	usecase.IStockUsecase
+}
+
 type IStockController interface {
 	AddStock(w http.ResponseWriter, r *http.Request)
 	DeleteStockBySKU(w http.ResponseWriter, r *http.Request)
@@ -18,11 +22,11 @@ type IStockController interface {
 }
 
 type StockController struct {
-	usecase usecase.IStockUsecase
+	Usecases
 }
 
-func NewStockController(stUsecase usecase.IStockUsecase) *StockController {
-	return &StockController{usecase: stUsecase}
+func NewStockController(stUsecase Usecases) *StockController {
+	return &StockController{Usecases: stUsecase}
 }
 
 const ErrBadRequest string = "Bad Request: Failed to decode request body"
@@ -43,7 +47,7 @@ func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 		Location: req.Location,
 	}
 
-	if err := c.usecase.AddStock(r.Context(), dto); err != nil {
+	if err := c.IStockUsecase.AddStock(r.Context(), dto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) || errors.Is(err, usecase.ErrUserID) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
@@ -73,7 +77,7 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 		SKUID:  models.SKUID(req.SKUID),
 	}
 
-	if err := c.usecase.DeleteStockBySKU(r.Context(), dto); err != nil {
+	if err := c.IStockUsecase.DeleteStockBySKU(r.Context(), dto); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)
 
@@ -104,7 +108,7 @@ func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Requ
 		CurrentPage: req.CurrentPage,
 	}
 
-	items, err := c.usecase.GetStocksByLocation(r.Context(), dto)
+	items, err := c.IStockUsecase.GetStocksByLocation(r.Context(), dto)
 	if err != nil {
 		utils.ErrorResponse(w, err, http.StatusInternalServerError)
 
@@ -143,7 +147,7 @@ func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 
 	skuID := models.SKUID(req.SKU)
 
-	item, err := c.usecase.GetItemBySKU(r.Context(), skuID)
+	item, err := c.IStockUsecase.GetItemBySKU(r.Context(), skuID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			utils.ErrorResponse(w, err, http.StatusNotFound)

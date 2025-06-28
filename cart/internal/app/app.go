@@ -53,7 +53,9 @@ func RunApp() error {
 	}
 	defer dbPool.Close()
 
-	transaction := repository.NewPgTxManager(dbPool)
+	cartRepo := repository.NewCartRepository(dbPool)
+
+	trxManager := repository.NewPgTxManager(dbPool)
 
 	timeOut, err := strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
 	if err != nil {
@@ -61,11 +63,14 @@ func RunApp() error {
 		return err
 	}
 
-	getSkuService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
+	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
 
-	cartUsecase := usecase.NewCartUsecase(*transaction, getSkuService)
+	cartUsecase := usecase.NewCartUsecase(usecase.Repository{
+		ICartRepo:    cartRepo,
+		IPgTxManager: trxManager,
+	}, stockService)
 
-	controller := myHttp.NewCartController(cartUsecase)
+	controller := myHttp.NewCartController(myHttp.Usecases{ICartUsecase: cartUsecase})
 
 	newMux := myHttp.NewMux(controller)
 

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type StockService interface {
+type IStockService interface {
 	GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error)
 }
 
@@ -19,7 +19,7 @@ type stockService struct {
 	baseUrl    string
 }
 
-func NewStockService(timeoutDur time.Duration, url string) StockService {
+func NewStockService(timeoutDur time.Duration, url string) IStockService {
 	httpClient := &http.Client{
 		Timeout: timeoutDur,
 	}
