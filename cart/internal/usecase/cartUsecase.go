@@ -8,11 +8,6 @@ import (
 	"errors"
 )
 
-type Repository struct {
-	repository.ICartRepo
-	repository.IPgTxManager
-}
-
 type ICartUsecase interface {
 	AddItem(ctx context.Context, addItem AddItemDTO) error
 	DeleteItem(ctx context.Context, delItem DeleteItemDTO) error
@@ -21,8 +16,9 @@ type ICartUsecase interface {
 }
 
 type CartUsecase struct {
-	Repository
 	skuService services.IStockService
+	cartRepo   repository.ICartRepo
+	trManager  repository.IPgTxManager
 }
 
 var (
@@ -30,8 +26,8 @@ var (
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(repo Repository, service services.IStockService) *CartUsecase {
-	return &CartUsecase{Repository: repo, skuService: service}
+func NewCartUsecase(cartRepo repository.ICartRepo, trManager repository.IPgTxManager, service services.IStockService) *CartUsecase {
+	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service}
 }
 
 func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
@@ -44,7 +40,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return ErrNotEnoughStock
 	}
 
-	return u.IPgTxManager.WithTx(ctx, func(repo repository.ICartRepo) error {
+	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		cartID, err := repo.GetCartIDByUserID(ctx, addItem.UserID, addItem.SKUID)
 		if err != nil {
 			return err
@@ -75,7 +71,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
-	err := u.ICartRepo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
+	err := u.cartRepo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound
 	}
@@ -86,7 +82,7 @@ func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) err
 func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
 	var list ListItemsDTO
 
-	cart, err := u.ICartRepo.GetCartByUserID(ctx, userID)
+	cart, err := u.cartRepo.GetCartByUserID(ctx, userID)
 	if err != nil {
 		return list, err
 	}
@@ -107,7 +103,7 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 }
 
 func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
-	return u.IPgTxManager.WithTx(ctx, func(repo repository.ICartRepo) error {
+	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		err := repo.ClearCartByUserID(ctx, userID)
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrNotFound

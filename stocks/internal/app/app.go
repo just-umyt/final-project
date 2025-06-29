@@ -18,10 +18,10 @@ import (
 )
 
 var (
-	ErrLoadEnv               = "Error loading .env file: %v"
-	ErrDBConnect             = "Error connecting to database: %v"
-	ErrLoadServerReadTimeOut = "Error loading SERVER_READ_HEADER_TIMEOUT: %v"
-	ErrLoadServerShutdown    = "Error loading SERVER_SHUTDOWN_TIMEOUT: %v"
+	ErrLoadEnv               = "error loading .env file: %v"
+	ErrDBConnect             = "error connecting to database: %v"
+	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
+	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
 )
 
