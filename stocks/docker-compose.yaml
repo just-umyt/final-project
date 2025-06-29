@@ -2,8 +2,7 @@ version: "3.9"
 
 services:
   stocks_service:
-    image: umyt/my-stock-app:hw7
-    # build: .
+    image: umyt/stocks:hw7
     depends_on:
       stocks_db:
         condition: service_healthy
