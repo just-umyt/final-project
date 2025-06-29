@@ -90,7 +90,7 @@ func (c *CartRepo) DeleteItem(ctx context.Context, userID models.UserID, skuID m
 		return ErrNotFound
 	}
 
-	return err
+	return nil
 }
 
 func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error) {
