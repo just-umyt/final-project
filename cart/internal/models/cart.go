@@ -6,3 +6,8 @@ type Cart struct {
 	SKUID  SKUID
 	Count  uint16
 }
+
+type CartItem struct {
+	SKUID SKUID
+	Count uint16
+}

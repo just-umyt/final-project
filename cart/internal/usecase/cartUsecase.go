@@ -6,6 +6,7 @@ import (
 	"cart/internal/services"
 	"context"
 	"errors"
+	"log"
 )
 
 type ICartUsecase interface {
@@ -82,21 +83,27 @@ func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) err
 func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
 	var list ListItemsDTO
 
-	cart, err := u.cartRepo.GetCartByUserID(ctx, userID)
+	carts, err := u.cartRepo.GetCartByUserID(ctx, userID)
 	if err != nil {
 		return list, err
 	}
 
-	for id, c := range cart {
-		sku, err := u.skuService.GetItemInfo(ctx, id)
+	for _, cart := range carts {
+		sku, err := u.skuService.GetItemInfo(ctx, cart.SKUID)
 		if err != nil {
 			return ListItemsDTO{}, err
 		}
 
-		if c <= sku.Count {
-			list.Items = append(list.Items, sku)
-			list.TotalPrice += sku.Price
+		realCount := cart.Count
+
+		if cart.Count > sku.Count {
+			log.Printf("Warning: user requested %d of SKU %d, but only %d in stock. Adjusting.",
+				cart.Count, cart.SKUID, sku.Count)
+			realCount = sku.Count
 		}
+		sku.Count = realCount
+		list.Items = append(list.Items, sku)
+		list.TotalPrice += uint32(realCount) * sku.Price
 	}
 
 	return list, nil

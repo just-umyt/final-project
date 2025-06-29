@@ -20,7 +20,7 @@ type ICartRepo interface {
 	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
 	AddItem(ctx context.Context, cart models.Cart) error
 	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
-	GetCartByUserID(ctx context.Context, userID models.UserID) (map[models.SKUID]uint16, error)
+	GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error)
 	ClearCartByUserID(ctx context.Context, userID models.UserID) error
 }
 
@@ -80,7 +80,11 @@ func (c *CartRepo) AddItem(ctx context.Context, cart models.Cart) error {
 
 func (c *CartRepo) DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error {
 	query := `DELETE FROM cart WHERE user_id = $1 AND sku_id = $2`
+
 	tag, err := c.db.Exec(ctx, query, userID, skuID)
+	if err != nil {
+		return err
+	}
 
 	if tag.RowsAffected() < 1 {
 		return ErrNotFound
@@ -89,7 +93,7 @@ func (c *CartRepo) DeleteItem(ctx context.Context, userID models.UserID, skuID m
 	return err
 }
 
-func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) (map[models.SKUID]uint16, error) {
+func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error) {
 	query := `SELECT sku_id, count FROM cart WHERE user_id = $1`
 
 	rows, err := c.db.Query(ctx, query, userID)
@@ -99,21 +103,30 @@ func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) (m
 
 	defer rows.Close()
 
-	cart := make(map[models.SKUID]uint16)
+	var items []models.CartItem
 
 	for rows.Next() {
-		var skuID models.SKUID
-
-		var count uint16
-
-		if err := rows.Scan(&skuID, &count); err != nil {
+		var dbItem cartItemDB
+		if err := rows.Scan(&dbItem.SKUID, &dbItem.Count); err != nil {
 			return nil, err
 		}
 
-		cart[skuID] = count
+		skuID, err := models.Int64ToSKUID(dbItem.SKUID)
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, models.CartItem{
+			SKUID: skuID,
+			Count: dbItem.Count,
+		})
 	}
 
-	return cart, nil
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
 
 func (c *CartRepo) ClearCartByUserID(ctx context.Context, userID models.UserID) error {

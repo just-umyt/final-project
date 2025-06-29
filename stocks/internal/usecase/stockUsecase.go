@@ -56,7 +56,6 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 
 			return err
 		case stock.UserID:
-
 			err := repo.UpdateStock(ctx, newItem)
 			if errors.Is(err, repository.ErrNotFound) {
 				return ErrNotFound
