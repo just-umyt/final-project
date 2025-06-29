@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   cart_service:
-    image: umyt/my-cart-app:hw7
+    image: umyt/cart:hw7
     depends_on:
       cart_db:
         condition: service_healthy

@@ -41,7 +41,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 	}
 
 	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
-		cartID, err := repo.GetCartIDByUserID(ctx, addItem.UserID, addItem.SKUID)
+		cartID, count, err := repo.GetCartInfoByUserID(ctx, addItem.UserID, addItem.SKUID)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		cart := models.Cart{
 			UserID: addItem.UserID,
 			SKUID:  addItem.SKUID,
-			Count:  addItem.Count,
+			Count:  count + addItem.Count,
 		}
 
 		if cartID > 0 {

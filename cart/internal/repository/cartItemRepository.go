@@ -16,7 +16,7 @@ type IDBQuery interface {
 }
 
 type ICartRepo interface {
-	GetCartIDByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, error)
+	GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error)
 	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
 	AddItem(ctx context.Context, cart models.Cart) error
 	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
@@ -34,17 +34,18 @@ func NewCartRepository(db IDBQuery) *CartRepo {
 	return &CartRepo{db: db}
 }
 
-func (c *CartRepo) GetCartIDByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, error) {
-	query := `SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2`
+func (c *CartRepo) GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error) {
+	query := `SELECT id, count FROM cart WHERE user_id = $1 AND sku_id = $2`
 
 	var cartID models.CartID
+	var count uint16
 
-	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&cartID)
+	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&cartID, &count)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return 0, err
+		return 0, 0, err
 	}
 
-	return cartID, nil
+	return cartID, count, nil
 }
 
 func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) error {
