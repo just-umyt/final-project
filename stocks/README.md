@@ -46,10 +46,10 @@ Other things you can modify on your own info.
 
 ### ✅ Docker Compose
 
-1. You need create a new docker network
+1. You need create a new docker network. If you already created no need to create again.
 
 ```bash
-docker network create app-network
+docker network create public-net
 ```
 
 2. Run:
