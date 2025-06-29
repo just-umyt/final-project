@@ -55,12 +55,9 @@ func RunApp() error {
 
 	stockRepo := repository.NewStockRepository(dbPool)
 
-	stockUsecase := usecase.NewStockUsecase(usecase.Repository{
-		IStockRepo:   stockRepo,
-		IPgTxManager: trxManager,
-	})
+	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager)
 
-	controller := myHttp.NewStockController(myHttp.Usecases{IStockUsecase: stockUsecase})
+	controller := myHttp.NewStockController(stockUsecase)
 
 	newMux := myHttp.NewMux(controller)
 

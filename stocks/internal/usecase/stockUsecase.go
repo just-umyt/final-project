@@ -7,11 +7,6 @@ import (
 	"stocks/internal/repository"
 )
 
-type Repository struct {
-	repository.IStockRepo
-	repository.IPgTxManager
-}
-
 type IStockUsecase interface {
 	AddStock(ctx context.Context, stock AddStockDTO) error
 	DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error
@@ -20,7 +15,8 @@ type IStockUsecase interface {
 }
 
 type StockUsecase struct {
-	Repository
+	stockRepo repository.IStockRepo
+	trManager repository.IPgTxManager
 }
 
 var (
@@ -28,12 +24,12 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo Repository) *StockUsecase {
-	return &StockUsecase{Repository: repo}
+func NewStockUsecase(repo repository.IStockRepo, trManager repository.IPgTxManager) *StockUsecase {
+	return &StockUsecase{stockRepo: repo, trManager: trManager}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.IPgTxManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	return u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
 			if item.Stock.ID == 0 {
@@ -73,7 +69,7 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 }
 
 func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {
-	err := u.IStockRepo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
+	err := u.stockRepo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound
 	}
@@ -94,7 +90,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 		Offset:   offset,
 	}
 
-	err := u.IPgTxManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
@@ -127,7 +123,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
 	var stockDTO StockDTO
-	err := u.IPgTxManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
 			if item.SKU.ID == 0 {
