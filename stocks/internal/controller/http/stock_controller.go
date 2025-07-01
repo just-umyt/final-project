@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -10,18 +11,18 @@ import (
 	"stocks/pkg/utils"
 )
 
-type IStockController interface {
-	AddStock(w http.ResponseWriter, r *http.Request)
-	DeleteStockBySKU(w http.ResponseWriter, r *http.Request)
-	GetItemsByLocation(w http.ResponseWriter, r *http.Request)
-	GetItemBySKU(w http.ResponseWriter, r *http.Request)
+type IStockUsecase interface {
+	AddStock(ctx context.Context, stock usecase.AddStockDTO) error
+	DeleteStockBySKU(ctx context.Context, delStock usecase.DeleteStockDTO) error
+	GetStocksByLocation(ctx context.Context, param usecase.GetItemByLocDTO) (usecase.ItemsByLocDTO, error)
+	GetItemBySKU(ctx context.Context, sku models.SKUID) (usecase.StockDTO, error)
 }
 
 type StockController struct {
-	stockUsecase usecase.IStockUsecase
+	stockUsecase IStockUsecase
 }
 
-func NewStockController(stockUsecase usecase.IStockUsecase) *StockController {
+func NewStockController(stockUsecase IStockUsecase) *StockController {
 	return &StockController{stockUsecase: stockUsecase}
 }
 

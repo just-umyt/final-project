@@ -55,7 +55,7 @@ func RunApp() error {
 
 	cartRepo := repository.NewCartRepository(dbPool)
 
-	trxManager := repository.NewPgTxManager(dbPool)
+	trxManager := postgres.NewPgTxManager(dbPool)
 
 	timeOut, err := strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
 	if err != nil {

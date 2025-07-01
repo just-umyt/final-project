@@ -4,24 +4,25 @@ import (
 	"cart/internal/models"
 	"cart/internal/usecase"
 	"cart/pkg/utils"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 )
 
-type ICartController interface {
-	AddItem(w http.ResponseWriter, r *http.Request)
-	CartClear(w http.ResponseWriter, r *http.Request)
-	DeleteItem(w http.ResponseWriter, r *http.Request)
-	CartList(w http.ResponseWriter, r *http.Request)
+type ICartUsecase interface {
+	AddItem(ctx context.Context, addItem usecase.AddItemDTO) error
+	DeleteItem(ctx context.Context, delItem usecase.DeleteItemDTO) error
+	GetItemsByUserID(ctx context.Context, userID models.UserID) (usecase.ListItemsDTO, error)
+	ClearCartByUserID(ctx context.Context, userID models.UserID) error
 }
 
 type CartController struct {
-	cartUsecase usecase.ICartUsecase
+	cartUsecase ICartUsecase
 }
 
-func NewCartController(us usecase.ICartUsecase) *CartController {
+func NewCartController(us ICartUsecase) *CartController {
 	return &CartController{cartUsecase: us}
 }
 

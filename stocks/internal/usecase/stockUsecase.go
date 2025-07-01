@@ -7,16 +7,21 @@ import (
 	"stocks/internal/repository"
 )
 
-type IStockUsecase interface {
-	AddStock(ctx context.Context, stock AddStockDTO) error
-	DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error
-	GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error)
-	GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error)
+type IStockRepo interface {
+	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
+	AddStock(ctx context.Context, stock models.Stock) error
+	UpdateStock(ctx context.Context, stock models.Stock) error
+	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error
+	GetItemsByLocation(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error)
+}
+
+type IPgTxManager interface {
+	WithTx(ctx context.Context, fn func(IStockRepo) error) error
 }
 
 type StockUsecase struct {
-	stockRepo repository.IStockRepo
-	trManager repository.IPgTxManager
+	stockRepo IStockRepo
+	trManager IPgTxManager
 }
 
 var (
@@ -24,12 +29,12 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo repository.IStockRepo, trManager repository.IPgTxManager) *StockUsecase {
+func NewStockUsecase(repo IStockRepo, trManager IPgTxManager) *StockUsecase {
 	return &StockUsecase{stockRepo: repo, trManager: trManager}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	return u.trManager.WithTx(ctx, func(repo IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
 			if item.Stock.ID == 0 {
@@ -90,7 +95,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 		Offset:   offset,
 	}
 
-	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo IStockRepo) error {
 		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
@@ -123,7 +128,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
 	var stockDTO StockDTO
-	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
 			if item.SKU.ID == 0 {

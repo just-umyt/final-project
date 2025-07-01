@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type ICartController interface {
+	AddItem(w http.ResponseWriter, r *http.Request)
+	CartClear(w http.ResponseWriter, r *http.Request)
+	DeleteItem(w http.ResponseWriter, r *http.Request)
+	CartList(w http.ResponseWriter, r *http.Request)
+}
+
 type ServerConfig struct {
 	Address           string
 	Handler           http.Handler

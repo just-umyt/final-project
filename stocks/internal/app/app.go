@@ -51,7 +51,7 @@ func RunApp() error {
 	}
 	defer dbPool.Close()
 
-	trxManager := repository.NewPgTxManager(dbPool)
+	trxManager := postgres.NewPgTxManager(dbPool)
 
 	stockRepo := repository.NewStockRepository(dbPool)
 

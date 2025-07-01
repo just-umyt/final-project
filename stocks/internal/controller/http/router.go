@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type IStockController interface {
+	AddStock(w http.ResponseWriter, r *http.Request)
+	DeleteStockBySKU(w http.ResponseWriter, r *http.Request)
+	GetItemsByLocation(w http.ResponseWriter, r *http.Request)
+	GetItemBySKU(w http.ResponseWriter, r *http.Request)
+}
+
 type ServerConfig struct {
 	Address           string
 	Handler           http.Handler

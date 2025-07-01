@@ -15,14 +15,14 @@ type IDBQuery interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 }
 
-type ICartRepo interface {
-	GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error)
-	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
-	AddItem(ctx context.Context, cart models.Cart) error
-	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
-	GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error)
-	ClearCartByUserID(ctx context.Context, userID models.UserID) error
-}
+// type ICartRepo interface {
+// 	GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error)
+// 	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
+// 	AddItem(ctx context.Context, cart models.Cart) error
+// 	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
+// 	GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error)
+// 	ClearCartByUserID(ctx context.Context, userID models.UserID) error
+// }
 
 type CartRepo struct {
 	db IDBQuery
