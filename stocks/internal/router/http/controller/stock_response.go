@@ -1,4 +1,4 @@
-package http
+package controller
 
 type StockByLocResponse struct {
 	Items      []ItemResponse `json:"stocks"`

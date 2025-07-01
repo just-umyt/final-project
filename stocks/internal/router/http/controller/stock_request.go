@@ -1,4 +1,4 @@
-package http
+package controller
 
 type AddStockRequest struct {
 	SKUID    uint32 `json:"sku"`

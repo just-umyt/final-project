@@ -2,7 +2,8 @@ package app
 
 import (
 	"cart/internal/config"
-	myHttp "cart/internal/controller/http"
+	myHttp "cart/internal/router/http"
+	"cart/internal/router/http/controller"
 	"log"
 
 	"cart/internal/repository"
@@ -67,7 +68,7 @@ func RunApp() error {
 
 	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
 
-	controller := myHttp.NewCartController(cartUsecase)
+	controller := controller.NewCartController(cartUsecase)
 
 	newMux := myHttp.NewMux(controller)
 

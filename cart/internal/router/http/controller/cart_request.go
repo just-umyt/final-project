@@ -1,4 +1,4 @@
-package http
+package controller
 
 type AddItemRequest struct {
 	UserID int64  `json:"userId"`

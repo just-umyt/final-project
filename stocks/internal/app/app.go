@@ -8,8 +8,9 @@ import (
 	"os"
 	"os/signal"
 	"stocks/internal/config"
-	myHttp "stocks/internal/controller/http"
 	"stocks/internal/repository"
+	myHttp "stocks/internal/router/http"
+	"stocks/internal/router/http/controller"
 	"stocks/internal/usecase"
 	"stocks/pkg/postgres"
 	"strconv"
@@ -57,7 +58,7 @@ func RunApp() error {
 
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager)
 
-	controller := myHttp.NewStockController(stockUsecase)
+	controller := controller.NewStockController(stockUsecase)
 
 	newMux := myHttp.NewMux(controller)
 

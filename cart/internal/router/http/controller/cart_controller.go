@@ -1,4 +1,4 @@
-package http
+package controller
 
 import (
 	"cart/internal/models"
@@ -11,6 +11,8 @@ import (
 	"net/http"
 )
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s cart_controller.go  -g
 type ICartUsecase interface {
 	AddItem(ctx context.Context, addItem usecase.AddItemDTO) error
 	DeleteItem(ctx context.Context, delItem usecase.DeleteItemDTO) error
