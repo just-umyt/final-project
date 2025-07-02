@@ -5,26 +5,12 @@ import (
 	"errors"
 	"stocks/internal/models"
 	"stocks/internal/repository"
+	"stocks/internal/trManager"
 )
 
-//go:generate mkdir -p mock
-//go:generate minimock -o ./mock/ -s .go  -g
-type IStockRepo interface {
-	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
-	AddStock(ctx context.Context, stock models.Stock) error
-	UpdateStock(ctx context.Context, stock models.Stock) error
-	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error
-	GetItemsByLocation(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error)
-}
-
-//go:generate minimock -o ./mock/ -s .go  -g
-type IPgTxManager interface {
-	WithTx(ctx context.Context, fn func(IStockRepo) error) error
-}
-
 type StockUsecase struct {
-	stockRepo IStockRepo
-	trManager IPgTxManager
+	stockRepo trManager.IStockRepo
+	trManager trManager.IPgTxManager
 }
 
 var (
@@ -32,12 +18,12 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo IStockRepo, trManager IPgTxManager) *StockUsecase {
+func NewStockUsecase(repo trManager.IStockRepo, trManager trManager.IPgTxManager) *StockUsecase {
 	return &StockUsecase{stockRepo: repo, trManager: trManager}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.trManager.WithTx(ctx, func(repo IStockRepo) error {
+	return u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
 			if item.Stock.ID == 0 {
@@ -98,7 +84,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 		Offset:   offset,
 	}
 
-	err := u.trManager.WithTx(ctx, func(repo IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
 		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
@@ -131,7 +117,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
 	var stockDTO StockDTO
-	err := u.trManager.WithTx(ctx, func(repo IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
 			if item.SKU.ID == 0 {

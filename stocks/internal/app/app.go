@@ -11,6 +11,7 @@ import (
 	"stocks/internal/repository"
 	myHttp "stocks/internal/router/http"
 	"stocks/internal/router/http/controller"
+	"stocks/internal/trManager"
 	"stocks/internal/usecase"
 	"stocks/pkg/postgres"
 	"strconv"
@@ -52,7 +53,7 @@ func RunApp() error {
 	}
 	defer dbPool.Close()
 
-	trxManager := postgres.NewPgTxManager(dbPool)
+	trxManager := trManager.NewPgTxManager(dbPool)
 
 	stockRepo := repository.NewStockRepository(dbPool)
 
