@@ -13,7 +13,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// IStockRepoMock implements mm_usecase.IStockRepo
+// IStockRepoMock implements mm_trManager.IStockRepo
 type IStockRepoMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
@@ -54,7 +54,7 @@ type IStockRepoMock struct {
 	UpdateStockMock          mIStockRepoMockUpdateStock
 }
 
-// NewIStockRepoMock returns a mock for mm_usecase.IStockRepo
+// NewIStockRepoMock returns a mock for mm_trManager.IStockRepo
 func NewIStockRepoMock(t minimock.Tester) *IStockRepoMock {
 	m := &IStockRepoMock{t: t}
 
@@ -294,7 +294,7 @@ func (mmAddStock *mIStockRepoMockAddStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// AddStock implements mm_usecase.IStockRepo
+// AddStock implements mm_trManager.IStockRepo
 func (mmAddStock *IStockRepoMock) AddStock(ctx context.Context, stock models.Stock) (err error) {
 	mm_atomic.AddUint64(&mmAddStock.beforeAddStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddStock.afterAddStockCounter, 1)
@@ -662,7 +662,7 @@ func (mmDeleteStock *mIStockRepoMockDeleteStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// DeleteStock implements mm_usecase.IStockRepo
+// DeleteStock implements mm_trManager.IStockRepo
 func (mmDeleteStock *IStockRepoMock) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (err error) {
 	mm_atomic.AddUint64(&mmDeleteStock.beforeDeleteStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmDeleteStock.afterDeleteStockCounter, 1)
@@ -1010,7 +1010,7 @@ func (mmGetItemBySKU *mIStockRepoMockGetItemBySKU) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// GetItemBySKU implements mm_usecase.IStockRepo
+// GetItemBySKU implements mm_trManager.IStockRepo
 func (mmGetItemBySKU *IStockRepoMock) GetItemBySKU(ctx context.Context, skuID models.SKUID) (i1 models.Item, err error) {
 	mm_atomic.AddUint64(&mmGetItemBySKU.beforeGetItemBySKUCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetItemBySKU.afterGetItemBySKUCounter, 1)
@@ -1353,7 +1353,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) invocationsDone()
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// GetItemsByLocation implements mm_usecase.IStockRepo
+// GetItemsByLocation implements mm_trManager.IStockRepo
 func (mmGetItemsByLocation *IStockRepoMock) GetItemsByLocation(ctx context.Context, param repository.GetStockByLocation) (ia1 []models.Item, err error) {
 	mm_atomic.AddUint64(&mmGetItemsByLocation.beforeGetItemsByLocationCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetItemsByLocation.afterGetItemsByLocationCounter, 1)
@@ -1695,7 +1695,7 @@ func (mmUpdateStock *mIStockRepoMockUpdateStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// UpdateStock implements mm_usecase.IStockRepo
+// UpdateStock implements mm_trManager.IStockRepo
 func (mmUpdateStock *IStockRepoMock) UpdateStock(ctx context.Context, stock models.Stock) (err error) {
 	mm_atomic.AddUint64(&mmUpdateStock.beforeUpdateStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmUpdateStock.afterUpdateStockCounter, 1)
