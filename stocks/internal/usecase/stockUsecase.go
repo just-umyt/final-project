@@ -7,6 +7,8 @@ import (
 	"stocks/internal/repository"
 )
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go  -g
 type IStockRepo interface {
 	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
 	AddStock(ctx context.Context, stock models.Stock) error
@@ -15,6 +17,7 @@ type IStockRepo interface {
 	GetItemsByLocation(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error)
 }
 
+//go:generate minimock -o ./mock/ -s .go  -g
 type IPgTxManager interface {
 	WithTx(ctx context.Context, fn func(IStockRepo) error) error
 }
