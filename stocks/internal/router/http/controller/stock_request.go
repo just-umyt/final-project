@@ -1,25 +1,25 @@
 package controller
 
 type AddStockRequest struct {
-	SKUID    uint32 `json:"sku"`
-	UserID   int64  `json:"userId"`
-	Count    uint16 `json:"count"`
-	Price    uint32 `json:"price"`
-	Location string `json:"location"`
+	SKUID    uint32 `json:"sku" validate:"required"`
+	UserID   int64  `json:"userId" validate:"required"`
+	Count    uint16 `json:"count" validate:"required"`
+	Price    uint32 `json:"price" validate:"required"`
+	Location string `json:"location" validate:"required"`
 }
 
 type DeleteStockRequest struct {
-	UserID int64  `json:"userId"`
-	SKUID  uint32 `json:"sku"`
+	UserID int64  `json:"userId" validate:"required"`
+	SKUID  uint32 `json:"sku" validate:"required"`
 }
 
 type GetItemsByLocRequest struct {
-	UserID      int64  `json:"userId"`
-	Location    string `json:"location"`
-	PageSize    int64  `json:"pageSize"`
-	CurrentPage int64  `json:"currentPage"`
+	UserID      int64  `json:"userId" validate:"required"`
+	Location    string `json:"location" validate:"required"`
+	PageSize    int64  `json:"pageSize" validate:"required"`
+	CurrentPage int64  `json:"currentPage" validate:"required"`
 }
 
 type GetItemBySKURequest struct {
-	SKU uint32 `json:"sku"`
+	SKU uint32 `json:"sku" validate:"required"`
 }
