@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"stocks/internal/models"
@@ -70,17 +71,25 @@ func TestAddStock(t *testing.T) {
 			},
 			wantCode: http.StatusNotFound,
 		},
+		{
+			name: "sql error",
+			body: AddStockRequest{
+				SKUID:    20000,
+				UserID:   1,
+				Count:    10,
+				Price:    100,
+				Location: "AG",
+			},
+			wantCode: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqBody, err := json.Marshal(tt.body)
+			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
 				t.Errorf("failed converting STRUCT to BYTE")
 			}
-
-			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "//stocks/item/add", bytes.NewReader(reqBody))
 
 			controller.AddStock(w, req)
 
@@ -144,17 +153,22 @@ func TestDeleteStockBySKU(t *testing.T) {
 			},
 			wantCode: http.StatusNotFound,
 		},
+		{
+			name: "sql error",
+			body: DeleteStockRequest{
+				UserID: 1,
+				SKUID:  20000,
+			},
+			wantCode: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqBody, err := json.Marshal(tt.body)
+			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
 				t.Errorf("failed converting STRUCT to BYTE")
 			}
-
-			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/stocks/item/delete", bytes.NewReader(reqBody))
 
 			controller.DeleteStockBySKU(w, req)
 
@@ -174,7 +188,13 @@ func TestGetItemsByLocation(t *testing.T) {
 		usecaseMock.MinimockFinish()
 	})
 
-	usecaseMock.GetStocksByLocationMock.Return(usecase.ItemsByLocDTO{Stocks: []usecase.StockDTO{{Count: 1}}}, nil)
+	usecaseMock.GetStocksByLocationMock.Set(func(ctx context.Context, param usecase.GetItemByLocDTO) (usecase.ItemsByLocDTO, error) {
+		if param.UserID != 1 {
+			return usecase.ItemsByLocDTO{}, errors.New("sql err")
+		}
+
+		return usecase.ItemsByLocDTO{Stocks: []usecase.StockDTO{{Count: 1}}}, nil
+	})
 
 	tests := []struct {
 		name     string
@@ -203,19 +223,26 @@ func TestGetItemsByLocation(t *testing.T) {
 			},
 			wantCode: http.StatusBadRequest,
 		},
+		{
+			name: "sql err",
+			body: GetItemsByLocRequest{
+				UserID:      2,
+				Location:    "AG",
+				PageSize:    1,
+				CurrentPage: 1,
+			},
+			wantCode: http.StatusInternalServerError,
+		},
 	}
 
 	controller := NewStockController(usecaseMock)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqBody, err := json.Marshal(tt.body)
+			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
 				t.Errorf("failed converting STRUCT to BYTE")
 			}
-
-			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/stocks/list/location", bytes.NewReader(reqBody))
 
 			controller.GetItemsByLocation(w, req)
 
@@ -246,7 +273,7 @@ func TestGetItemBySKU(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		body     GetItemBySKURequest
+		body     any
 		wantCode int
 	}{
 		{
@@ -258,13 +285,20 @@ func TestGetItemBySKU(t *testing.T) {
 		},
 		{
 			name:     "bad request",
-			body:     GetItemBySKURequest{},
-			wantCode: 400,
+			body:     `{}`,
+			wantCode: http.StatusBadRequest,
 		},
 		{
 			name:     "not found",
 			body:     GetItemBySKURequest{SKU: 1},
-			wantCode: 404,
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name: "sql err",
+			body: GetItemBySKURequest{
+				SKU: 20000,
+			},
+			wantCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -288,9 +322,25 @@ func TestGetItemBySKU(t *testing.T) {
 
 }
 
+func generateWriterRequest(body any) (*httptest.ResponseRecorder, *http.Request, error) {
+	reqBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, errors.New("failed converting STRUCT to BYTE")
+	}
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(reqBody))
+
+	return w, req, nil
+}
+
 func notFoundCheck(i models.SKUID) error {
-	if i < 1001 || i > 10101 {
+	if i < 1001 {
 		return usecase.ErrNotFound
+	}
+
+	if i > 10101 {
+		return errors.New("sql error")
 	}
 
 	return nil

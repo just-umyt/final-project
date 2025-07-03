@@ -162,12 +162,6 @@ func (c *StockController) GetItemBySKU(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.IsValid(req); err != nil {
-		utils.ErrorResponse(w, err, http.StatusBadRequest)
-
-		return
-	}
-
 	skuID := models.SKUID(req.SKU)
 
 	item, err := c.stockUsecase.GetItemBySKU(r.Context(), skuID)

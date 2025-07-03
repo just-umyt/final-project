@@ -21,5 +21,5 @@ type GetItemsByLocRequest struct {
 }
 
 type GetItemBySKURequest struct {
-	SKU uint32 `json:"sku" validate:"required"`
+	SKU uint32 `json:"sku"`
 }
