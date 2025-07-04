@@ -2,10 +2,12 @@
 
 package mock
 
+//go:generate minimock -i stocks/internal/repository.IStockRepo -o i_stock_repo.go -n IStockRepoMock -p mock
+
 import (
 	"context"
 	"stocks/internal/models"
-	"stocks/internal/repository"
+	mm_repository "stocks/internal/repository"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -13,7 +15,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// IStockRepoMock implements mm_trManager.IStockRepo
+// IStockRepoMock implements mm_repository.IStockRepo
 type IStockRepoMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
@@ -39,9 +41,9 @@ type IStockRepoMock struct {
 	beforeGetItemBySKUCounter uint64
 	GetItemBySKUMock          mIStockRepoMockGetItemBySKU
 
-	funcGetItemsByLocation          func(ctx context.Context, param repository.GetStockByLocation) (ia1 []models.Item, err error)
+	funcGetItemsByLocation          func(ctx context.Context, param mm_repository.GetStockByLocation) (ia1 []models.Item, err error)
 	funcGetItemsByLocationOrigin    string
-	inspectFuncGetItemsByLocation   func(ctx context.Context, param repository.GetStockByLocation)
+	inspectFuncGetItemsByLocation   func(ctx context.Context, param mm_repository.GetStockByLocation)
 	afterGetItemsByLocationCounter  uint64
 	beforeGetItemsByLocationCounter uint64
 	GetItemsByLocationMock          mIStockRepoMockGetItemsByLocation
@@ -54,7 +56,7 @@ type IStockRepoMock struct {
 	UpdateStockMock          mIStockRepoMockUpdateStock
 }
 
-// NewIStockRepoMock returns a mock for mm_trManager.IStockRepo
+// NewIStockRepoMock returns a mock for mm_repository.IStockRepo
 func NewIStockRepoMock(t minimock.Tester) *IStockRepoMock {
 	m := &IStockRepoMock{t: t}
 
@@ -294,7 +296,7 @@ func (mmAddStock *mIStockRepoMockAddStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// AddStock implements mm_trManager.IStockRepo
+// AddStock implements mm_repository.IStockRepo
 func (mmAddStock *IStockRepoMock) AddStock(ctx context.Context, stock models.Stock) (err error) {
 	mm_atomic.AddUint64(&mmAddStock.beforeAddStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddStock.afterAddStockCounter, 1)
@@ -662,7 +664,7 @@ func (mmDeleteStock *mIStockRepoMockDeleteStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// DeleteStock implements mm_trManager.IStockRepo
+// DeleteStock implements mm_repository.IStockRepo
 func (mmDeleteStock *IStockRepoMock) DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) (err error) {
 	mm_atomic.AddUint64(&mmDeleteStock.beforeDeleteStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmDeleteStock.afterDeleteStockCounter, 1)
@@ -1010,7 +1012,7 @@ func (mmGetItemBySKU *mIStockRepoMockGetItemBySKU) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// GetItemBySKU implements mm_trManager.IStockRepo
+// GetItemBySKU implements mm_repository.IStockRepo
 func (mmGetItemBySKU *IStockRepoMock) GetItemBySKU(ctx context.Context, skuID models.SKUID) (i1 models.Item, err error) {
 	mm_atomic.AddUint64(&mmGetItemBySKU.beforeGetItemBySKUCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetItemBySKU.afterGetItemBySKUCounter, 1)
@@ -1167,13 +1169,13 @@ type IStockRepoMockGetItemsByLocationExpectation struct {
 // IStockRepoMockGetItemsByLocationParams contains parameters of the IStockRepo.GetItemsByLocation
 type IStockRepoMockGetItemsByLocationParams struct {
 	ctx   context.Context
-	param repository.GetStockByLocation
+	param mm_repository.GetStockByLocation
 }
 
 // IStockRepoMockGetItemsByLocationParamPtrs contains pointers to parameters of the IStockRepo.GetItemsByLocation
 type IStockRepoMockGetItemsByLocationParamPtrs struct {
 	ctx   *context.Context
-	param *repository.GetStockByLocation
+	param *mm_repository.GetStockByLocation
 }
 
 // IStockRepoMockGetItemsByLocationResults contains results of the IStockRepo.GetItemsByLocation
@@ -1200,7 +1202,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Optional() *mISto
 }
 
 // Expect sets up expected params for IStockRepo.GetItemsByLocation
-func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Expect(ctx context.Context, param repository.GetStockByLocation) *mIStockRepoMockGetItemsByLocation {
+func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Expect(ctx context.Context, param mm_repository.GetStockByLocation) *mIStockRepoMockGetItemsByLocation {
 	if mmGetItemsByLocation.mock.funcGetItemsByLocation != nil {
 		mmGetItemsByLocation.mock.t.Fatalf("IStockRepoMock.GetItemsByLocation mock is already set by Set")
 	}
@@ -1248,7 +1250,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) ExpectCtxParam1(c
 }
 
 // ExpectParamParam2 sets up expected param param for IStockRepo.GetItemsByLocation
-func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) ExpectParamParam2(param repository.GetStockByLocation) *mIStockRepoMockGetItemsByLocation {
+func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) ExpectParamParam2(param mm_repository.GetStockByLocation) *mIStockRepoMockGetItemsByLocation {
 	if mmGetItemsByLocation.mock.funcGetItemsByLocation != nil {
 		mmGetItemsByLocation.mock.t.Fatalf("IStockRepoMock.GetItemsByLocation mock is already set by Set")
 	}
@@ -1271,7 +1273,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) ExpectParamParam2
 }
 
 // Inspect accepts an inspector function that has same arguments as the IStockRepo.GetItemsByLocation
-func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Inspect(f func(ctx context.Context, param repository.GetStockByLocation)) *mIStockRepoMockGetItemsByLocation {
+func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Inspect(f func(ctx context.Context, param mm_repository.GetStockByLocation)) *mIStockRepoMockGetItemsByLocation {
 	if mmGetItemsByLocation.mock.inspectFuncGetItemsByLocation != nil {
 		mmGetItemsByLocation.mock.t.Fatalf("Inspect function is already set for IStockRepoMock.GetItemsByLocation")
 	}
@@ -1296,7 +1298,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Return(ia1 []mode
 }
 
 // Set uses given function f to mock the IStockRepo.GetItemsByLocation method
-func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Set(f func(ctx context.Context, param repository.GetStockByLocation) (ia1 []models.Item, err error)) *IStockRepoMock {
+func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Set(f func(ctx context.Context, param mm_repository.GetStockByLocation) (ia1 []models.Item, err error)) *IStockRepoMock {
 	if mmGetItemsByLocation.defaultExpectation != nil {
 		mmGetItemsByLocation.mock.t.Fatalf("Default expectation is already set for the IStockRepo.GetItemsByLocation method")
 	}
@@ -1312,7 +1314,7 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) Set(f func(ctx co
 
 // When sets expectation for the IStockRepo.GetItemsByLocation which will trigger the result defined by the following
 // Then helper
-func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) When(ctx context.Context, param repository.GetStockByLocation) *IStockRepoMockGetItemsByLocationExpectation {
+func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) When(ctx context.Context, param mm_repository.GetStockByLocation) *IStockRepoMockGetItemsByLocationExpectation {
 	if mmGetItemsByLocation.mock.funcGetItemsByLocation != nil {
 		mmGetItemsByLocation.mock.t.Fatalf("IStockRepoMock.GetItemsByLocation mock is already set by Set")
 	}
@@ -1353,8 +1355,8 @@ func (mmGetItemsByLocation *mIStockRepoMockGetItemsByLocation) invocationsDone()
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// GetItemsByLocation implements mm_trManager.IStockRepo
-func (mmGetItemsByLocation *IStockRepoMock) GetItemsByLocation(ctx context.Context, param repository.GetStockByLocation) (ia1 []models.Item, err error) {
+// GetItemsByLocation implements mm_repository.IStockRepo
+func (mmGetItemsByLocation *IStockRepoMock) GetItemsByLocation(ctx context.Context, param mm_repository.GetStockByLocation) (ia1 []models.Item, err error) {
 	mm_atomic.AddUint64(&mmGetItemsByLocation.beforeGetItemsByLocationCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetItemsByLocation.afterGetItemsByLocationCounter, 1)
 
@@ -1695,7 +1697,7 @@ func (mmUpdateStock *mIStockRepoMockUpdateStock) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// UpdateStock implements mm_trManager.IStockRepo
+// UpdateStock implements mm_repository.IStockRepo
 func (mmUpdateStock *IStockRepoMock) UpdateStock(ctx context.Context, stock models.Stock) (err error) {
 	mm_atomic.AddUint64(&mmUpdateStock.beforeUpdateStockCounter, 1)
 	defer mm_atomic.AddUint64(&mmUpdateStock.afterUpdateStockCounter, 1)

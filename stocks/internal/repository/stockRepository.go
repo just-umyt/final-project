@@ -15,6 +15,16 @@ type IDBQuery interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 }
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go
+type IStockRepo interface {
+	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
+	AddStock(ctx context.Context, stock models.Stock) error
+	UpdateStock(ctx context.Context, stock models.Stock) error
+	DeleteStock(ctx context.Context, skuID models.SKUID, userID models.UserID) error
+	GetItemsByLocation(ctx context.Context, param GetStockByLocation) ([]models.Item, error)
+}
+
 type StockRepo struct {
 	db IDBQuery
 }

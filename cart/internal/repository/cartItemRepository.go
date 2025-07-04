@@ -15,14 +15,15 @@ type IDBQuery interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 }
 
-// type ICartRepo interface {
-// 	GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error)
-// 	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
-// 	AddItem(ctx context.Context, cart models.Cart) error
-// 	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
-// 	GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error)
-// 	ClearCartByUserID(ctx context.Context, userID models.UserID) error
-// }
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go  -g
+type ICartRepo interface {
+	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
+	AddItem(ctx context.Context, cart models.Cart) error
+	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
+	GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error)
+	ClearCartByUserID(ctx context.Context, userID models.UserID) error
+}
 
 type CartRepo struct {
 	db IDBQuery
@@ -34,22 +35,8 @@ func NewCartRepository(db IDBQuery) *CartRepo {
 	return &CartRepo{db: db}
 }
 
-func (c *CartRepo) GetCartInfoByUserID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, uint16, error) {
-	query := `SELECT id, count FROM cart WHERE user_id = $1 AND sku_id = $2`
-
-	var cartID models.CartID
-	var count uint16
-
-	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&cartID, &count)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return 0, 0, err
-	}
-
-	return cartID, count, nil
-}
-
 func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) error {
-	query := `UPDATE cart SET count = $1 WHERE user_id = $2 AND sku_id = $3`
+	query := `UPDATE cart SET count = count + $1 WHERE user_id = $2 AND sku_id = $3`
 
 	tag, err := c.db.Exec(ctx, query, cart.Count, cart.UserID, cart.SKUID)
 	if err != nil {
@@ -66,13 +53,9 @@ func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) err
 func (c *CartRepo) AddItem(ctx context.Context, cart models.Cart) error {
 	query := `INSERT INTO cart (user_id, sku_id, count) VALUES ($1, $2, $3)`
 
-	tag, err := c.db.Exec(ctx, query, cart.UserID, cart.SKUID, cart.Count)
+	_, err := c.db.Exec(ctx, query, cart.UserID, cart.SKUID, cart.Count)
 	if err != nil {
 		return err
-	}
-
-	if tag.RowsAffected() < 1 {
-		return ErrNotFound
 	}
 
 	return nil

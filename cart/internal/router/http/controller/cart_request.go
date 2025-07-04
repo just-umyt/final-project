@@ -1,14 +1,14 @@
 package controller
 
 type AddItemRequest struct {
-	UserID int64  `json:"userId" validate:"required,min=1, "`
-	SKUID  uint32 `json:"sku" validate:"required, min=4"`
-	Count  uint16 `json:"count" validate:"required, min=1"`
+	UserID int64  `json:"userId" validate:"required"`
+	SKUID  uint32 `json:"sku" validate:"required"`
+	Count  uint16 `json:"count" validate:"required"`
 }
 
 type DeleteItemRequest struct {
-	UserID int64  `json:"userId"`
-	SKUID  uint32 `json:"sku"`
+	UserID int64  `json:"userId" validate:"required"`
+	SKUID  uint32 `json:"sku" validate:"required"`
 }
 
 type UserIDRequest struct {

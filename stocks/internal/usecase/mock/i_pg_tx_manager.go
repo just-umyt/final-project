@@ -4,7 +4,7 @@ package mock
 
 import (
 	"context"
-	mm_trManager "stocks/internal/trManager"
+	"stocks/internal/repository"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -12,20 +12,20 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// IPgTxManagerMock implements mm_trManager.IPgTxManager
+// IPgTxManagerMock implements mm_usecase.IPgTxManager
 type IPgTxManagerMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcWithTx          func(ctx context.Context, fn func(mm_trManager.IStockRepo) error) (err error)
+	funcWithTx          func(ctx context.Context, fn func(repository.IStockRepo) error) (err error)
 	funcWithTxOrigin    string
-	inspectFuncWithTx   func(ctx context.Context, fn func(mm_trManager.IStockRepo) error)
+	inspectFuncWithTx   func(ctx context.Context, fn func(repository.IStockRepo) error)
 	afterWithTxCounter  uint64
 	beforeWithTxCounter uint64
 	WithTxMock          mIPgTxManagerMockWithTx
 }
 
-// NewIPgTxManagerMock returns a mock for mm_trManager.IPgTxManager
+// NewIPgTxManagerMock returns a mock for mm_usecase.IPgTxManager
 func NewIPgTxManagerMock(t minimock.Tester) *IPgTxManagerMock {
 	m := &IPgTxManagerMock{t: t}
 
@@ -68,13 +68,13 @@ type IPgTxManagerMockWithTxExpectation struct {
 // IPgTxManagerMockWithTxParams contains parameters of the IPgTxManager.WithTx
 type IPgTxManagerMockWithTxParams struct {
 	ctx context.Context
-	fn  func(mm_trManager.IStockRepo) error
+	fn  func(repository.IStockRepo) error
 }
 
 // IPgTxManagerMockWithTxParamPtrs contains pointers to parameters of the IPgTxManager.WithTx
 type IPgTxManagerMockWithTxParamPtrs struct {
 	ctx *context.Context
-	fn  *func(mm_trManager.IStockRepo) error
+	fn  *func(repository.IStockRepo) error
 }
 
 // IPgTxManagerMockWithTxResults contains results of the IPgTxManager.WithTx
@@ -100,7 +100,7 @@ func (mmWithTx *mIPgTxManagerMockWithTx) Optional() *mIPgTxManagerMockWithTx {
 }
 
 // Expect sets up expected params for IPgTxManager.WithTx
-func (mmWithTx *mIPgTxManagerMockWithTx) Expect(ctx context.Context, fn func(mm_trManager.IStockRepo) error) *mIPgTxManagerMockWithTx {
+func (mmWithTx *mIPgTxManagerMockWithTx) Expect(ctx context.Context, fn func(repository.IStockRepo) error) *mIPgTxManagerMockWithTx {
 	if mmWithTx.mock.funcWithTx != nil {
 		mmWithTx.mock.t.Fatalf("IPgTxManagerMock.WithTx mock is already set by Set")
 	}
@@ -148,7 +148,7 @@ func (mmWithTx *mIPgTxManagerMockWithTx) ExpectCtxParam1(ctx context.Context) *m
 }
 
 // ExpectFnParam2 sets up expected param fn for IPgTxManager.WithTx
-func (mmWithTx *mIPgTxManagerMockWithTx) ExpectFnParam2(fn func(mm_trManager.IStockRepo) error) *mIPgTxManagerMockWithTx {
+func (mmWithTx *mIPgTxManagerMockWithTx) ExpectFnParam2(fn func(repository.IStockRepo) error) *mIPgTxManagerMockWithTx {
 	if mmWithTx.mock.funcWithTx != nil {
 		mmWithTx.mock.t.Fatalf("IPgTxManagerMock.WithTx mock is already set by Set")
 	}
@@ -171,7 +171,7 @@ func (mmWithTx *mIPgTxManagerMockWithTx) ExpectFnParam2(fn func(mm_trManager.ISt
 }
 
 // Inspect accepts an inspector function that has same arguments as the IPgTxManager.WithTx
-func (mmWithTx *mIPgTxManagerMockWithTx) Inspect(f func(ctx context.Context, fn func(mm_trManager.IStockRepo) error)) *mIPgTxManagerMockWithTx {
+func (mmWithTx *mIPgTxManagerMockWithTx) Inspect(f func(ctx context.Context, fn func(repository.IStockRepo) error)) *mIPgTxManagerMockWithTx {
 	if mmWithTx.mock.inspectFuncWithTx != nil {
 		mmWithTx.mock.t.Fatalf("Inspect function is already set for IPgTxManagerMock.WithTx")
 	}
@@ -196,7 +196,7 @@ func (mmWithTx *mIPgTxManagerMockWithTx) Return(err error) *IPgTxManagerMock {
 }
 
 // Set uses given function f to mock the IPgTxManager.WithTx method
-func (mmWithTx *mIPgTxManagerMockWithTx) Set(f func(ctx context.Context, fn func(mm_trManager.IStockRepo) error) (err error)) *IPgTxManagerMock {
+func (mmWithTx *mIPgTxManagerMockWithTx) Set(f func(ctx context.Context, fn func(repository.IStockRepo) error) (err error)) *IPgTxManagerMock {
 	if mmWithTx.defaultExpectation != nil {
 		mmWithTx.mock.t.Fatalf("Default expectation is already set for the IPgTxManager.WithTx method")
 	}
@@ -212,7 +212,7 @@ func (mmWithTx *mIPgTxManagerMockWithTx) Set(f func(ctx context.Context, fn func
 
 // When sets expectation for the IPgTxManager.WithTx which will trigger the result defined by the following
 // Then helper
-func (mmWithTx *mIPgTxManagerMockWithTx) When(ctx context.Context, fn func(mm_trManager.IStockRepo) error) *IPgTxManagerMockWithTxExpectation {
+func (mmWithTx *mIPgTxManagerMockWithTx) When(ctx context.Context, fn func(repository.IStockRepo) error) *IPgTxManagerMockWithTxExpectation {
 	if mmWithTx.mock.funcWithTx != nil {
 		mmWithTx.mock.t.Fatalf("IPgTxManagerMock.WithTx mock is already set by Set")
 	}
@@ -253,8 +253,8 @@ func (mmWithTx *mIPgTxManagerMockWithTx) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// WithTx implements mm_trManager.IPgTxManager
-func (mmWithTx *IPgTxManagerMock) WithTx(ctx context.Context, fn func(mm_trManager.IStockRepo) error) (err error) {
+// WithTx implements mm_usecase.IPgTxManager
+func (mmWithTx *IPgTxManagerMock) WithTx(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
 	mm_atomic.AddUint64(&mmWithTx.beforeWithTxCounter, 1)
 	defer mm_atomic.AddUint64(&mmWithTx.afterWithTxCounter, 1)
 

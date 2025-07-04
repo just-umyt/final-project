@@ -5,21 +5,22 @@ import (
 	"errors"
 	"stocks/internal/models"
 	"stocks/internal/repository"
-	"stocks/internal/trManager"
-	"stocks/internal/trManager/mock"
+	"stocks/internal/repository/mock"
+	txMock "stocks/internal/usecase/mock"
+
 	"testing"
 )
 
 func TestAddStock(t *testing.T) {
-	repo := mock.NewIStockRepoMock(t)
-	trx := mock.NewIPgTxManagerMock(t)
+	repoMock := mock.NewIStockRepoMock(t)
+	trxMock := txMock.NewIPgTxManagerMock(t)
 
 	t.Cleanup(func() {
-		repo.MinimockFinish()
-		trx.MinimockFinish()
+		repoMock.MinimockFinish()
+		trxMock.MinimockFinish()
 	})
 
-	repo.GetItemBySKUMock.Set(func(ctx context.Context, skuID models.SKUID) (i1 models.Item, err error) {
+	repoMock.GetItemBySKUMock.Set(func(ctx context.Context, skuID models.SKUID) (i1 models.Item, err error) {
 		switch skuID {
 		case 0:
 			return models.Item{}, repository.ErrNotFound
@@ -32,7 +33,7 @@ func TestAddStock(t *testing.T) {
 		return models.Item{Stock: models.Stock{ID: 3033}}, errors.New("sql err")
 	})
 
-	repo.AddStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
+	repoMock.AddStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
 		if stock.Count > 1 {
 			return repository.ErrNotFound
 		}
@@ -40,7 +41,7 @@ func TestAddStock(t *testing.T) {
 		return nil
 	})
 
-	repo.UpdateStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
+	repoMock.UpdateStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
 		if stock.Count > 1 {
 			return repository.ErrNotFound
 		}
@@ -48,11 +49,11 @@ func TestAddStock(t *testing.T) {
 		return nil
 	})
 
-	trx.WithTxMock.Set(func(ctx context.Context, fn func(trManager.IStockRepo) error) (err error) {
-		return fn(repo)
+	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
+		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repo, trx)
+	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
 		name      string
@@ -128,15 +129,15 @@ func TestAddStock(t *testing.T) {
 }
 
 func TestDeleteStockBySKU(t *testing.T) {
-	repo := mock.NewIStockRepoMock(t)
-	trx := mock.NewIPgTxManagerMock(t)
+	repoMock := mock.NewIStockRepoMock(t)
+	trxMock := txMock.NewIPgTxManagerMock(t)
 
 	t.Cleanup(func() {
-		repo.MinimockFinish()
-		trx.MinimockFinish()
+		repoMock.MinimockFinish()
+		trxMock.MinimockFinish()
 	})
 
-	repo.DeleteStockMock.Set(func(ctx context.Context, skuID models.SKUID, userID models.UserID) (err error) {
+	repoMock.DeleteStockMock.Set(func(ctx context.Context, skuID models.SKUID, userID models.UserID) (err error) {
 		if userID > 1 {
 			return repository.ErrNotFound
 		}
@@ -144,7 +145,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 		return nil
 	})
 
-	usecase := NewStockUsecase(repo, trx)
+	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
 		name      string
@@ -181,15 +182,15 @@ func TestDeleteStockBySKU(t *testing.T) {
 }
 
 func TestGetStockByLocation(t *testing.T) {
-	repo := mock.NewIStockRepoMock(t)
-	trx := mock.NewIPgTxManagerMock(t)
+	repoMock := mock.NewIStockRepoMock(t)
+	trxMock := txMock.NewIPgTxManagerMock(t)
 
 	t.Cleanup(func() {
-		repo.MinimockFinish()
-		trx.MinimockFinish()
+		repoMock.MinimockFinish()
+		trxMock.MinimockFinish()
 	})
 
-	repo.GetItemsByLocationMock.Set(func(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error) {
+	repoMock.GetItemsByLocationMock.Set(func(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error) {
 		if param.UserID > 1 {
 			return []models.Item{}, errors.New("sql error")
 		}
@@ -202,11 +203,11 @@ func TestGetStockByLocation(t *testing.T) {
 		}, nil
 	})
 
-	trx.WithTxMock.Set(func(ctx context.Context, fn func(trManager.IStockRepo) error) (err error) {
-		return fn(repo)
+	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
+		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repo, trx)
+	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
 		name      string
@@ -225,7 +226,7 @@ func TestGetStockByLocation(t *testing.T) {
 			body: GetItemByLocDTO{
 				UserID: 2,
 			},
-			wantError: false,
+			wantError: true,
 		},
 	}
 
@@ -241,15 +242,15 @@ func TestGetStockByLocation(t *testing.T) {
 }
 
 func TestGetItemBySKU(t *testing.T) {
-	repo := mock.NewIStockRepoMock(t)
-	trx := mock.NewIPgTxManagerMock(t)
+	repoMock := mock.NewIStockRepoMock(t)
+	trxMock := txMock.NewIPgTxManagerMock(t)
 
 	t.Cleanup(func() {
-		repo.MinimockFinish()
-		trx.MinimockFinish()
+		repoMock.MinimockFinish()
+		trxMock.MinimockFinish()
 	})
 
-	repo.GetItemBySKUMock.Set(func(ctx context.Context, skuID models.SKUID) (models.Item, error) {
+	repoMock.GetItemBySKUMock.Set(func(ctx context.Context, skuID models.SKUID) (models.Item, error) {
 		switch skuID {
 		case 1001:
 			return models.Item{}, nil
@@ -260,11 +261,11 @@ func TestGetItemBySKU(t *testing.T) {
 		}
 	})
 
-	trx.WithTxMock.Set(func(ctx context.Context, fn func(trManager.IStockRepo) error) (err error) {
-		return fn(repo)
+	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
+		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repo, trx)
+	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
 		name    string

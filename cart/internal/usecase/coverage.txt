@@ -1,0 +1,26 @@
+mode: set
+cart/internal/usecase/cartUsecase.go:33.112,35.2 1 1
+cart/internal/usecase/cartUsecase.go:37.78,39.16 2 1
+cart/internal/usecase/cartUsecase.go:39.16,41.3 1 1
+cart/internal/usecase/cartUsecase.go:43.2,43.32 1 1
+cart/internal/usecase/cartUsecase.go:43.32,45.3 1 1
+cart/internal/usecase/cartUsecase.go:47.2,47.71 1 1
+cart/internal/usecase/cartUsecase.go:47.71,55.45 3 1
+cart/internal/usecase/cartUsecase.go:55.45,57.4 1 1
+cart/internal/usecase/cartUsecase.go:59.3,59.13 1 1
+cart/internal/usecase/cartUsecase.go:63.84,65.44 2 1
+cart/internal/usecase/cartUsecase.go:65.44,67.3 1 1
+cart/internal/usecase/cartUsecase.go:69.2,69.12 1 1
+cart/internal/usecase/cartUsecase.go:72.105,76.16 3 1
+cart/internal/usecase/cartUsecase.go:76.16,78.3 1 1
+cart/internal/usecase/cartUsecase.go:80.2,80.29 1 1
+cart/internal/usecase/cartUsecase.go:80.29,82.17 2 1
+cart/internal/usecase/cartUsecase.go:82.17,84.4 1 0
+cart/internal/usecase/cartUsecase.go:86.3,88.29 2 1
+cart/internal/usecase/cartUsecase.go:88.29,92.4 2 1
+cart/internal/usecase/cartUsecase.go:93.3,95.51 3 1
+cart/internal/usecase/cartUsecase.go:98.2,98.18 1 1
+cart/internal/usecase/cartUsecase.go:101.90,102.71 1 1
+cart/internal/usecase/cartUsecase.go:102.71,104.45 2 1
+cart/internal/usecase/cartUsecase.go:104.45,106.4 1 1
+cart/internal/usecase/cartUsecase.go:108.3,108.13 1 1

@@ -4,6 +4,7 @@ import (
 	"cart/internal/models"
 	"cart/internal/usecase"
 	"cart/pkg/utils"
+	"cart/pkg/validation"
 	"context"
 	"encoding/json"
 	"errors"
@@ -32,6 +33,12 @@ func (c *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 	var req AddItemRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -94,6 +101,12 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return

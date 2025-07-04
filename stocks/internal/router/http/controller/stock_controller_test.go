@@ -20,11 +20,7 @@ func TestAddStock(t *testing.T) {
 	})
 
 	usecaseMock.AddStockMock.Set(func(ctx context.Context, stock usecase.AddStockDTO) error {
-		if err := notFoundCheck(stock.SKUID); err != nil {
-			return err
-		}
-
-		return nil
+		return idCheck(stock.SKUID)
 	})
 
 	controller := NewStockController(usecaseMock)
@@ -88,15 +84,13 @@ func TestAddStock(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
-				t.Errorf("failed converting STRUCT to BYTE")
+				t.Error(err)
 			}
 
 			controller.AddStock(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
-
-				return
 			}
 		})
 
@@ -111,11 +105,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 	})
 
 	usecaseMock.DeleteStockBySKUMock.Set(func(ctx context.Context, delStock usecase.DeleteStockDTO) (err error) {
-		if err := notFoundCheck(delStock.SKUID); err != nil {
-			return err
-		}
-
-		return nil
+		return idCheck(delStock.SKUID)
 	})
 
 	controller := NewStockController(usecaseMock)
@@ -167,15 +157,13 @@ func TestDeleteStockBySKU(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
-				t.Errorf("failed converting STRUCT to BYTE")
+				t.Error(err)
 			}
 
 			controller.DeleteStockBySKU(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
-
-				return
 			}
 		})
 	}
@@ -241,15 +229,13 @@ func TestGetItemsByLocation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			if err != nil {
-				t.Errorf("failed converting STRUCT to BYTE")
+				t.Error(err)
 			}
 
 			controller.GetItemsByLocation(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
-
-				return
 			}
 		})
 	}
@@ -262,7 +248,7 @@ func TestGetItemBySKU(t *testing.T) {
 	})
 
 	usecaseMock.GetItemBySKUMock.Set(func(ctx context.Context, sku models.SKUID) (s1 usecase.StockDTO, err error) {
-		if err := notFoundCheck(sku); err != nil {
+		if err := idCheck(sku); err != nil {
 			return usecase.StockDTO{}, err
 		}
 
@@ -305,7 +291,7 @@ func TestGetItemBySKU(t *testing.T) {
 	for _, tt := range tests {
 		reqBody, err := json.Marshal(tt.body)
 		if err != nil {
-			t.Errorf("failed converting STRUCT to BYTE")
+			t.Error(err)
 		}
 
 		w := httptest.NewRecorder()
@@ -315,8 +301,6 @@ func TestGetItemBySKU(t *testing.T) {
 
 		if w.Result().StatusCode != tt.wantCode {
 			t.Errorf("failed test with code :%d", w.Result().StatusCode)
-
-			return
 		}
 	}
 
@@ -334,7 +318,7 @@ func generateWriterRequest(body any) (*httptest.ResponseRecorder, *http.Request,
 	return w, req, nil
 }
 
-func notFoundCheck(i models.SKUID) error {
+func idCheck(i models.SKUID) error {
 	if i < 1001 {
 		return usecase.ErrNotFound
 	}

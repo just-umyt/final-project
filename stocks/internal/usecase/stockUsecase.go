@@ -5,12 +5,17 @@ import (
 	"errors"
 	"stocks/internal/models"
 	"stocks/internal/repository"
-	"stocks/internal/trManager"
 )
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock -s .go  -g
+type IPgTxManager interface {
+	WithTx(ctx context.Context, fn func(repository.IStockRepo) error) error
+}
+
 type StockUsecase struct {
-	stockRepo trManager.IStockRepo
-	trManager trManager.IPgTxManager
+	stockRepo repository.IStockRepo
+	trManager IPgTxManager
 }
 
 var (
@@ -18,12 +23,12 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo trManager.IStockRepo, trManager trManager.IPgTxManager) *StockUsecase {
+func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager) *StockUsecase {
 	return &StockUsecase{stockRepo: repo, trManager: trManager}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
+	return u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
 			if item.Stock.ID == 0 {
@@ -84,7 +89,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 		Offset:   offset,
 	}
 
-	err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
 		if err != nil {
 			return err
@@ -117,7 +122,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
 	var stockDTO StockDTO
-	err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error {
+	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)
 		if err != nil {
 			if item.SKU.ID == 0 {
