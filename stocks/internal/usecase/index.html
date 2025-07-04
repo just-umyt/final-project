@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">stocks/internal/usecase/stockUsecase.go (100.0%)</option>
+				<option value="file0">stocks/internal/usecase/stockUsecase.go (93.6%)</option>
 				
 				</select>
 			</div>
@@ -76,12 +76,17 @@ import (
         "errors"
         "stocks/internal/models"
         "stocks/internal/repository"
-        "stocks/internal/trManager"
 )
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock -s .go  -g
+type IPgTxManager interface {
+        WithTx(ctx context.Context, fn func(repository.IStockRepo) error) error
+}
+
 type StockUsecase struct {
-        stockRepo trManager.IStockRepo
-        trManager trManager.IPgTxManager
+        stockRepo repository.IStockRepo
+        trManager IPgTxManager
 }
 
 var (
@@ -89,12 +94,12 @@ var (
         ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo trManager.IStockRepo, trManager trManager.IPgTxManager) *StockUsecase <span class="cov8" title="1">{
+func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager) *StockUsecase <span class="cov8" title="1">{
         return &amp;StockUsecase{stockRepo: repo, trManager: trManager}
 }</span>
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error <span class="cov8" title="1">{
-        return u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error </span><span class="cov8" title="1">{
+        return u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error </span><span class="cov8" title="1">{
                 item, err := repo.GetItemBySKU(ctx, stock.SKUID)
                 if err != nil </span><span class="cov8" title="1">{
                         if item.Stock.ID == 0 </span><span class="cov8" title="1">{
@@ -115,14 +120,14 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error <s
                 switch item.Stock.UserID </span>{
                 case 0:<span class="cov8" title="1">
                         err := repo.AddStock(ctx, newItem)
-                        if errors.Is(err, repository.ErrNotFound) </span><span class="cov8" title="1">{
+                        if errors.Is(err, repository.ErrNotFound) </span><span class="cov0" title="0">{
                                 return ErrNotFound
                         }</span>
 
                         <span class="cov8" title="1">return err</span>
                 case stock.UserID:<span class="cov8" title="1">
                         err := repo.UpdateStock(ctx, newItem)
-                        if errors.Is(err, repository.ErrNotFound) </span><span class="cov8" title="1">{
+                        if errors.Is(err, repository.ErrNotFound) </span><span class="cov0" title="0">{
                                 return ErrNotFound
                         }</span>
 
@@ -155,7 +160,7 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
                 Offset:   offset,
         }
 
-        err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error </span><span class="cov8" title="1">{
+        err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error </span><span class="cov8" title="1">{
                 stocksFromRepo, err := repo.GetItemsByLocation(ctx, params)
                 if err != nil </span><span class="cov8" title="1">{
                         return err
@@ -188,12 +193,12 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) <span class="cov8" title="1">{
         var stockDTO StockDTO
-        err := u.trManager.WithTx(ctx, func(repo trManager.IStockRepo) error </span><span class="cov8" title="1">{
+        err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error </span><span class="cov8" title="1">{
                 item, err := repo.GetItemBySKU(ctx, sku)
                 if err != nil </span><span class="cov8" title="1">{
                         if item.SKU.ID == 0 </span><span class="cov8" title="1">{
                                 return ErrNotFound
-                        }</span> else<span class="cov8" title="1"> {
+                        }</span> else<span class="cov0" title="0"> {
                                 return err
                         }</span>
                 }

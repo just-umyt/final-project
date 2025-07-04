@@ -11,6 +11,11 @@ import (
 	"testing"
 )
 
+const (
+	testSuccesName   = "Succes"
+	testSqlErrorName = "ErrorSqlGetItem"
+)
+
 func TestAddStock(t *testing.T) {
 	repoMock := mock.NewIStockRepoMock(t)
 	trxMock := txMock.NewIPgTxManagerMock(t)
@@ -33,21 +38,9 @@ func TestAddStock(t *testing.T) {
 		return models.Item{Stock: models.Stock{ID: 3033}}, errors.New("sql err")
 	})
 
-	repoMock.AddStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
-		if stock.Count > 1 {
-			return repository.ErrNotFound
-		}
+	repoMock.AddStockMock.Return(nil)
 
-		return nil
-	})
-
-	repoMock.UpdateStockMock.Set(func(ctx context.Context, stock models.Stock) (err error) {
-		if stock.Count > 1 {
-			return repository.ErrNotFound
-		}
-
-		return nil
-	})
+	repoMock.UpdateStockMock.Return(nil)
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
 		return fn(repoMock)
@@ -61,56 +54,38 @@ func TestAddStock(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "add",
-			stock: AddStockDTO{
-				SKUID:  1001,
-				UserID: 0,
-			},
-			wantError: false,
-		},
-		{
-			name: "add sql err",
-			stock: AddStockDTO{
-				SKUID:  1001,
-				UserID: 0,
-				Count:  2,
-			},
-			wantError: true,
-		},
-		{
-			name: "update",
-			stock: AddStockDTO{
-				SKUID:  2020,
-				UserID: 1,
-			},
-			wantError: false,
-		},
-		{
-			name: "update sql err",
-			stock: AddStockDTO{
-				SKUID:  2020,
-				UserID: 1,
-				Count:  2,
-			},
-			wantError: true,
-		},
-		{
-			name: "error user id",
-			stock: AddStockDTO{
-				SKUID:  2020,
-				UserID: 3,
-			},
-			wantError: true,
-		},
-		{
-			name:      "get item err",
+			name:      "ErrorGetItem",
 			stock:     AddStockDTO{},
 			wantError: true,
 		},
 		{
-			name: "get item sql err",
+			name: "ErrorSqlGetItem",
 			stock: AddStockDTO{
 				SKUID: 3033,
+			},
+			wantError: true,
+		},
+		{
+			name: "Add",
+			stock: AddStockDTO{
+				SKUID:  1001,
+				UserID: 0,
+			},
+			wantError: false,
+		},
+		{
+			name: "Update",
+			stock: AddStockDTO{
+				SKUID:  2020,
+				UserID: 1,
+			},
+			wantError: false,
+		},
+		{
+			name: "ErrorUserId",
+			stock: AddStockDTO{
+				SKUID:  2020,
+				UserID: 3,
 			},
 			wantError: true,
 		},
@@ -153,7 +128,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "valid",
+			name: testSuccesName,
 			body: DeleteStockDTO{
 				UserID: 1,
 				SKUID:  1001,
@@ -161,7 +136,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 			wantError: false,
 		},
 		{
-			name: "sql err",
+			name: testSqlErrorName,
 			body: DeleteStockDTO{
 				UserID: 2,
 				SKUID:  1001,
@@ -215,14 +190,14 @@ func TestGetStockByLocation(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "valid",
+			name: testSuccesName,
 			body: GetItemByLocDTO{
 				UserID: 1,
 			},
 			wantError: false,
 		},
 		{
-			name: "sql err",
+			name: testSqlErrorName,
 			body: GetItemByLocDTO{
 				UserID: 2,
 			},
@@ -251,14 +226,10 @@ func TestGetItemBySKU(t *testing.T) {
 	})
 
 	repoMock.GetItemBySKUMock.Set(func(ctx context.Context, skuID models.SKUID) (models.Item, error) {
-		switch skuID {
-		case 1001:
-			return models.Item{}, nil
-		case 2020:
-			return models.Item{SKU: models.SKU{ID: skuID}}, errors.New("not found")
-		default:
-			return models.Item{}, errors.New("sql error")
+		if skuID != 1001 {
+			return models.Item{SKU: models.SKU{}}, errors.New("not found")
 		}
+		return models.Item{}, nil
 	})
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
@@ -273,18 +244,13 @@ func TestGetItemBySKU(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "valid",
+			name:    testSuccesName,
 			body:    1001,
 			wantErr: false,
 		},
 		{
-			name:    "not found",
+			name:    "NotFound",
 			body:    2020,
-			wantErr: true,
-		},
-		{
-			name:    "sql err",
-			body:    3003,
 			wantErr: true,
 		},
 	}

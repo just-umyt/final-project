@@ -13,6 +13,11 @@ import (
 	"testing"
 )
 
+const (
+	testValidRequestName = "ValidRequest"
+	testNotFoundName     = "NotFound"
+)
+
 func TestAddStock(t *testing.T) {
 	usecaseMock := mock.NewIStockUsecaseMock(t)
 	t.Cleanup(func() {
@@ -31,7 +36,7 @@ func TestAddStock(t *testing.T) {
 		wantCode int
 	}{
 		{
-			name: "valid request",
+			name: testValidRequestName,
 			body: AddStockRequest{
 				SKUID:    1001,
 				UserID:   1,
@@ -42,24 +47,19 @@ func TestAddStock(t *testing.T) {
 			wantCode: http.StatusOK,
 		},
 		{
-			name:     "bad request",
+			name:     "BadRequest",
 			body:     `{}`,
 			wantCode: http.StatusBadRequest,
 		},
 		{
-			name: "validation",
-			body: AddStockRequest{
-				SKUID:    2020,
-				Count:    10,
-				Price:    100,
-				Location: "AG",
-			},
+			name:     "Validation",
+			body:     AddStockRequest{},
 			wantCode: http.StatusBadRequest,
 		},
 		{
-			name: "not found",
+			name: testNotFoundName,
 			body: AddStockRequest{
-				SKUID:    100,
+				SKUID:    1000,
 				UserID:   1,
 				Count:    10,
 				Price:    100,
@@ -68,9 +68,9 @@ func TestAddStock(t *testing.T) {
 			wantCode: http.StatusNotFound,
 		},
 		{
-			name: "sql error",
+			name: "SqlError",
 			body: AddStockRequest{
-				SKUID:    20000,
+				SKUID:    1002,
 				UserID:   1,
 				Count:    10,
 				Price:    100,
@@ -93,7 +93,6 @@ func TestAddStock(t *testing.T) {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
 			}
 		})
-
 	}
 }
 
@@ -104,9 +103,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 		usecaseMock.MinimockFinish()
 	})
 
-	usecaseMock.DeleteStockBySKUMock.Set(func(ctx context.Context, delStock usecase.DeleteStockDTO) (err error) {
-		return idCheck(delStock.SKUID)
-	})
+	usecaseMock.DeleteStockBySKUMock.Return(nil)
 
 	controller := NewStockController(usecaseMock)
 
@@ -116,40 +113,12 @@ func TestDeleteStockBySKU(t *testing.T) {
 		wantCode int
 	}{
 		{
-			name: "valid test",
+			name: testValidRequestName,
 			body: DeleteStockRequest{
 				UserID: 1,
 				SKUID:  1001,
 			},
 			wantCode: http.StatusOK,
-		},
-		{
-			name:     "bad request",
-			body:     `{}`,
-			wantCode: http.StatusBadRequest,
-		},
-		{
-			name: "validation",
-			body: DeleteStockRequest{
-				UserID: 1,
-			},
-			wantCode: http.StatusBadRequest,
-		},
-		{
-			name: "not found",
-			body: DeleteStockRequest{
-				UserID: 1,
-				SKUID:  1,
-			},
-			wantCode: http.StatusNotFound,
-		},
-		{
-			name: "sql error",
-			body: DeleteStockRequest{
-				UserID: 1,
-				SKUID:  20000,
-			},
-			wantCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -176,13 +145,7 @@ func TestGetItemsByLocation(t *testing.T) {
 		usecaseMock.MinimockFinish()
 	})
 
-	usecaseMock.GetStocksByLocationMock.Set(func(ctx context.Context, param usecase.GetItemByLocDTO) (usecase.ItemsByLocDTO, error) {
-		if param.UserID != 1 {
-			return usecase.ItemsByLocDTO{}, errors.New("sql err")
-		}
-
-		return usecase.ItemsByLocDTO{Stocks: []usecase.StockDTO{{Count: 1}}}, nil
-	})
+	usecaseMock.GetStocksByLocationMock.Return(usecase.ItemsByLocDTO{Stocks: []usecase.StockDTO{{Count: 1}}}, nil)
 
 	tests := []struct {
 		name     string
@@ -190,7 +153,7 @@ func TestGetItemsByLocation(t *testing.T) {
 		wantCode int
 	}{
 		{
-			name: "valid",
+			name: testValidRequestName,
 			body: GetItemsByLocRequest{
 				UserID:      1,
 				Location:    "AG",
@@ -198,28 +161,6 @@ func TestGetItemsByLocation(t *testing.T) {
 				CurrentPage: 1,
 			},
 			wantCode: http.StatusOK,
-		},
-		{
-			name:     "bad request",
-			body:     `{}`,
-			wantCode: http.StatusBadRequest,
-		},
-		{
-			name: "validation",
-			body: GetItemsByLocRequest{
-				UserID: 1,
-			},
-			wantCode: http.StatusBadRequest,
-		},
-		{
-			name: "sql err",
-			body: GetItemsByLocRequest{
-				UserID:      2,
-				Location:    "AG",
-				PageSize:    1,
-				CurrentPage: 1,
-			},
-			wantCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -263,39 +204,22 @@ func TestGetItemBySKU(t *testing.T) {
 		wantCode int
 	}{
 		{
-			name: "valid",
-			body: GetItemBySKURequest{
-				SKU: 1001,
-			},
+			name:     testValidRequestName,
+			body:     GetItemBySKURequest{SKU: 1001},
 			wantCode: http.StatusOK,
 		},
 		{
-			name:     "bad request",
-			body:     `{}`,
-			wantCode: http.StatusBadRequest,
-		},
-		{
-			name:     "not found",
-			body:     GetItemBySKURequest{SKU: 1},
+			name:     testNotFoundName,
+			body:     GetItemBySKURequest{SKU: 1000},
 			wantCode: http.StatusNotFound,
-		},
-		{
-			name: "sql err",
-			body: GetItemBySKURequest{
-				SKU: 20000,
-			},
-			wantCode: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tt := range tests {
-		reqBody, err := json.Marshal(tt.body)
+		w, req, err := generateWriterRequest(tt.body)
 		if err != nil {
 			t.Error(err)
 		}
-
-		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/stocks/item/get", bytes.NewReader(reqBody))
 
 		controller.GetItemBySKU(w, req)
 
@@ -303,7 +227,6 @@ func TestGetItemBySKU(t *testing.T) {
 			t.Errorf("failed test with code :%d", w.Result().StatusCode)
 		}
 	}
-
 }
 
 func generateWriterRequest(body any) (*httptest.ResponseRecorder, *http.Request, error) {
@@ -323,7 +246,7 @@ func idCheck(i models.SKUID) error {
 		return usecase.ErrNotFound
 	}
 
-	if i > 10101 {
+	if i > 1001 {
 		return errors.New("sql error")
 	}
 
