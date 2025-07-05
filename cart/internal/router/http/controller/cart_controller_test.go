@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -86,9 +88,7 @@ func TestAddItem(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.AddItem(w, req)
 
@@ -133,9 +133,7 @@ func TestCartClear(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.CartClear(w, req)
 
@@ -187,9 +185,7 @@ func TestDeleteItem(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.DeleteItem(w, req)
 
@@ -235,9 +231,7 @@ func TestCartList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.CartList(w, req)
 

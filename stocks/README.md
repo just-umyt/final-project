@@ -20,7 +20,7 @@ Make sure the following ports are accessible:
 First, create a `.env` file and add the following variables:
 
 ```env
-SERVER_HOST=0.0.0.0
+SERVER_HOST=127.0.0.1
 SERVER_PORT=8081
 SERVER_READ_HEADER_TIMEOUT=10
 SERVER_SHUTDOWN_TIMEOUT=3

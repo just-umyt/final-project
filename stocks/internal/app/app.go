@@ -21,6 +21,8 @@ import (
 var (
 	ErrLoadEnv               = "error loading .env file: %v"
 	ErrDBConnect             = "error connecting to database: %v"
+	ErrMigration             = "error migration: %v"
+	ErrMigrationUp           = "error migration up: %v"
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
@@ -45,6 +47,25 @@ func RunApp() error {
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
+	db, err := postgres.NewDB(dbConfig)
+	if err != nil {
+		err = fmt.Errorf(ErrDBConnect, err)
+		return err
+	}
+	defer db.Close()
+
+	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
+	if err != nil {
+		err = fmt.Errorf(ErrMigration, err)
+		return err
+	}
+
+	err = postgres.MigrationUp(migration)
+	if err != nil {
+		err = fmt.Errorf(ErrMigrationUp, err)
+		return err
+	}
+
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		err = fmt.Errorf(ErrDBConnect, err)
@@ -58,9 +79,9 @@ func RunApp() error {
 
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager)
 
-	controller := controller.NewStockController(stockUsecase)
+	stockController := controller.NewStockController(stockUsecase)
 
-	newMux := myHttp.NewMux(controller)
+	newMux := myHttp.NewMux(stockController)
 
 	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 

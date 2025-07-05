@@ -23,6 +23,8 @@ import (
 var (
 	ErrLoadEnv               = "error loading .env file: %v"
 	ErrDBConnect             = "error connecting to database: %v"
+	ErrMigration             = "error migration: %v"
+	ErrMigrationUp           = "error migration up: %v"
 	ErrLoadClientTimeOut     = "error loading CLIENT_TIMEOUT: %v"
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
@@ -45,6 +47,24 @@ func RunApp() error {
 		Password: os.Getenv("DB_PASSWORD"),
 		Dbname:   os.Getenv("DB_NAME"),
 		SSLMode:  os.Getenv("DB_SSLMODE"),
+	}
+
+	db, err := postgres.NewDB(dbConfig)
+	if err != nil {
+		err = fmt.Errorf(ErrDBConnect, err)
+		return err
+	}
+
+	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
+	if err != nil {
+		err = fmt.Errorf(ErrMigration, err)
+		return err
+	}
+
+	err = postgres.MigrationUp(migration)
+	if err != nil {
+		err = fmt.Errorf(ErrMigrationUp, err)
+		return err
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)

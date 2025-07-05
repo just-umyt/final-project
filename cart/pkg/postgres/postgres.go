@@ -3,11 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,7 +20,7 @@ type PostgresConfig struct {
 	SSLMode  string
 }
 
-func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
+func NewDB(cnfg *PostgresConfig) (*sql.DB, error) {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
 
 	db, err := sql.Open("postgres", dsn)
@@ -31,18 +28,15 @@ func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, er
 		return nil, err
 	}
 
-	migration, err := migration(db)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := migration.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, err
-	}
-
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
+
+	return db, nil
+}
+
+func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
 
 	dbPool, err := pgxpool.New(context, dsn)
 	if err != nil {
@@ -54,22 +48,4 @@ func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, er
 	}
 
 	return dbPool, nil
-}
-
-func migration(db *sql.DB) (*migrate.Migrate, error) {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	migrate, err := migrate.NewWithDatabaseInstance(
-		"file://internal/migrations/postgres",
-		"postgres",
-		driver,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return migrate, nil
 }

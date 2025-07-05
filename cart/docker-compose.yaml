@@ -14,8 +14,8 @@ services:
       DB_SSLMODE: ${DB_SSLMODE}
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "8080:${SERVER_PORT}"
-    container_name: umyt_cart-service
+      - "${SERVER_PORT}:8080"
+    container_name: umyt/cart-service
     networks:
       - public_net
       - internal_net
@@ -33,7 +33,7 @@ services:
       retries: 3
     ports:
       - "5433:${DB_PORT}"
-    container_name: umyt_cart-db
+    container_name: umyt/cart-db
     networks:
       - internal_net
 

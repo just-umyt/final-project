@@ -11,6 +11,8 @@ import (
 	"stocks/internal/router/http/controller/mock"
 	"stocks/internal/usecase"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -83,9 +85,7 @@ func TestAddStock(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.AddStock(w, req)
 
@@ -125,9 +125,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.DeleteStockBySKU(w, req)
 
@@ -169,9 +167,7 @@ func TestGetItemsByLocation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err)
 
 			controller.GetItemsByLocation(w, req)
 
@@ -217,9 +213,7 @@ func TestGetItemBySKU(t *testing.T) {
 
 	for _, tt := range tests {
 		w, req, err := generateWriterRequest(tt.body)
-		if err != nil {
-			t.Error(err)
-		}
+		require.NoError(t, err)
 
 		controller.GetItemBySKU(w, req)
 

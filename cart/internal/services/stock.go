@@ -5,6 +5,7 @@ import (
 	"cart/internal/models"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -46,16 +47,16 @@ func (s *StockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (Ite
 	if err != nil {
 		return ItemDTO{}, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return ItemDTO{}, err
+		return ItemDTO{}, errors.New("status code is not ok")
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ItemDTO{}, err
 	}
+	defer resp.Body.Close()
 
 	var respData httpResponse
 

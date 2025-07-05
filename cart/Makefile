@@ -21,3 +21,20 @@ clean:
 	@echo "Cleaning $(APP_NAME)..."
 	@rm -rf $(BIN_DIR)
 	@go clean
+	
+test-env-up:
+	@echo "Test-environments up..."
+	@docker compose -f docker-compose.test.yaml up -d
+
+test-env-down:
+	@echo "Test-environments down..."
+	@docker compose -f docker-compose.test.yaml down -v
+
+test-int:
+	@echo "Testing integration test..."
+	@go test -v ./integration
+
+test-unit:
+	@echo "Testing unit tests..."
+	@go test -v -cover  ./internal/router/http/controller/
+	@go test -v -cover  ./internal/usecase/

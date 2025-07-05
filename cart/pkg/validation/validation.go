@@ -9,7 +9,6 @@ func IsValid(strct any) error {
 
 	err := validate.Struct(strct)
 	if err != nil {
-
 		return err
 	}
 
