@@ -2,7 +2,8 @@ package app
 
 import (
 	"cart/internal/config"
-	myHttp "cart/internal/controller/http"
+	myHttp "cart/internal/router/http"
+	"cart/internal/router/http/controller"
 	"log"
 
 	"cart/internal/repository"
@@ -22,17 +23,19 @@ import (
 var (
 	ErrLoadEnv               = "error loading .env file: %v"
 	ErrDBConnect             = "error connecting to database: %v"
+	ErrMigration             = "error migration: %v"
+	ErrMigrationUp           = "error migration up: %v"
 	ErrLoadClientTimeOut     = "error loading CLIENT_TIMEOUT: %v"
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
 )
 
-func RunApp() error {
+func RunApp(env string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := config.LoadConfig(".env"); err != nil {
+	if err := config.LoadConfig(env); err != nil {
 		err = fmt.Errorf(ErrLoadEnv, err)
 		return err
 	}
@@ -46,6 +49,24 @@ func RunApp() error {
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
+	db, err := postgres.NewDB(dbConfig)
+	if err != nil {
+		err = fmt.Errorf(ErrDBConnect, err)
+		return err
+	}
+
+	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
+	if err != nil {
+		err = fmt.Errorf(ErrMigration, err)
+		return err
+	}
+
+	err = postgres.MigrationUp(migration)
+	if err != nil {
+		err = fmt.Errorf(ErrMigrationUp, err)
+		return err
+	}
+
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		err = fmt.Errorf(ErrDBConnect, err)
@@ -55,7 +76,7 @@ func RunApp() error {
 
 	cartRepo := repository.NewCartRepository(dbPool)
 
-	trxManager := repository.NewPgTxManager(dbPool)
+	trxManager := postgres.NewPgTxManager(dbPool)
 
 	timeOut, err := strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
 	if err != nil {
@@ -67,7 +88,7 @@ func RunApp() error {
 
 	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
 
-	controller := myHttp.NewCartController(cartUsecase)
+	controller := controller.NewCartController(cartUsecase)
 
 	newMux := myHttp.NewMux(controller)
 

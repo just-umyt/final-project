@@ -5,29 +5,26 @@ import (
 	"cart/internal/models"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
 )
 
-type IStockService interface {
-	GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error)
-}
-
-type stockService struct {
+type StockService struct {
 	httpClient *http.Client
 	baseUrl    string
 }
 
-func NewStockService(timeoutDur time.Duration, url string) IStockService {
+func NewStockService(timeoutDur time.Duration, url string) *StockService {
 	httpClient := &http.Client{
 		Timeout: timeoutDur,
 	}
 
-	return &stockService{httpClient: httpClient, baseUrl: url}
+	return &StockService{httpClient: httpClient, baseUrl: url}
 }
 
-func (s *stockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error) {
+func (s *StockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error) {
 	reqData := getSKUIDRequest{
 		SKUID: skuID,
 	}
@@ -50,16 +47,16 @@ func (s *stockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (Ite
 	if err != nil {
 		return ItemDTO{}, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return ItemDTO{}, err
+		return ItemDTO{}, errors.New("status code is not ok")
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ItemDTO{}, err
 	}
+	defer resp.Body.Close()
 
 	var respData httpResponse
 

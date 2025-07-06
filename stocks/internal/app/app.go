@@ -8,8 +8,9 @@ import (
 	"os"
 	"os/signal"
 	"stocks/internal/config"
-	myHttp "stocks/internal/controller/http"
 	"stocks/internal/repository"
+	myHttp "stocks/internal/router/http"
+	"stocks/internal/router/http/controller"
 	"stocks/internal/usecase"
 	"stocks/pkg/postgres"
 	"strconv"
@@ -20,16 +21,18 @@ import (
 var (
 	ErrLoadEnv               = "error loading .env file: %v"
 	ErrDBConnect             = "error connecting to database: %v"
+	ErrMigration             = "error migration: %v"
+	ErrMigrationUp           = "error migration up: %v"
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
 )
 
-func RunApp() error {
+func RunApp(env string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	err := config.LoadConfig(".env")
+	err := config.LoadConfig(env)
 	if err != nil {
 		err = fmt.Errorf(ErrLoadEnv, err)
 		return err
@@ -44,6 +47,25 @@ func RunApp() error {
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
+	db, err := postgres.NewDB(dbConfig)
+	if err != nil {
+		err = fmt.Errorf(ErrDBConnect, err)
+		return err
+	}
+	defer db.Close()
+
+	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
+	if err != nil {
+		err = fmt.Errorf(ErrMigration, err)
+		return err
+	}
+
+	err = postgres.MigrationUp(migration)
+	if err != nil {
+		err = fmt.Errorf(ErrMigrationUp, err)
+		return err
+	}
+
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		err = fmt.Errorf(ErrDBConnect, err)
@@ -51,15 +73,15 @@ func RunApp() error {
 	}
 	defer dbPool.Close()
 
-	trxManager := repository.NewPgTxManager(dbPool)
+	trxManager := postgres.NewPgTxManager(dbPool)
 
 	stockRepo := repository.NewStockRepository(dbPool)
 
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager)
 
-	controller := myHttp.NewStockController(stockUsecase)
+	stockController := controller.NewStockController(stockUsecase)
 
-	newMux := myHttp.NewMux(controller)
+	newMux := myHttp.NewMux(stockController)
 
 	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
 

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   cart_service:
     image: umyt/cart:hw7
@@ -14,8 +12,8 @@ services:
       DB_SSLMODE: ${DB_SSLMODE}
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "8080:${SERVER_PORT}"
-    container_name: umyt_cart-service
+      - "${SERVER_PORT}:8080"
+    container_name: umyt/cart-service
     networks:
       - public_net
       - internal_net
@@ -32,8 +30,8 @@ services:
       timeout: 5s
       retries: 3
     ports:
-      - "5433:${DB_PORT}"
-    container_name: umyt_cart-db
+      - "${DB_PORT}:5432"
+    container_name: umyt/cart-db
     networks:
       - internal_net
 

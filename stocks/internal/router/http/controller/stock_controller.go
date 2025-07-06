@@ -1,6 +1,7 @@
-package http
+package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -8,26 +9,36 @@ import (
 	"stocks/internal/models"
 	"stocks/internal/usecase"
 	"stocks/pkg/utils"
+	"stocks/pkg/validation"
 )
 
-type IStockController interface {
-	AddStock(w http.ResponseWriter, r *http.Request)
-	DeleteStockBySKU(w http.ResponseWriter, r *http.Request)
-	GetItemsByLocation(w http.ResponseWriter, r *http.Request)
-	GetItemBySKU(w http.ResponseWriter, r *http.Request)
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go  -g
+type IStockUsecase interface {
+	AddStock(ctx context.Context, stock usecase.AddStockDTO) error
+	DeleteStockBySKU(ctx context.Context, delStock usecase.DeleteStockDTO) error
+	GetStocksByLocation(ctx context.Context, param usecase.GetItemByLocDTO) (usecase.ItemsByLocDTO, error)
+	GetItemBySKU(ctx context.Context, sku models.SKUID) (usecase.StockDTO, error)
 }
 
 type StockController struct {
-	stockUsecase usecase.IStockUsecase
+	stockUsecase IStockUsecase
 }
 
-func NewStockController(stockUsecase usecase.IStockUsecase) *StockController {
+func NewStockController(stockUsecase IStockUsecase) *StockController {
 	return &StockController{stockUsecase: stockUsecase}
 }
 
 func (c *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	var req AddStockRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -66,6 +77,12 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if err := validation.IsValid(req); err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
 	dto := usecase.DeleteStockDTO{
 		UserID: models.UserID(req.UserID),
 		SKUID:  models.SKUID(req.SKUID),
@@ -90,6 +107,12 @@ func (c *StockController) DeleteStockBySKU(w http.ResponseWriter, r *http.Reques
 func (c *StockController) GetItemsByLocation(w http.ResponseWriter, r *http.Request) {
 	var req GetItemsByLocRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return

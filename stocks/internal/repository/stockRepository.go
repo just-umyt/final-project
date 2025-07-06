@@ -15,6 +15,8 @@ type IDBQuery interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 }
 
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go
 type IStockRepo interface {
 	GetItemBySKU(ctx context.Context, skuID models.SKUID) (models.Item, error)
 	AddStock(ctx context.Context, stock models.Stock) error

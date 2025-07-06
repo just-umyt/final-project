@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-type succesResponse struct {
+type SuccesResp struct {
 	Message any `json:"message"`
 }
 
@@ -14,7 +14,7 @@ func SuccessResponse(w http.ResponseWriter, msg any, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
-	res := succesResponse{
+	res := SuccesResp{
 		Message: msg,
 	}
 

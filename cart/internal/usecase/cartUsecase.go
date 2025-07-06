@@ -9,17 +9,20 @@ import (
 	"log"
 )
 
-type ICartUsecase interface {
-	AddItem(ctx context.Context, addItem AddItemDTO) error
-	DeleteItem(ctx context.Context, delItem DeleteItemDTO) error
-	GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error)
-	ClearCartByUserID(ctx context.Context, userID models.UserID) error
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go  -g
+type IPgTxManager interface {
+	WithTx(ctx context.Context, fn func(repository.ICartRepo) error) error
+}
+
+type IStockService interface {
+	GetItemInfo(ctx context.Context, skuID models.SKUID) (services.ItemDTO, error)
 }
 
 type CartUsecase struct {
-	skuService services.IStockService
+	skuService IStockService
 	cartRepo   repository.ICartRepo
-	trManager  repository.IPgTxManager
+	trManager  IPgTxManager
 }
 
 var (
@@ -27,7 +30,7 @@ var (
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(cartRepo repository.ICartRepo, trManager repository.IPgTxManager, service services.IStockService) *CartUsecase {
+func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService) *CartUsecase {
 	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service}
 }
 
@@ -42,29 +45,15 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 	}
 
 	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
-		cartID, count, err := repo.GetCartInfoByUserID(ctx, addItem.UserID, addItem.SKUID)
-		if err != nil {
-			return err
-		}
-
 		cart := models.Cart{
 			UserID: addItem.UserID,
 			SKUID:  addItem.SKUID,
-			Count:  count + addItem.Count,
+			Count:  addItem.Count,
 		}
 
-		if cartID > 0 {
-			err := repo.UpdateItemByUserID(ctx, cart)
-			if errors.Is(err, repository.ErrNotFound) {
-				return ErrNotFound
-			}
-
-			return err
-		}
-
-		err = repo.AddItem(ctx, cart)
+		err := repo.UpdateItemByUserID(ctx, cart)
 		if errors.Is(err, repository.ErrNotFound) {
-			return ErrNotFound
+			return repo.AddItem(ctx, cart)
 		}
 
 		return err

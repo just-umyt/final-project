@@ -1,27 +1,31 @@
-package http
+package controller
 
 import (
 	"cart/internal/models"
 	"cart/internal/usecase"
 	"cart/pkg/utils"
+	"cart/pkg/validation"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 )
 
-type ICartController interface {
-	AddItem(w http.ResponseWriter, r *http.Request)
-	CartClear(w http.ResponseWriter, r *http.Request)
-	DeleteItem(w http.ResponseWriter, r *http.Request)
-	CartList(w http.ResponseWriter, r *http.Request)
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock/ -s .go  -g
+type ICartUsecase interface {
+	AddItem(ctx context.Context, addItem usecase.AddItemDTO) error
+	DeleteItem(ctx context.Context, delItem usecase.DeleteItemDTO) error
+	GetItemsByUserID(ctx context.Context, userID models.UserID) (usecase.ListItemsDTO, error)
+	ClearCartByUserID(ctx context.Context, userID models.UserID) error
 }
 
 type CartController struct {
-	cartUsecase usecase.ICartUsecase
+	cartUsecase ICartUsecase
 }
 
-func NewCartController(us usecase.ICartUsecase) *CartController {
+func NewCartController(us ICartUsecase) *CartController {
 	return &CartController{cartUsecase: us}
 }
 
@@ -29,6 +33,12 @@ func (c *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 	var req AddItemRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return
@@ -91,6 +101,12 @@ func (c *CartController) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		utils.ErrorResponse(w, err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := validation.IsValid(req); err != nil {
 		utils.ErrorResponse(w, err, http.StatusBadRequest)
 
 		return

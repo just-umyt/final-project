@@ -1,8 +1,9 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"log"
+	"stocks/internal/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -11,15 +12,11 @@ type PgTxManager struct {
 	pool *pgxpool.Pool
 }
 
-type IPgTxManager interface {
-	WithTx(ctx context.Context, fn func(ICartRepo) error) error
-}
-
 func NewPgTxManager(pool *pgxpool.Pool) *PgTxManager {
 	return &PgTxManager{pool: pool}
 }
 
-func (tm *PgTxManager) WithTx(ctx context.Context, fn func(ICartRepo) error) error {
+func (tm *PgTxManager) WithTx(ctx context.Context, fn func(repository.IStockRepo) error) error {
 	tx, err := tm.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -34,7 +31,7 @@ func (tm *PgTxManager) WithTx(ctx context.Context, fn func(ICartRepo) error) err
 		}
 	}()
 
-	factory := NewCartRepository(tx)
+	factory := repository.NewStockRepository(tx)
 
 	if err = fn(factory); err != nil {
 		return err

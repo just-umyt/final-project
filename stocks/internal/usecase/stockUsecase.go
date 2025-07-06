@@ -7,16 +7,15 @@ import (
 	"stocks/internal/repository"
 )
 
-type IStockUsecase interface {
-	AddStock(ctx context.Context, stock AddStockDTO) error
-	DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error
-	GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error)
-	GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error)
+//go:generate mkdir -p mock
+//go:generate minimock -o ./mock -s .go  -g
+type IPgTxManager interface {
+	WithTx(ctx context.Context, fn func(repository.IStockRepo) error) error
 }
 
 type StockUsecase struct {
 	stockRepo repository.IStockRepo
-	trManager repository.IPgTxManager
+	trManager IPgTxManager
 }
 
 var (
@@ -24,7 +23,7 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo repository.IStockRepo, trManager repository.IPgTxManager) *StockUsecase {
+func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager) *StockUsecase {
 	return &StockUsecase{stockRepo: repo, trManager: trManager}
 }
 
