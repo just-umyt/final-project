@@ -26,12 +26,11 @@ var (
 )
 
 func TestIntegration_AddItem(t *testing.T) {
-	err := config.LoadConfig(envPath)
-
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
+	err := config.LoadConfig(envPath)
 	require.NoError(t, err)
 
 	init := testAppConfig{}
@@ -92,12 +91,11 @@ func TestIntegration_AddItem(t *testing.T) {
 }
 
 func TestIntegration_ListItems(t *testing.T) {
-	err := config.LoadConfig(envPath)
-
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
+	err := config.LoadConfig(envPath)
 	require.NoError(t, err)
 
 	init := testAppConfig{}
@@ -148,12 +146,11 @@ func TestIntegration_ListItems(t *testing.T) {
 }
 
 func TestIntegration_GetItem(t *testing.T) {
-	err := config.LoadConfig(envPath)
-
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
+	err := config.LoadConfig(envPath)
 	require.NoError(t, err)
 
 	init := testAppConfig{}
@@ -208,12 +205,11 @@ func TestIntegration_GetItem(t *testing.T) {
 }
 
 func TestIntegration_DeleteItem(t *testing.T) {
-	err := config.LoadConfig(envPath)
-
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
+	err := config.LoadConfig(envPath)
 	require.NoError(t, err)
 
 	init := testAppConfig{}

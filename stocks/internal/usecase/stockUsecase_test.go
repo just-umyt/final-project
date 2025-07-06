@@ -16,6 +16,10 @@ const (
 	testSqlErrorName = "ErrorSqlGetItem"
 )
 
+var (
+	errSql = errors.New("sql error")
+)
+
 func TestAddStock(t *testing.T) {
 	repoMock := mock.NewIStockRepoMock(t)
 	trxMock := txMock.NewIPgTxManagerMock(t)
@@ -35,7 +39,7 @@ func TestAddStock(t *testing.T) {
 			return models.Item{SKU: models.SKU{ID: 2020}, Stock: models.Stock{UserID: 1}}, nil
 		}
 
-		return models.Item{Stock: models.Stock{ID: 3033}}, errors.New("sql err")
+		return models.Item{Stock: models.Stock{ID: 3033}}, errSql
 	})
 
 	repoMock.AddStockMock.Return(nil)
@@ -49,21 +53,21 @@ func TestAddStock(t *testing.T) {
 	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
-		name      string
-		stock     AddStockDTO
-		wantError bool
+		name    string
+		stock   AddStockDTO
+		wantErr error
 	}{
 		{
-			name:      "ErrorGetItem",
-			stock:     AddStockDTO{},
-			wantError: true,
+			name:    "ErrorGetItem",
+			stock:   AddStockDTO{},
+			wantErr: ErrNotFound,
 		},
 		{
 			name: "ErrorSqlGetItem",
 			stock: AddStockDTO{
 				SKUID: 3033,
 			},
-			wantError: true,
+			wantErr: errSql,
 		},
 		{
 			name: "Add",
@@ -71,7 +75,7 @@ func TestAddStock(t *testing.T) {
 				SKUID:  1001,
 				UserID: 0,
 			},
-			wantError: false,
+			wantErr: nil,
 		},
 		{
 			name: "Update",
@@ -79,7 +83,7 @@ func TestAddStock(t *testing.T) {
 				SKUID:  2020,
 				UserID: 1,
 			},
-			wantError: false,
+			wantErr: nil,
 		},
 		{
 			name: "ErrorUserId",
@@ -87,15 +91,15 @@ func TestAddStock(t *testing.T) {
 				SKUID:  2020,
 				UserID: 3,
 			},
-			wantError: true,
+			wantErr: ErrUserID,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := usecase.AddStock(t.Context(), tt.stock)
-			if (err != nil) != tt.wantError {
-				t.Error(err)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
 			}
 		})
 	}
@@ -121,9 +125,9 @@ func TestDeleteStockBySKU(t *testing.T) {
 	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
-		name      string
-		body      DeleteStockDTO
-		wantError bool
+		name    string
+		body    DeleteStockDTO
+		wantErr error
 	}{
 		{
 			name: testSuccesName,
@@ -131,7 +135,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 				UserID: 1,
 				SKUID:  1001,
 			},
-			wantError: false,
+			wantErr: nil,
 		},
 		{
 			name: testSqlErrorName,
@@ -139,15 +143,15 @@ func TestDeleteStockBySKU(t *testing.T) {
 				UserID: 2,
 				SKUID:  1001,
 			},
-			wantError: true,
+			wantErr: ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := usecase.DeleteStockBySKU(t.Context(), tt.body)
-			if (err != nil) != tt.wantError {
-				t.Error(err)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
 			}
 		})
 	}
@@ -164,13 +168,17 @@ func TestGetStockByLocation(t *testing.T) {
 
 	repoMock.GetItemsByLocationMock.Set(func(ctx context.Context, param repository.GetStockByLocation) ([]models.Item, error) {
 		if param.UserID > 1 {
-			return []models.Item{}, errors.New("sql error")
+			return []models.Item{}, errSql
 		}
 
 		return []models.Item{
 			{
-				SKU:   models.SKU{},
-				Stock: models.Stock{},
+				SKU: models.SKU{
+					ID: 1001,
+				},
+				Stock: models.Stock{
+					Location: "AG",
+				},
 			},
 		}, nil
 	})
@@ -182,32 +190,49 @@ func TestGetStockByLocation(t *testing.T) {
 	usecase := NewStockUsecase(repoMock, trxMock)
 
 	tests := []struct {
-		name      string
-		body      GetItemByLocDTO
-		wantError bool
+		name    string
+		body    GetItemByLocDTO
+		want    ItemsByLocDTO
+		wantErr error
 	}{
 		{
 			name: testSuccesName,
 			body: GetItemByLocDTO{
 				UserID: 1,
 			},
-			wantError: false,
+			want: ItemsByLocDTO{
+				Stocks:     []StockDTO{},
+				TotalCount: 1,
+				PageNumber: 1,
+			},
+			wantErr: nil,
 		},
 		{
 			name: testSqlErrorName,
 			body: GetItemByLocDTO{
 				UserID: 2,
 			},
-			wantError: true,
+			want: ItemsByLocDTO{
+				Stocks:     []StockDTO{{}},
+				TotalCount: 0,
+				PageNumber: 1,
+			},
+			wantErr: errSql,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := usecase.GetStocksByLocation(t.Context(), tt.body)
-			if (err != nil) != tt.wantError {
-				t.Error(err)
+			items, err := usecase.GetStocksByLocation(t.Context(), tt.body)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
 			}
+
+			if items.TotalCount != tt.want.TotalCount {
+				t.Errorf("wanted total count:%d,  respond: %d", items.TotalCount, tt.want.TotalCount)
+			}
+
+			t.Log(err)
 		})
 	}
 }
@@ -226,7 +251,7 @@ func TestGetItemBySKU(t *testing.T) {
 			return models.Item{SKU: models.SKU{}}, errors.New("not found")
 		}
 
-		return models.Item{}, nil
+		return models.Item{SKU: models.SKU{ID: 1001}}, nil
 	})
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
@@ -238,26 +263,39 @@ func TestGetItemBySKU(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    models.SKUID
-		wantErr bool
+		want    StockDTO
+		wantErr error
 	}{
 		{
-			name:    testSuccesName,
-			body:    1001,
-			wantErr: false,
+			name: testSuccesName,
+			body: 1001,
+			want: StockDTO{
+				SKU: SKUDTO{
+					SKUID: 1001,
+				},
+			},
+			wantErr: nil,
 		},
 		{
 			name:    "NotFound",
 			body:    2020,
-			wantErr: true,
+			want:    StockDTO{},
+			wantErr: ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := usecase.GetItemBySKU(t.Context(), tt.body)
-			if (err != nil) != tt.wantErr {
-				t.Error(err)
+			item, err := usecase.GetItemBySKU(t.Context(), tt.body)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
 			}
+
+			if item != tt.want {
+				t.Errorf("wanted: %v, respond: %v", tt.want, item)
+			}
+
+			t.Log(err)
 		})
 	}
 }

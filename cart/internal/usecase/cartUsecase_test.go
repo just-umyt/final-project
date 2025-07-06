@@ -17,6 +17,10 @@ const (
 	testNotFoundName = "NotFound"
 )
 
+var (
+	errSql = errors.New("sql error")
+)
+
 func TestAddItem(t *testing.T) {
 	t.Parallel()
 
@@ -32,7 +36,7 @@ func TestAddItem(t *testing.T) {
 
 	serviceMock.GetItemInfoMock.Set(func(ctx context.Context, skuID models.SKUID) (services.ItemDTO, error) {
 		if skuID < 1001 {
-			return services.ItemDTO{}, errors.New("not found")
+			return services.ItemDTO{}, ErrNotFound
 		} else if skuID > 1001 {
 			return services.ItemDTO{Count: 1}, nil
 		}
@@ -59,7 +63,7 @@ func TestAddItem(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    AddItemDTO
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name: testSuccesName,
@@ -68,7 +72,7 @@ func TestAddItem(t *testing.T) {
 				SKUID:  1001,
 				Count:  5,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "ErrorGetInfoCheck",
@@ -77,7 +81,7 @@ func TestAddItem(t *testing.T) {
 				SKUID:  1000,
 				Count:  5,
 			},
-			wantErr: true,
+			wantErr: ErrNotFound,
 		},
 		{
 			name: "ErrorNotEnoughStock",
@@ -86,7 +90,7 @@ func TestAddItem(t *testing.T) {
 				SKUID:  1002,
 				Count:  5,
 			},
-			wantErr: true,
+			wantErr: ErrNotEnoughStock,
 		},
 		{
 			name: "ErrorUpdateNotfound",
@@ -95,15 +99,17 @@ func TestAddItem(t *testing.T) {
 				SKUID:  1001,
 				Count:  5,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := cartUsecase.AddItem(t.Context(), tt.body)
-			if (err != nil) != tt.wantErr {
-				t.Error(err)
+			if !errors.Is(err, tt.wantErr) {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
+				}
 			}
 		})
 	}
@@ -135,7 +141,7 @@ func TestDeleteItem(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    DeleteItemDTO
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name: testSuccesName,
@@ -143,7 +149,7 @@ func TestDeleteItem(t *testing.T) {
 				UserID: 1,
 				SKUID:  1001,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: testNotFoundName,
@@ -151,15 +157,17 @@ func TestDeleteItem(t *testing.T) {
 				UserID: 1,
 				SKUID:  1,
 			},
-			wantErr: true,
+			wantErr: ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := cartUsecase.DeleteItem(t.Context(), tt.body)
-			if (err != nil) != tt.wantErr {
-				t.Error(err)
+			if !errors.Is(err, tt.wantErr) {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
+				}
 			}
 		})
 	}
@@ -180,7 +188,7 @@ func TestGetItemsByUserID(t *testing.T) {
 
 	repoMock.GetCartByUserIDMock.Set(func(ctx context.Context, userID models.UserID) (ca1 []models.CartItem, err error) {
 		if userID > 1 {
-			return []models.CartItem{}, errors.New("sql error")
+			return []models.CartItem{}, errSql
 		}
 
 		return []models.CartItem{{SKUID: models.SKUID(1001), Count: 10}}, nil
@@ -193,25 +201,34 @@ func TestGetItemsByUserID(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    models.UserID
-		wantErr bool
+		want    ListItemsDTO
+		wantErr error
 	}{
 		{
 			name:    testNotFoundName,
 			body:    1,
-			wantErr: false,
+			want:    ListItemsDTO{},
+			wantErr: nil,
 		},
 		{
 			name:    "SqlError",
 			body:    2,
-			wantErr: true,
+			want:    ListItemsDTO{},
+			wantErr: errSql,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := cartUsecase.GetItemsByUserID(t.Context(), tt.body)
-			if (err != nil) != tt.wantErr {
-				t.Error(err)
+			items, err := cartUsecase.GetItemsByUserID(t.Context(), tt.body)
+			if !errors.Is(err, tt.wantErr) {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
+				}
+			}
+
+			if items.TotalPrice != tt.want.TotalPrice {
+				t.Error("want body != return body")
 			}
 		})
 	}
@@ -245,25 +262,27 @@ func TestClearCartByUserID(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    models.UserID
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name:    testSuccesName,
 			body:    1,
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:    testNotFoundName,
 			body:    2,
-			wantErr: true,
+			wantErr: ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := cartUsecase.ClearCartByUserID(t.Context(), tt.body)
-			if (err != nil) != tt.wantErr {
-				t.Error(err)
+			if !errors.Is(err, tt.wantErr) {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("wanted: %v, respond: %v", tt.wantErr.Error(), err)
+				}
 			}
 		})
 	}

@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"cart/internal/models"
 	"cart/internal/router/http/controller/mock"
+	"cart/internal/services"
 	"cart/internal/usecase"
 	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -198,6 +200,10 @@ func TestDeleteItem(t *testing.T) {
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
 			}
+
+			if err != nil {
+				t.Error(err)
+			}
 		})
 	}
 }
@@ -214,7 +220,10 @@ func TestCartList(t *testing.T) {
 			return usecase.ListItemsDTO{}, errInternalServer
 		}
 
-		return usecase.ListItemsDTO{}, nil
+		return usecase.ListItemsDTO{
+			Items:      []services.ItemDTO{},
+			TotalPrice: 100,
+		}, nil
 	})
 
 	cartController := NewCartController(usecaseMock)
@@ -222,16 +231,19 @@ func TestCartList(t *testing.T) {
 	tests := []struct {
 		name     string
 		body     any
+		want     string
 		wantCode int
 	}{
 		{
 			name:     testValidRequestName,
 			body:     UserIDRequest{UserID: 1},
+			want:     `{"message":{"Items":[],"TotalPrice":100}}`,
 			wantCode: http.StatusOK,
 		},
 		{
 			name:     testInternalServerErrorName,
 			body:     UserIDRequest{UserID: 2},
+			want:     `{"error":"nternal server error"}`,
 			wantCode: http.StatusInternalServerError,
 		},
 	}
@@ -245,6 +257,12 @@ func TestCartList(t *testing.T) {
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
+			}
+
+			resp := strings.TrimSpace(w.Body.String())
+
+			if resp != tt.want {
+				t.Errorf("wanted: %v responde: %v", resp, tt.want)
 			}
 		})
 	}

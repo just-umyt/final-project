@@ -10,6 +10,7 @@ import (
 	"stocks/internal/models"
 	"stocks/internal/router/http/controller/mock"
 	"stocks/internal/usecase"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -154,6 +155,7 @@ func TestGetItemsByLocation(t *testing.T) {
 	tests := []struct {
 		name     string
 		body     any
+		want     string
 		wantCode int
 	}{
 		{
@@ -164,6 +166,7 @@ func TestGetItemsByLocation(t *testing.T) {
 				PageSize:    1,
 				CurrentPage: 1,
 			},
+			want:     `{"message":{"stocks":[{"sku":0,"name":"","type":"","count":1}],"totalCount":0,"pageNumber":0}}`,
 			wantCode: http.StatusOK,
 		},
 	}
@@ -179,6 +182,12 @@ func TestGetItemsByLocation(t *testing.T) {
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
+			}
+
+			resp := strings.TrimSpace(w.Body.String())
+
+			if resp != tt.want {
+				t.Errorf("respond: %s, wanted: %s", resp, tt.want)
 			}
 		})
 	}
@@ -197,7 +206,7 @@ func TestGetItemBySKU(t *testing.T) {
 			return usecase.StockDTO{}, err
 		}
 
-		return usecase.StockDTO{}, nil
+		return usecase.StockDTO{SKU: usecase.SKUDTO{SKUID: 1001}}, nil
 	})
 
 	stockController := NewStockController(usecaseMock)
@@ -205,16 +214,19 @@ func TestGetItemBySKU(t *testing.T) {
 	tests := []struct {
 		name     string
 		body     any
+		want     string
 		wantCode int
 	}{
 		{
 			name:     testValidRequestName,
 			body:     GetItemBySKURequest{SKU: 1001},
+			want:     `{"message":{"sku":1001,"name":"","type":""}}`,
 			wantCode: http.StatusOK,
 		},
 		{
 			name:     testNotFoundName,
 			body:     GetItemBySKURequest{SKU: 1000},
+			want:     `{"error":"not found"}`,
 			wantCode: http.StatusNotFound,
 		},
 	}
@@ -227,6 +239,12 @@ func TestGetItemBySKU(t *testing.T) {
 
 		if w.Result().StatusCode != tt.wantCode {
 			t.Errorf("failed test with code :%d", w.Result().StatusCode)
+		}
+
+		resp := strings.TrimSpace(w.Body.String())
+
+		if resp != tt.want {
+			t.Errorf("respond: %s, wanted: %s", resp, tt.want)
 		}
 	}
 }
