@@ -24,15 +24,15 @@ clean:
 
 test-env-up:
 	@echo "Test-environments up..."
-	@docker compose --env-file .env.testing -f docker-compose.test.yaml up -d
+	@docker compose -f docker-compose.test.yaml up -d
 
 test-env-down:
 	@echo "Test-environments down..."
-	@docker compose --env-file .env.testing -f docker-compose.test.yaml down -v
+	@docker compose -f docker-compose.test.yaml down -v
 
 test-int:
 	@echo "Testing integration test..."
-	@go test -v ./integration
+	@INTEGRATION_TEST=1 go test -v ./integration
 
 test-unit:
 	@echo "Testing unit tests..."

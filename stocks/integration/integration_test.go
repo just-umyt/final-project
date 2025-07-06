@@ -22,7 +22,7 @@ var (
 	TestSuccessName = "Succes"
 	TesNotFoundName = "NotFound"
 
-	envPath = "../.env.testing"
+	envPath = "../.env"
 )
 
 func TestIntegration_AddItem(t *testing.T) {
