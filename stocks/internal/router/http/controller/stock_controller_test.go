@@ -21,6 +21,8 @@ const (
 )
 
 func TestAddStock(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewIStockUsecaseMock(t)
 	t.Cleanup(func() {
 		usecaseMock.MinimockFinish()
@@ -30,7 +32,7 @@ func TestAddStock(t *testing.T) {
 		return idCheck(stock.SKUID)
 	})
 
-	controller := NewStockController(usecaseMock)
+	stockController := NewStockController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -87,7 +89,7 @@ func TestAddStock(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.AddStock(w, req)
+			stockController.AddStock(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -97,6 +99,8 @@ func TestAddStock(t *testing.T) {
 }
 
 func TestDeleteStockBySKU(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewIStockUsecaseMock(t)
 
 	t.Cleanup(func() {
@@ -105,7 +109,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 
 	usecaseMock.DeleteStockBySKUMock.Return(nil)
 
-	controller := NewStockController(usecaseMock)
+	stockController := NewStockController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -127,7 +131,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.DeleteStockBySKU(w, req)
+			stockController.DeleteStockBySKU(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -137,6 +141,8 @@ func TestDeleteStockBySKU(t *testing.T) {
 }
 
 func TestGetItemsByLocation(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewIStockUsecaseMock(t)
 
 	t.Cleanup(func() {
@@ -162,14 +168,14 @@ func TestGetItemsByLocation(t *testing.T) {
 		},
 	}
 
-	controller := NewStockController(usecaseMock)
+	stockController := NewStockController(usecaseMock)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.GetItemsByLocation(w, req)
+			stockController.GetItemsByLocation(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -179,6 +185,8 @@ func TestGetItemsByLocation(t *testing.T) {
 }
 
 func TestGetItemBySKU(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewIStockUsecaseMock(t)
 	t.Cleanup(func() {
 		usecaseMock.MinimockFinish()
@@ -192,7 +200,7 @@ func TestGetItemBySKU(t *testing.T) {
 		return usecase.StockDTO{}, nil
 	})
 
-	controller := NewStockController(usecaseMock)
+	stockController := NewStockController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -215,7 +223,7 @@ func TestGetItemBySKU(t *testing.T) {
 		w, req, err := generateWriterRequest(tt.body)
 		require.NoError(t, err)
 
-		controller.GetItemBySKU(w, req)
+		stockController.GetItemBySKU(w, req)
 
 		if w.Result().StatusCode != tt.wantCode {
 			t.Errorf("failed test with code :%d", w.Result().StatusCode)

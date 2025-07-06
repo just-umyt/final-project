@@ -18,6 +18,8 @@ const (
 )
 
 func TestAddItem(t *testing.T) {
+	t.Parallel()
+
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
@@ -52,7 +54,7 @@ func TestAddItem(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
 
 	tests := []struct {
 		name    string
@@ -99,7 +101,7 @@ func TestAddItem(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := usecase.AddItem(t.Context(), tt.body)
+			err := cartUsecase.AddItem(t.Context(), tt.body)
 			if (err != nil) != tt.wantErr {
 				t.Error(err)
 			}
@@ -108,6 +110,8 @@ func TestAddItem(t *testing.T) {
 }
 
 func TestDeleteItem(t *testing.T) {
+	t.Parallel()
+
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
@@ -126,7 +130,7 @@ func TestDeleteItem(t *testing.T) {
 		return nil
 	})
 
-	usecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
 
 	tests := []struct {
 		name    string
@@ -153,7 +157,7 @@ func TestDeleteItem(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := usecase.DeleteItem(t.Context(), tt.body)
+			err := cartUsecase.DeleteItem(t.Context(), tt.body)
 			if (err != nil) != tt.wantErr {
 				t.Error(err)
 			}
@@ -162,6 +166,8 @@ func TestDeleteItem(t *testing.T) {
 }
 
 func TestGetItemsByUserID(t *testing.T) {
+	t.Parallel()
+
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
@@ -182,7 +188,7 @@ func TestGetItemsByUserID(t *testing.T) {
 
 	serviceMock.GetItemInfoMock.Return(services.ItemDTO{}, nil)
 
-	usecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
 
 	tests := []struct {
 		name    string
@@ -203,7 +209,7 @@ func TestGetItemsByUserID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := usecase.GetItemsByUserID(t.Context(), tt.body)
+			_, err := cartUsecase.GetItemsByUserID(t.Context(), tt.body)
 			if (err != nil) != tt.wantErr {
 				t.Error(err)
 			}
@@ -212,6 +218,8 @@ func TestGetItemsByUserID(t *testing.T) {
 }
 
 func TestClearCartByUserID(t *testing.T) {
+	t.Parallel()
+
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
@@ -232,7 +240,7 @@ func TestClearCartByUserID(t *testing.T) {
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.ICartRepo) error) (err error) { return fn(repoMock) })
 
-	usecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
 
 	tests := []struct {
 		name    string
@@ -253,7 +261,7 @@ func TestClearCartByUserID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := usecase.ClearCartByUserID(t.Context(), tt.body)
+			err := cartUsecase.ClearCartByUserID(t.Context(), tt.body)
 			if (err != nil) != tt.wantErr {
 				t.Error(err)
 			}

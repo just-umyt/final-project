@@ -28,11 +28,11 @@ var (
 	ErrShutdown              = "shutdown error: %v"
 )
 
-func RunApp() error {
+func RunApp(env string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	err := config.LoadConfig(".env")
+	err := config.LoadConfig(env)
 	if err != nil {
 		err = fmt.Errorf(ErrLoadEnv, err)
 		return err

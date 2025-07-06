@@ -7,6 +7,10 @@ import (
 	"net/http/httptest"
 )
 
+const (
+	stockCount = 10
+)
+
 func testStockService() *httptest.Server {
 	mux := http.NewServeMux()
 
@@ -22,7 +26,7 @@ func getItemBySKU(w http.ResponseWriter, r *http.Request) {
 	item := struct {
 		Count uint16
 	}{
-		Count: 10,
+		Count: stockCount,
 	}
 
 	res := struct {

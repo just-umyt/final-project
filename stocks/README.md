@@ -8,30 +8,12 @@ docker pull umyt/my-stock-app:hw7
 
 ## 🚀 Application Ports
 
-Make sure the following ports are accessible:
+Make sure the following ports are accessible, or you can change it on your own free ports:
 
-- App port: `8081`
-- PostgreSQL port: `5434`
+- App port: `SERVER_PORT=8081`
+- PostgreSQL port: `DB_PORT=5434`
 
 ---
-
-## ⚙️ Required Environment Variables
-
-First, create a `.env` file and add the following variables:
-
-```env
-SERVER_HOST=127.0.0.1
-SERVER_PORT=8081
-SERVER_READ_HEADER_TIMEOUT=10
-SERVER_SHUTDOWN_TIMEOUT=3
-
-DB_HOST= "stocks_db"
-DB_PORT= 5432
-DB_USER= "postgres"
-DB_PASSWORD= "password"
-DB_NAME= "stocks_service_db"
-DB_SSLMODE= "disable"
-```
 
 ### ‼️ Don't Modify
 

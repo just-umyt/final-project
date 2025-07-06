@@ -8,33 +8,12 @@ docker pull umyt/my-cart-app:hw7
 
 ## 🚀 Application Ports
 
-Make sure the following ports are accessible:
+Make sure the following ports are accessible, or you can change it on your own free ports:
 
-- App port: `8080`
-- PostgreSQL port: `5433`
+- App port: `SERVER_PORT=8080`
+- PostgreSQL port: `DB_PORT=5433`
 
 ---
-
-## ⚙️ Required Environment Variables
-
-First, create a `.env` file and add the following variables:
-
-```env
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8080
-SERVER_READ_HEADER_TIMEOUT=10
-SERVER_SHUTDOWN_TIMEOUT=3
-
-DB_HOST= "cart_db"
-DB_PORT= 5432
-DB_USER= "postgres"
-DB_NAME= "cart_service_db"
-DB_SSLMODE= "disable"
-DB_PASSWORD= "password"
-
-CLIENT_URL=http://stocks_service:8081/stocks/item/get
-CLIENT_TIMEOUT=2
-```
 
 ### ‼️ Don't Modify
 

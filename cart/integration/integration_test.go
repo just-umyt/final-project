@@ -3,20 +3,12 @@ package integration
 import (
 	"bytes"
 	"cart/internal/config"
-	"cart/internal/repository"
-	myHttp "cart/internal/router/http"
 	"cart/internal/router/http/controller"
-	"cart/internal/services"
-	"cart/internal/usecase"
-	"cart/pkg/postgres"
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -29,61 +21,27 @@ var (
 
 	TestSuccessName = "Succes"
 	TesNotFoundName = "NotFound"
+
+	envPath = "../.env.testing"
 )
 
 func TestIntegration_AddItem(t *testing.T) {
-	err := config.LoadConfig("../.env")
-	require.NoError(t, err)
+	err := config.LoadConfig(envPath)
 
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
-	dbConfig := &postgres.PostgresConfig{
-		Host:     os.Getenv("TEST_DB_HOST"),
-		Port:     os.Getenv("TEST_DB_PORT"),
-		User:     os.Getenv("TEST_DB_USER"),
-		Password: os.Getenv("TEST_DB_PASSWORD"),
-		Dbname:   os.Getenv("TEST_DB_NAME"),
-		SSLMode:  os.Getenv("TEST_DB_SSLMODE"),
-	}
-
-	db, err := postgres.NewDB(dbConfig)
 	require.NoError(t, err)
 
-	migration, err := postgres.NewMigration(db, os.Getenv("TEST_MIGRATION_SOURCE_URL"))
+	init := testAppConfig{}
+
+	err = init.Setup(t.Context())
 	require.NoError(t, err)
-
-	err = postgres.MigrationUp(migration)
-	require.NoError(t, err)
-
-	dbPool, err := postgres.NewDBPool(t.Context(), dbConfig)
-	require.NoError(t, err)
-
-	trxManager := postgres.NewPgTxManager(dbPool)
-
-	cartRepo := repository.NewCartRepository(dbPool)
-
-	timeOut, err := strconv.Atoi(os.Getenv("TEST_CLIENT_TIMEOUT"))
-	require.NoError(t, err)
-
-	stockServer := testStockService()
-
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, stockServer.URL)
-
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
-
-	cartController := controller.NewCartController(cartUsecase)
-
-	newMux := myHttp.NewMux(cartController)
-
-	server := httptest.NewServer(newMux)
 
 	t.Cleanup(func() {
-		db.Close()
-		dbPool.Close()
-		server.Close()
-		stockServer.Close()
+		err := init.Close()
+		require.NoError(t, err)
 	})
 
 	tests := []struct {
@@ -95,15 +53,6 @@ func TestIntegration_AddItem(t *testing.T) {
 			name: TestSuccessName,
 			body: controller.AddItemRequest{
 				UserID: 1,
-				SKUID:  1001,
-				Count:  9,
-			},
-			wantCode: http.StatusOK,
-		},
-		{
-			name: TestSuccessName,
-			body: controller.AddItemRequest{
-				UserID: 2,
 				SKUID:  1001,
 				Count:  9,
 			},
@@ -125,7 +74,7 @@ func TestIntegration_AddItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(server.URL+AddItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Server.URL+AddItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -138,72 +87,49 @@ func TestIntegration_AddItem(t *testing.T) {
 }
 
 func TestIntegration_CartList(t *testing.T) {
-	err := config.LoadConfig("../.env")
-	require.NoError(t, err)
+	err := config.LoadConfig(envPath)
 
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
-	dbConfig := &postgres.PostgresConfig{
-		Host:     os.Getenv("TEST_DB_HOST"),
-		Port:     os.Getenv("TEST_DB_PORT"),
-		User:     os.Getenv("TEST_DB_USER"),
-		Password: os.Getenv("TEST_DB_PASSWORD"),
-		Dbname:   os.Getenv("TEST_DB_NAME"),
-		SSLMode:  os.Getenv("TEST_DB_SSLMODE"),
-	}
-
-	db, err := postgres.NewDB(dbConfig)
 	require.NoError(t, err)
 
-	migration, err := postgres.NewMigration(db, os.Getenv("TEST_MIGRATION_SOURCE_URL"))
+	init := testAppConfig{}
+
+	err = init.Setup(t.Context())
 	require.NoError(t, err)
-
-	err = postgres.MigrationUp(migration)
-	require.NoError(t, err)
-
-	dbPool, err := postgres.NewDBPool(t.Context(), dbConfig)
-	require.NoError(t, err)
-
-	trxManager := postgres.NewPgTxManager(dbPool)
-
-	cartRepo := repository.NewCartRepository(dbPool)
-
-	timeOut, err := strconv.Atoi(os.Getenv("TEST_CLIENT_TIMEOUT"))
-	require.NoError(t, err)
-
-	stockServer := testStockService()
-
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, stockServer.URL)
-
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
-
-	cartController := controller.NewCartController(cartUsecase)
-
-	newMux := myHttp.NewMux(cartController)
-
-	server := httptest.NewServer(newMux)
 
 	t.Cleanup(func() {
-		db.Close()
-		dbPool.Close()
-		server.Close()
-		stockServer.Close()
+		err := init.Close()
+		require.NoError(t, err)
 	})
 
 	tests := []struct {
 		name     string
 		body     any
+		reqURL   string
 		wantMsg  bool
 		wantCode int
 	}{
+		{
+			name: TestSuccessName,
+			body: controller.AddItemRequest{
+				UserID: 1,
+				SKUID:  1001,
+				Count:  9,
+			},
+			reqURL:   AddItemHttpReqURL,
+			wantMsg:  true,
+			wantCode: http.StatusOK,
+		},
 		{
 			name: TestSuccessName,
 			body: controller.DeleteItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 			},
+			reqURL:   ListItemHttpReqURL,
 			wantCode: http.StatusOK,
 			wantMsg:  true,
 		},
@@ -214,7 +140,7 @@ func TestIntegration_CartList(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(server.URL+ListItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -231,79 +157,56 @@ func TestIntegration_CartList(t *testing.T) {
 }
 
 func TestIntegration_DeleteItem(t *testing.T) {
-	err := config.LoadConfig("../.env")
-	require.NoError(t, err)
+	err := config.LoadConfig(envPath)
 
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
-	dbConfig := &postgres.PostgresConfig{
-		Host:     os.Getenv("TEST_DB_HOST"),
-		Port:     os.Getenv("TEST_DB_PORT"),
-		User:     os.Getenv("TEST_DB_USER"),
-		Password: os.Getenv("TEST_DB_PASSWORD"),
-		Dbname:   os.Getenv("TEST_DB_NAME"),
-		SSLMode:  os.Getenv("TEST_DB_SSLMODE"),
-	}
-
-	db, err := postgres.NewDB(dbConfig)
 	require.NoError(t, err)
 
-	migration, err := postgres.NewMigration(db, os.Getenv("TEST_MIGRATION_SOURCE_URL"))
+	init := testAppConfig{}
+
+	err = init.Setup(t.Context())
 	require.NoError(t, err)
-
-	err = postgres.MigrationUp(migration)
-	require.NoError(t, err)
-
-	dbPool, err := postgres.NewDBPool(t.Context(), dbConfig)
-	require.NoError(t, err)
-
-	trxManager := postgres.NewPgTxManager(dbPool)
-
-	cartRepo := repository.NewCartRepository(dbPool)
-
-	timeOut, err := strconv.Atoi(os.Getenv("TEST_CLIENT_TIMEOUT"))
-	require.NoError(t, err)
-
-	stockServer := testStockService()
-
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, stockServer.URL)
-
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
-
-	cartController := controller.NewCartController(cartUsecase)
-
-	newMux := myHttp.NewMux(cartController)
-
-	server := httptest.NewServer(newMux)
 
 	t.Cleanup(func() {
-		db.Close()
-		dbPool.Close()
-		server.Close()
-		stockServer.Close()
+		err := init.Close()
+		require.NoError(t, err)
 	})
 
 	tests := []struct {
 		name     string
 		body     any
+		reqURL   string
 		wantCode int
 	}{
+		{
+			name: TestSuccessName,
+			body: controller.AddItemRequest{
+				UserID: 1,
+				SKUID:  1001,
+				Count:  9,
+			},
+			reqURL:   AddItemHttpReqURL,
+			wantCode: http.StatusOK,
+		},
 		{
 			name: TestSuccessName,
 			body: controller.DeleteItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 			},
+			reqURL:   DeleteItemHttpReqURL,
 			wantCode: http.StatusOK,
 		},
 		{
 			name: TesNotFoundName,
 			body: controller.DeleteItemRequest{
-				UserID: 3,
+				UserID: 2,
 				SKUID:  1001,
 			},
+			reqURL:   DeleteItemHttpReqURL,
 			wantCode: http.StatusNotFound,
 		},
 	}
@@ -313,7 +216,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(server.URL+DeleteItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -321,84 +224,59 @@ func TestIntegration_DeleteItem(t *testing.T) {
 			if resp.StatusCode != tt.wantCode {
 				t.Errorf("status is not correct: %d, want code: %d", resp.StatusCode, tt.wantCode)
 			}
-
 		})
 	}
 }
 
 func TestIntegration_ClearCart(t *testing.T) {
-	err := config.LoadConfig("../.env")
-	require.NoError(t, err)
+	err := config.LoadConfig(envPath)
 
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("integration test is not set")
 	}
 
-	dbConfig := &postgres.PostgresConfig{
-		Host:     os.Getenv("TEST_DB_HOST"),
-		Port:     os.Getenv("TEST_DB_PORT"),
-		User:     os.Getenv("TEST_DB_USER"),
-		Password: os.Getenv("TEST_DB_PASSWORD"),
-		Dbname:   os.Getenv("TEST_DB_NAME"),
-		SSLMode:  os.Getenv("TEST_DB_SSLMODE"),
-	}
-
-	db, err := postgres.NewDB(dbConfig)
 	require.NoError(t, err)
 
-	migration, err := postgres.NewMigration(db, os.Getenv("TEST_MIGRATION_SOURCE_URL"))
+	init := testAppConfig{}
+
+	err = init.Setup(t.Context())
 	require.NoError(t, err)
-
-	err = postgres.MigrationUp(migration)
-	require.NoError(t, err)
-
-	dbPool, err := postgres.NewDBPool(t.Context(), dbConfig)
-	require.NoError(t, err)
-
-	trxManager := postgres.NewPgTxManager(dbPool)
-
-	cartRepo := repository.NewCartRepository(dbPool)
-
-	timeOut, err := strconv.Atoi(os.Getenv("TEST_CLIENT_TIMEOUT"))
-	require.NoError(t, err)
-
-	stockServer := testStockService()
-
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, stockServer.URL)
-
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
-
-	cartController := controller.NewCartController(cartUsecase)
-
-	newMux := myHttp.NewMux(cartController)
-
-	server := httptest.NewServer(newMux)
 
 	t.Cleanup(func() {
-		db.Close()
-		dbPool.Close()
-		server.Close()
-		stockServer.Close()
-		require.NoError(t, migration.Down())
+		err := init.Close()
+		require.NoError(t, err)
 	})
 
 	tests := []struct {
 		name     string
 		body     any
+		reqURL   string
 		wantCode int
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.UserIDRequest{
-				UserID: 2,
+			body: controller.AddItemRequest{
+				UserID: 1,
+				SKUID:  1001,
+				Count:  9,
 			},
+			reqURL:   AddItemHttpReqURL,
+			wantCode: http.StatusOK,
+		},
+		{
+			name: TestSuccessName,
+			body: controller.UserIDRequest{
+				UserID: 1,
+			},
+			reqURL:   ClearCartHttpReqURL,
 			wantCode: http.StatusOK,
 		},
 		{
 			name: TesNotFoundName,
 			body: controller.UserIDRequest{
-				UserID: 3,
+				UserID: 2,
 			},
+			reqURL:   ClearCartHttpReqURL,
 			wantCode: http.StatusNotFound,
 		},
 	}
@@ -408,7 +286,7 @@ func TestIntegration_ClearCart(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(server.URL+ClearCartHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -416,7 +294,6 @@ func TestIntegration_ClearCart(t *testing.T) {
 			if resp.StatusCode != tt.wantCode {
 				t.Errorf("status is not correct: %d, want code: %d", resp.StatusCode, tt.wantCode)
 			}
-
 		})
 	}
 }

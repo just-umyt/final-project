@@ -26,6 +26,8 @@ var (
 )
 
 func TestAddItem(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewICartUsecaseMock(t)
 	t.Cleanup(func() { usecaseMock.MinimockFinish() })
 
@@ -39,7 +41,7 @@ func TestAddItem(t *testing.T) {
 		return nil
 	})
 
-	controller := NewCartController(usecaseMock)
+	cartController := NewCartController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -90,7 +92,7 @@ func TestAddItem(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.AddItem(w, req)
+			cartController.AddItem(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -100,6 +102,8 @@ func TestAddItem(t *testing.T) {
 }
 
 func TestCartClear(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewICartUsecaseMock(t)
 	t.Cleanup(func() { usecaseMock.MinimockFinish() })
 
@@ -111,7 +115,7 @@ func TestCartClear(t *testing.T) {
 		return nil
 	})
 
-	controller := NewCartController(usecaseMock)
+	cartController := NewCartController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -135,7 +139,7 @@ func TestCartClear(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.CartClear(w, req)
+			cartController.CartClear(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -145,6 +149,8 @@ func TestCartClear(t *testing.T) {
 }
 
 func TestDeleteItem(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewICartUsecaseMock(t)
 
 	t.Cleanup(func() { usecaseMock.MinimockFinish() })
@@ -157,7 +163,7 @@ func TestDeleteItem(t *testing.T) {
 		return nil
 	})
 
-	controller := NewCartController(usecaseMock)
+	cartController := NewCartController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -187,7 +193,7 @@ func TestDeleteItem(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.DeleteItem(w, req)
+			cartController.DeleteItem(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)
@@ -197,6 +203,8 @@ func TestDeleteItem(t *testing.T) {
 }
 
 func TestCartList(t *testing.T) {
+	t.Parallel()
+
 	usecaseMock := mock.NewICartUsecaseMock(t)
 
 	t.Cleanup(func() { usecaseMock.MinimockFinish() })
@@ -209,7 +217,7 @@ func TestCartList(t *testing.T) {
 		return usecase.ListItemsDTO{}, nil
 	})
 
-	controller := NewCartController(usecaseMock)
+	cartController := NewCartController(usecaseMock)
 
 	tests := []struct {
 		name     string
@@ -233,7 +241,7 @@ func TestCartList(t *testing.T) {
 			w, req, err := generateWriterRequest(tt.body)
 			require.NoError(t, err)
 
-			controller.CartList(w, req)
+			cartController.CartList(w, req)
 
 			if w.Result().StatusCode != tt.wantCode {
 				t.Errorf("failed test with code :%d", w.Result().StatusCode)

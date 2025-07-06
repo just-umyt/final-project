@@ -24,11 +24,11 @@ clean:
 
 test-env-up:
 	@echo "Test-environments up..."
-	@docker compose -f docker-compose.test.yaml up -d
+	@docker compose --env-file .env.testing -f docker-compose.test.yaml up -d
 
 test-env-down:
 	@echo "Test-environments down..."
-	@docker compose -f docker-compose.test.yaml down -v
+	@docker compose --env-file .env.testing -f docker-compose.test.yaml down -v
 
 test-int:
 	@echo "Testing integration test..."
