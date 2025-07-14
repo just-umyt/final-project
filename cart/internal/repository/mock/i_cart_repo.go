@@ -45,6 +45,13 @@ type ICartRepoMock struct {
 	beforeGetCartByUserIDCounter uint64
 	GetCartByUserIDMock          mICartRepoMockGetCartByUserID
 
+	funcGetCartID          func(ctx context.Context, userID models.UserID, skuID models.SKUID) (c2 models.CartID, err error)
+	funcGetCartIDOrigin    string
+	inspectFuncGetCartID   func(ctx context.Context, userID models.UserID, skuID models.SKUID)
+	afterGetCartIDCounter  uint64
+	beforeGetCartIDCounter uint64
+	GetCartIDMock          mICartRepoMockGetCartID
+
 	funcUpdateItemByUserID          func(ctx context.Context, cart models.Cart) (err error)
 	funcUpdateItemByUserIDOrigin    string
 	inspectFuncUpdateItemByUserID   func(ctx context.Context, cart models.Cart)
@@ -72,6 +79,9 @@ func NewICartRepoMock(t minimock.Tester) *ICartRepoMock {
 
 	m.GetCartByUserIDMock = mICartRepoMockGetCartByUserID{mock: m}
 	m.GetCartByUserIDMock.callArgs = []*ICartRepoMockGetCartByUserIDParams{}
+
+	m.GetCartIDMock = mICartRepoMockGetCartID{mock: m}
+	m.GetCartIDMock.callArgs = []*ICartRepoMockGetCartIDParams{}
 
 	m.UpdateItemByUserIDMock = mICartRepoMockUpdateItemByUserID{mock: m}
 	m.UpdateItemByUserIDMock.callArgs = []*ICartRepoMockUpdateItemByUserIDParams{}
@@ -1481,6 +1491,380 @@ func (m *ICartRepoMock) MinimockGetCartByUserIDInspect() {
 	}
 }
 
+type mICartRepoMockGetCartID struct {
+	optional           bool
+	mock               *ICartRepoMock
+	defaultExpectation *ICartRepoMockGetCartIDExpectation
+	expectations       []*ICartRepoMockGetCartIDExpectation
+
+	callArgs []*ICartRepoMockGetCartIDParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// ICartRepoMockGetCartIDExpectation specifies expectation struct of the ICartRepo.GetCartID
+type ICartRepoMockGetCartIDExpectation struct {
+	mock               *ICartRepoMock
+	params             *ICartRepoMockGetCartIDParams
+	paramPtrs          *ICartRepoMockGetCartIDParamPtrs
+	expectationOrigins ICartRepoMockGetCartIDExpectationOrigins
+	results            *ICartRepoMockGetCartIDResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// ICartRepoMockGetCartIDParams contains parameters of the ICartRepo.GetCartID
+type ICartRepoMockGetCartIDParams struct {
+	ctx    context.Context
+	userID models.UserID
+	skuID  models.SKUID
+}
+
+// ICartRepoMockGetCartIDParamPtrs contains pointers to parameters of the ICartRepo.GetCartID
+type ICartRepoMockGetCartIDParamPtrs struct {
+	ctx    *context.Context
+	userID *models.UserID
+	skuID  *models.SKUID
+}
+
+// ICartRepoMockGetCartIDResults contains results of the ICartRepo.GetCartID
+type ICartRepoMockGetCartIDResults struct {
+	c2  models.CartID
+	err error
+}
+
+// ICartRepoMockGetCartIDOrigins contains origins of expectations of the ICartRepo.GetCartID
+type ICartRepoMockGetCartIDExpectationOrigins struct {
+	origin       string
+	originCtx    string
+	originUserID string
+	originSkuID  string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmGetCartID *mICartRepoMockGetCartID) Optional() *mICartRepoMockGetCartID {
+	mmGetCartID.optional = true
+	return mmGetCartID
+}
+
+// Expect sets up expected params for ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) Expect(ctx context.Context, userID models.UserID, skuID models.SKUID) *mICartRepoMockGetCartID {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	if mmGetCartID.defaultExpectation == nil {
+		mmGetCartID.defaultExpectation = &ICartRepoMockGetCartIDExpectation{}
+	}
+
+	if mmGetCartID.defaultExpectation.paramPtrs != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by ExpectParams functions")
+	}
+
+	mmGetCartID.defaultExpectation.params = &ICartRepoMockGetCartIDParams{ctx, userID, skuID}
+	mmGetCartID.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmGetCartID.expectations {
+		if minimock.Equal(e.params, mmGetCartID.defaultExpectation.params) {
+			mmGetCartID.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetCartID.defaultExpectation.params)
+		}
+	}
+
+	return mmGetCartID
+}
+
+// ExpectCtxParam1 sets up expected param ctx for ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) ExpectCtxParam1(ctx context.Context) *mICartRepoMockGetCartID {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	if mmGetCartID.defaultExpectation == nil {
+		mmGetCartID.defaultExpectation = &ICartRepoMockGetCartIDExpectation{}
+	}
+
+	if mmGetCartID.defaultExpectation.params != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Expect")
+	}
+
+	if mmGetCartID.defaultExpectation.paramPtrs == nil {
+		mmGetCartID.defaultExpectation.paramPtrs = &ICartRepoMockGetCartIDParamPtrs{}
+	}
+	mmGetCartID.defaultExpectation.paramPtrs.ctx = &ctx
+	mmGetCartID.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmGetCartID
+}
+
+// ExpectUserIDParam2 sets up expected param userID for ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) ExpectUserIDParam2(userID models.UserID) *mICartRepoMockGetCartID {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	if mmGetCartID.defaultExpectation == nil {
+		mmGetCartID.defaultExpectation = &ICartRepoMockGetCartIDExpectation{}
+	}
+
+	if mmGetCartID.defaultExpectation.params != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Expect")
+	}
+
+	if mmGetCartID.defaultExpectation.paramPtrs == nil {
+		mmGetCartID.defaultExpectation.paramPtrs = &ICartRepoMockGetCartIDParamPtrs{}
+	}
+	mmGetCartID.defaultExpectation.paramPtrs.userID = &userID
+	mmGetCartID.defaultExpectation.expectationOrigins.originUserID = minimock.CallerInfo(1)
+
+	return mmGetCartID
+}
+
+// ExpectSkuIDParam3 sets up expected param skuID for ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) ExpectSkuIDParam3(skuID models.SKUID) *mICartRepoMockGetCartID {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	if mmGetCartID.defaultExpectation == nil {
+		mmGetCartID.defaultExpectation = &ICartRepoMockGetCartIDExpectation{}
+	}
+
+	if mmGetCartID.defaultExpectation.params != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Expect")
+	}
+
+	if mmGetCartID.defaultExpectation.paramPtrs == nil {
+		mmGetCartID.defaultExpectation.paramPtrs = &ICartRepoMockGetCartIDParamPtrs{}
+	}
+	mmGetCartID.defaultExpectation.paramPtrs.skuID = &skuID
+	mmGetCartID.defaultExpectation.expectationOrigins.originSkuID = minimock.CallerInfo(1)
+
+	return mmGetCartID
+}
+
+// Inspect accepts an inspector function that has same arguments as the ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) Inspect(f func(ctx context.Context, userID models.UserID, skuID models.SKUID)) *mICartRepoMockGetCartID {
+	if mmGetCartID.mock.inspectFuncGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("Inspect function is already set for ICartRepoMock.GetCartID")
+	}
+
+	mmGetCartID.mock.inspectFuncGetCartID = f
+
+	return mmGetCartID
+}
+
+// Return sets up results that will be returned by ICartRepo.GetCartID
+func (mmGetCartID *mICartRepoMockGetCartID) Return(c2 models.CartID, err error) *ICartRepoMock {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	if mmGetCartID.defaultExpectation == nil {
+		mmGetCartID.defaultExpectation = &ICartRepoMockGetCartIDExpectation{mock: mmGetCartID.mock}
+	}
+	mmGetCartID.defaultExpectation.results = &ICartRepoMockGetCartIDResults{c2, err}
+	mmGetCartID.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmGetCartID.mock
+}
+
+// Set uses given function f to mock the ICartRepo.GetCartID method
+func (mmGetCartID *mICartRepoMockGetCartID) Set(f func(ctx context.Context, userID models.UserID, skuID models.SKUID) (c2 models.CartID, err error)) *ICartRepoMock {
+	if mmGetCartID.defaultExpectation != nil {
+		mmGetCartID.mock.t.Fatalf("Default expectation is already set for the ICartRepo.GetCartID method")
+	}
+
+	if len(mmGetCartID.expectations) > 0 {
+		mmGetCartID.mock.t.Fatalf("Some expectations are already set for the ICartRepo.GetCartID method")
+	}
+
+	mmGetCartID.mock.funcGetCartID = f
+	mmGetCartID.mock.funcGetCartIDOrigin = minimock.CallerInfo(1)
+	return mmGetCartID.mock
+}
+
+// When sets expectation for the ICartRepo.GetCartID which will trigger the result defined by the following
+// Then helper
+func (mmGetCartID *mICartRepoMockGetCartID) When(ctx context.Context, userID models.UserID, skuID models.SKUID) *ICartRepoMockGetCartIDExpectation {
+	if mmGetCartID.mock.funcGetCartID != nil {
+		mmGetCartID.mock.t.Fatalf("ICartRepoMock.GetCartID mock is already set by Set")
+	}
+
+	expectation := &ICartRepoMockGetCartIDExpectation{
+		mock:               mmGetCartID.mock,
+		params:             &ICartRepoMockGetCartIDParams{ctx, userID, skuID},
+		expectationOrigins: ICartRepoMockGetCartIDExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmGetCartID.expectations = append(mmGetCartID.expectations, expectation)
+	return expectation
+}
+
+// Then sets up ICartRepo.GetCartID return parameters for the expectation previously defined by the When method
+func (e *ICartRepoMockGetCartIDExpectation) Then(c2 models.CartID, err error) *ICartRepoMock {
+	e.results = &ICartRepoMockGetCartIDResults{c2, err}
+	return e.mock
+}
+
+// Times sets number of times ICartRepo.GetCartID should be invoked
+func (mmGetCartID *mICartRepoMockGetCartID) Times(n uint64) *mICartRepoMockGetCartID {
+	if n == 0 {
+		mmGetCartID.mock.t.Fatalf("Times of ICartRepoMock.GetCartID mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmGetCartID.expectedInvocations, n)
+	mmGetCartID.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmGetCartID
+}
+
+func (mmGetCartID *mICartRepoMockGetCartID) invocationsDone() bool {
+	if len(mmGetCartID.expectations) == 0 && mmGetCartID.defaultExpectation == nil && mmGetCartID.mock.funcGetCartID == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmGetCartID.mock.afterGetCartIDCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmGetCartID.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// GetCartID implements mm_repository.ICartRepo
+func (mmGetCartID *ICartRepoMock) GetCartID(ctx context.Context, userID models.UserID, skuID models.SKUID) (c2 models.CartID, err error) {
+	mm_atomic.AddUint64(&mmGetCartID.beforeGetCartIDCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetCartID.afterGetCartIDCounter, 1)
+
+	mmGetCartID.t.Helper()
+
+	if mmGetCartID.inspectFuncGetCartID != nil {
+		mmGetCartID.inspectFuncGetCartID(ctx, userID, skuID)
+	}
+
+	mm_params := ICartRepoMockGetCartIDParams{ctx, userID, skuID}
+
+	// Record call args
+	mmGetCartID.GetCartIDMock.mutex.Lock()
+	mmGetCartID.GetCartIDMock.callArgs = append(mmGetCartID.GetCartIDMock.callArgs, &mm_params)
+	mmGetCartID.GetCartIDMock.mutex.Unlock()
+
+	for _, e := range mmGetCartID.GetCartIDMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.c2, e.results.err
+		}
+	}
+
+	if mmGetCartID.GetCartIDMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetCartID.GetCartIDMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetCartID.GetCartIDMock.defaultExpectation.params
+		mm_want_ptrs := mmGetCartID.GetCartIDMock.defaultExpectation.paramPtrs
+
+		mm_got := ICartRepoMockGetCartIDParams{ctx, userID, skuID}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmGetCartID.t.Errorf("ICartRepoMock.GetCartID got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmGetCartID.GetCartIDMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.userID != nil && !minimock.Equal(*mm_want_ptrs.userID, mm_got.userID) {
+				mmGetCartID.t.Errorf("ICartRepoMock.GetCartID got unexpected parameter userID, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmGetCartID.GetCartIDMock.defaultExpectation.expectationOrigins.originUserID, *mm_want_ptrs.userID, mm_got.userID, minimock.Diff(*mm_want_ptrs.userID, mm_got.userID))
+			}
+
+			if mm_want_ptrs.skuID != nil && !minimock.Equal(*mm_want_ptrs.skuID, mm_got.skuID) {
+				mmGetCartID.t.Errorf("ICartRepoMock.GetCartID got unexpected parameter skuID, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmGetCartID.GetCartIDMock.defaultExpectation.expectationOrigins.originSkuID, *mm_want_ptrs.skuID, mm_got.skuID, minimock.Diff(*mm_want_ptrs.skuID, mm_got.skuID))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetCartID.t.Errorf("ICartRepoMock.GetCartID got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmGetCartID.GetCartIDMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetCartID.GetCartIDMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetCartID.t.Fatal("No results are set for the ICartRepoMock.GetCartID")
+		}
+		return (*mm_results).c2, (*mm_results).err
+	}
+	if mmGetCartID.funcGetCartID != nil {
+		return mmGetCartID.funcGetCartID(ctx, userID, skuID)
+	}
+	mmGetCartID.t.Fatalf("Unexpected call to ICartRepoMock.GetCartID. %v %v %v", ctx, userID, skuID)
+	return
+}
+
+// GetCartIDAfterCounter returns a count of finished ICartRepoMock.GetCartID invocations
+func (mmGetCartID *ICartRepoMock) GetCartIDAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetCartID.afterGetCartIDCounter)
+}
+
+// GetCartIDBeforeCounter returns a count of ICartRepoMock.GetCartID invocations
+func (mmGetCartID *ICartRepoMock) GetCartIDBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetCartID.beforeGetCartIDCounter)
+}
+
+// Calls returns a list of arguments used in each call to ICartRepoMock.GetCartID.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetCartID *mICartRepoMockGetCartID) Calls() []*ICartRepoMockGetCartIDParams {
+	mmGetCartID.mutex.RLock()
+
+	argCopy := make([]*ICartRepoMockGetCartIDParams, len(mmGetCartID.callArgs))
+	copy(argCopy, mmGetCartID.callArgs)
+
+	mmGetCartID.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetCartIDDone returns true if the count of the GetCartID invocations corresponds
+// the number of defined expectations
+func (m *ICartRepoMock) MinimockGetCartIDDone() bool {
+	if m.GetCartIDMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.GetCartIDMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.GetCartIDMock.invocationsDone()
+}
+
+// MinimockGetCartIDInspect logs each unmet expectation
+func (m *ICartRepoMock) MinimockGetCartIDInspect() {
+	for _, e := range m.GetCartIDMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to ICartRepoMock.GetCartID at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterGetCartIDCounter := mm_atomic.LoadUint64(&m.afterGetCartIDCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetCartIDMock.defaultExpectation != nil && afterGetCartIDCounter < 1 {
+		if m.GetCartIDMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to ICartRepoMock.GetCartID at\n%s", m.GetCartIDMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to ICartRepoMock.GetCartID at\n%s with params: %#v", m.GetCartIDMock.defaultExpectation.expectationOrigins.origin, *m.GetCartIDMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetCartID != nil && afterGetCartIDCounter < 1 {
+		m.t.Errorf("Expected call to ICartRepoMock.GetCartID at\n%s", m.funcGetCartIDOrigin)
+	}
+
+	if !m.GetCartIDMock.invocationsDone() && afterGetCartIDCounter > 0 {
+		m.t.Errorf("Expected %d calls to ICartRepoMock.GetCartID at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.GetCartIDMock.expectedInvocations), m.GetCartIDMock.expectedInvocationsOrigin, afterGetCartIDCounter)
+	}
+}
+
 type mICartRepoMockUpdateItemByUserID struct {
 	optional           bool
 	mock               *ICartRepoMock
@@ -1835,6 +2219,8 @@ func (m *ICartRepoMock) MinimockFinish() {
 
 			m.MinimockGetCartByUserIDInspect()
 
+			m.MinimockGetCartIDInspect()
+
 			m.MinimockUpdateItemByUserIDInspect()
 		}
 	})
@@ -1863,5 +2249,6 @@ func (m *ICartRepoMock) minimockDone() bool {
 		m.MinimockClearCartByUserIDDone() &&
 		m.MinimockDeleteItemDone() &&
 		m.MinimockGetCartByUserIDDone() &&
+		m.MinimockGetCartIDDone() &&
 		m.MinimockUpdateItemByUserIDDone()
 }

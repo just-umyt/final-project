@@ -15,8 +15,8 @@ services:
       - "${SERVER_PORT}:8080"
     container_name: umyt/stocks-service
     networks:
-      - public_net
-      - internal_net
+      - public-net
+      - internal-net
 
   stocks_db:
     image: postgres:15-alpine
@@ -33,11 +33,10 @@ services:
       - "${DB_PORT}:5432"
     container_name: umyt/stocks-db
     networks:
-      - internal_net
+      - internal-net
 
 networks:
-  public_net:
+  public-net:
     external: true
-    name: public-net
-  internal_net:
+  internal-net:
     driver: bridge

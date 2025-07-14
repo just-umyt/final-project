@@ -27,12 +27,17 @@ func TestAddItem(t *testing.T) {
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
 		trxMock.MinimockFinish()
 		serviceMock.MinimockFinish()
 	})
+
+	kafkaMock.ProduceMock.Return(nil)
+
+	repoMock.GetCartIDMock.Return(1, nil)
 
 	serviceMock.GetItemInfoMock.Set(func(ctx context.Context, skuID models.SKUID) (services.ItemDTO, error) {
 		if skuID < 1001 {
@@ -44,21 +49,13 @@ func TestAddItem(t *testing.T) {
 		return services.ItemDTO{Count: 10}, nil
 	})
 
-	repoMock.UpdateItemByUserIDMock.Set(func(ctx context.Context, cart models.Cart) (err error) {
-		if cart.UserID != 1 {
-			return repository.ErrNotFound
-		}
-
-		return nil
-	})
-
-	repoMock.AddItemMock.Return(nil)
+	repoMock.UpdateItemByUserIDMock.Return(nil)
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.ICartRepo) error) (err error) {
 		return fn(repoMock)
 	})
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -92,15 +89,6 @@ func TestAddItem(t *testing.T) {
 			},
 			wantErr: ErrNotEnoughStock,
 		},
-		{
-			name: "ErrorUpdateNotfound",
-			body: AddItemDTO{
-				UserID: 2,
-				SKUID:  1001,
-				Count:  5,
-			},
-			wantErr: nil,
-		},
 	}
 
 	for _, tt := range tests {
@@ -121,6 +109,7 @@ func TestDeleteItem(t *testing.T) {
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -136,7 +125,7 @@ func TestDeleteItem(t *testing.T) {
 		return nil
 	})
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -179,6 +168,7 @@ func TestGetItemsByUserID(t *testing.T) {
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -196,7 +186,7 @@ func TestGetItemsByUserID(t *testing.T) {
 
 	serviceMock.GetItemInfoMock.Return(services.ItemDTO{}, nil)
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -240,6 +230,7 @@ func TestClearCartByUserID(t *testing.T) {
 	serviceMock := mock.NewIStockServiceMock(t)
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -257,7 +248,7 @@ func TestClearCartByUserID(t *testing.T) {
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.ICartRepo) error) (err error) { return fn(repoMock) })
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
 
 	tests := []struct {
 		name    string

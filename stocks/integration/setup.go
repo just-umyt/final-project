@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http/httptest"
 	"os"
+	"stocks/internal/producer"
 	"stocks/internal/repository"
 	"stocks/internal/router/http/controller"
 	"stocks/internal/usecase"
@@ -59,7 +60,12 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 
 	stockRepo := repository.NewStockRepository(t.DBPool)
 
-	stockUsecae := usecase.NewStockUsecase(stockRepo, trxManager)
+	kafkaProducer, err := producer.NewProducer(os.Getenv("KAFKA_BROKERS"))
+	if err != nil {
+		return err
+	}
+
+	stockUsecae := usecase.NewStockUsecase(stockRepo, trxManager, kafkaProducer)
 
 	stockController := controller.NewStockController(stockUsecae)
 

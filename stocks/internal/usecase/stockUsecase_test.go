@@ -5,8 +5,8 @@ import (
 	"errors"
 	"stocks/internal/models"
 	"stocks/internal/repository"
-	"stocks/internal/repository/mock"
-	txMock "stocks/internal/usecase/mock"
+	repositoryMock "stocks/internal/repository/mock"
+	"stocks/internal/usecase/mock"
 
 	"testing"
 )
@@ -21,8 +21,9 @@ var (
 )
 
 func TestAddStock(t *testing.T) {
-	repoMock := mock.NewIStockRepoMock(t)
-	trxMock := txMock.NewIPgTxManagerMock(t)
+	repoMock := repositoryMock.NewIStockRepoMock(t)
+	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -46,11 +47,13 @@ func TestAddStock(t *testing.T) {
 
 	repoMock.UpdateStockMock.Return(nil)
 
+	kafkaMock.ProduceMock.Return(nil)
+
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -106,8 +109,9 @@ func TestAddStock(t *testing.T) {
 }
 
 func TestDeleteStockBySKU(t *testing.T) {
-	repoMock := mock.NewIStockRepoMock(t)
-	trxMock := txMock.NewIPgTxManagerMock(t)
+	repoMock := repositoryMock.NewIStockRepoMock(t)
+	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -122,7 +126,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 		return nil
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -158,8 +162,9 @@ func TestDeleteStockBySKU(t *testing.T) {
 }
 
 func TestGetStockByLocation(t *testing.T) {
-	repoMock := mock.NewIStockRepoMock(t)
-	trxMock := txMock.NewIPgTxManagerMock(t)
+	repoMock := repositoryMock.NewIStockRepoMock(t)
+	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -187,7 +192,7 @@ func TestGetStockByLocation(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
 
 	tests := []struct {
 		name    string
@@ -238,8 +243,9 @@ func TestGetStockByLocation(t *testing.T) {
 }
 
 func TestGetItemBySKU(t *testing.T) {
-	repoMock := mock.NewIStockRepoMock(t)
-	trxMock := txMock.NewIPgTxManagerMock(t)
+	repoMock := repositoryMock.NewIStockRepoMock(t)
+	trxMock := mock.NewIPgTxManagerMock(t)
+	kafkaMock := mock.NewIProducerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -258,7 +264,7 @@ func TestGetItemBySKU(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
 
 	tests := []struct {
 		name    string

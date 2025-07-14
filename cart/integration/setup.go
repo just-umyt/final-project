@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"cart/internal/producer"
 	"cart/internal/repository"
 	"cart/internal/router/http/controller"
 	"cart/internal/services"
@@ -62,7 +63,6 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 	trxManager := postgres.NewPgTxManager(t.DBPool)
 
 	cartRepo := repository.NewCartRepository(t.DBPool)
-
 	var timeOut int
 
 	timeOut, err = strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
@@ -74,7 +74,12 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 
 	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, t.StockServer.URL)
 
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
+	kafkaProducer, err := producer.NewProducer(os.Getenv("KAFKA_BROKERS"))
+	if err != nil {
+		return err
+	}
+
+	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
 
 	cartController := controller.NewCartController(cartUsecase)
 

@@ -3,8 +3,11 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log"
 	"stocks/internal/models"
+	"stocks/internal/producer"
 	"stocks/internal/repository"
+	"time"
 )
 
 //go:generate mkdir -p mock
@@ -13,22 +16,43 @@ type IPgTxManager interface {
 	WithTx(ctx context.Context, fn func(repository.IStockRepo) error) error
 }
 
-type StockUsecase struct {
-	stockRepo repository.IStockRepo
-	trManager IPgTxManager
+type IProducer interface {
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) error
 }
 
-var (
-	ErrNotFound error = errors.New("not found")
-	ErrUserID   error = errors.New("user id is not matched")
+type StockUsecase struct {
+	stockRepo     repository.IStockRepo
+	trManager     IPgTxManager
+	kafkaProducer IProducer
+}
+
+const (
+	eventSKUCreateType  = "sku_created"
+	eventStokChangeType = "stock_changed"
+
+	eventService = "stock"
+
+	topic             = "metrics"
+	partitionID int32 = 0
 )
 
-func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager) *StockUsecase {
-	return &StockUsecase{stockRepo: repo, trManager: trManager}
+var (
+	ErrNotFound     error = errors.New("not found")
+	ErrUserID       error = errors.New("user id is not matched")
+	ErrKafkaProduce       = "error kafka produce: %v"
+)
+
+func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager, kafkaPr IProducer) *StockUsecase {
+	return &StockUsecase{stockRepo: repo, trManager: trManager, kafkaProducer: kafkaPr}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
-	return u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
+	messageDTO := producer.ProducerMessageDTO{
+		Service:   eventService,
+		Timestamp: time.Now(),
+	}
+
+	if err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, stock.SKUID)
 		if err != nil {
 			if item.Stock.ID == 0 {
@@ -53,6 +77,11 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 				return ErrNotFound
 			}
 
+			messageDTO.Type = eventSKUCreateType
+			messageDTO.SKU = newItem.SKUID
+			messageDTO.Count = newItem.Count
+			messageDTO.Price = newItem.Price
+
 			return err
 		case stock.UserID:
 			err := repo.UpdateStock(ctx, newItem)
@@ -60,11 +89,24 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 				return ErrNotFound
 			}
 
+			messageDTO.Type = eventSKUCreateType
+			messageDTO.SKU = newItem.SKUID
+			messageDTO.Count = newItem.Count
+			messageDTO.Price = newItem.Price
+
 			return err
 		default:
 			return ErrUserID
 		}
-	})
+	}); err != nil {
+		return err
+	}
+
+	if err := u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now()); err != nil {
+		log.Printf(ErrKafkaProduce, err)
+	}
+
+	return nil
 }
 
 func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {

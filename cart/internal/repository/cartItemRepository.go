@@ -4,6 +4,7 @@ import (
 	"cart/internal/models"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,6 +19,7 @@ type IDBQuery interface {
 //go:generate mkdir -p mock
 //go:generate minimock -o ./mock/ -s .go  -g
 type ICartRepo interface {
+	GetCartID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, error)
 	UpdateItemByUserID(ctx context.Context, cart models.Cart) error
 	AddItem(ctx context.Context, cart models.Cart) error
 	DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error
@@ -35,10 +37,30 @@ func NewCartRepository(db IDBQuery) *CartRepo {
 	return &CartRepo{db: db}
 }
 
-func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) error {
-	query := `UPDATE cart SET count = count + $1 WHERE user_id = $2 AND sku_id = $3`
+func (c *CartRepo) GetCartID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, error) {
+	query := "SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2"
 
-	tag, err := c.db.Exec(ctx, query, cart.Count, cart.UserID, cart.SKUID)
+	var id int64
+	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	cartID, err := models.Int64ToUint32(id)
+	if err != nil {
+		return 0, fmt.Errorf("cart_id %s", err.Error())
+	}
+
+	return models.CartID(cartID), nil
+}
+
+func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) error {
+	query := `UPDATE cart SET count = count + $1 WHERE id = $2`
+
+	tag, err := c.db.Exec(ctx, query, cart.Count, cart.ID)
 	if err != nil {
 		return err
 	}
@@ -94,13 +116,13 @@ func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) ([
 			return nil, err
 		}
 
-		skuID, err := models.Int64ToSKUID(dbItem.SKUID)
+		skuID, err := models.Int64ToUint32(dbItem.SKUID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("sku_id %s", err.Error())
 		}
 
 		items = append(items, models.CartItem{
-			SKUID: skuID,
+			SKUID: models.SKUID(skuID),
 			Count: dbItem.Count,
 		})
 	}
