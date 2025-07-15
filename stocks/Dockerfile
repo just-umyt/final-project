@@ -14,4 +14,4 @@ RUN go mod tidy
 
 RUN go build -tags musl -ldflags '-extldflags "-static"' -o stocks cmd/main.go
 
-CMD [ "./stocks" ]
+CMD [ "./stocks", "-env=prod"]

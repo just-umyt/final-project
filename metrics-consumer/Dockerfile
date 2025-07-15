@@ -19,4 +19,4 @@ WORKDIR /app
 
 COPY --from=builder /app/metrics /app/.env.prod ./
 
-CMD [ "./metrics" ]
+CMD [ "./metrics", "-env=prod" ]

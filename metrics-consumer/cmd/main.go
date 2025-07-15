@@ -19,12 +19,10 @@ func main() {
 	flag.StringVar(&env, "env", "prod", `There are 2 env: 1 - "prod", 2 - "local"`)
 	flag.Parse()
 
-	if env == "local" {
-		env = ".env." + env
-		if err := config.LoadConfig(env); err != nil {
-			err = fmt.Errorf(ErrLoadEnv, err)
-			log.Fatalf(ErrLoadEnv, err)
-		}
+	env = ".env." + env
+	if err := config.LoadConfig(env); err != nil {
+		err = fmt.Errorf(ErrLoadEnv, err)
+		log.Fatalf(ErrLoadEnv, err)
 	}
 
 	err := app.RunApp()
