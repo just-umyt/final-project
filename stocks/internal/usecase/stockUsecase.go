@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"log"
 	"stocks/internal/models"
 	"stocks/internal/producer"
 	"stocks/internal/repository"
@@ -17,7 +16,7 @@ type IPgTxManager interface {
 }
 
 type IProducer interface {
-	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) error
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
 }
 
 type StockUsecase struct {
@@ -37,9 +36,8 @@ const (
 )
 
 var (
-	ErrNotFound     error = errors.New("not found")
-	ErrUserID       error = errors.New("user id is not matched")
-	ErrKafkaProduce       = "error kafka produce: %v"
+	ErrNotFound error = errors.New("not found")
+	ErrUserID   error = errors.New("user id is not matched")
 )
 
 func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager, kafkaPr IProducer) *StockUsecase {
@@ -102,9 +100,7 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 		return err
 	}
 
-	if err := u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now()); err != nil {
-		log.Printf(ErrKafkaProduce, err)
-	}
+	u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
 
 	return nil
 }

@@ -2,17 +2,28 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"metrics-consumer/internal/config"
 	"metrics-consumer/internal/consumer"
 	"metrics-consumer/internal/handler"
 )
 
-func RunApp() error {
+var (
+	ErrLoadEnv = "error loading .env file: %v"
+)
+
+func RunApp(env string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	if err := config.LoadConfig(env); err != nil {
+		err = fmt.Errorf(ErrLoadEnv, err)
+		return err
+	}
 
 	address := os.Getenv("KAFKA_BROKERS")
 
@@ -30,9 +41,6 @@ func RunApp() error {
 	go func() {
 		cons.Start(ctx)
 	}()
-
-	// sigChan := make(chan os.Signal, 1)
-	// signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	<-ctx.Done()
 

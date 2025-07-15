@@ -41,11 +41,13 @@ func (c *CartRepo) GetCartID(ctx context.Context, userID models.UserID, skuID mo
 	query := "SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2"
 
 	var id int64
+
 	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&id)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil
 		}
+
 		return 0, err
 	}
 

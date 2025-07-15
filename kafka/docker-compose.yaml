@@ -1,10 +1,10 @@
 version: "3.8"
 
 services:
-  # metrics-consumer:
-  #   image: umyt/metrics-consumer:hw9
-  #   networks:
-  #     - shared-net
+  metrics-consumer:
+    image: umyt/metrics-consumer1:hw9
+    networks:
+      - shared-net
   #   environment:
   #     - KAFKA_BROKERS=kafka1:29091,kafka2:29092
   #     - TOPIC=metrics

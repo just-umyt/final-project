@@ -88,6 +88,7 @@ func RunApp(env string) error {
 	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
 
 	address := os.Getenv("KAFKA_BROKERS")
+
 	kafkaProducer, err := producer.NewProducer(address)
 	if err != nil {
 		return err

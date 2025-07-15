@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -12,11 +13,6 @@ import (
 const (
 	acks = 0
 
-	//if we want acks -1 uncomment config below
-	// retries = 3
-	// retryBackoffMs    = 500
-	// enableIdempotence = true
-
 	flushTimeout = 5000
 
 	partitionID = 0
@@ -24,6 +20,7 @@ const (
 	ErrCreateProducer = "error creating kafka producer: %v"
 	ErrSendMsg        = "error sending message to kafka: %v"
 	ErrMarshallMsg    = "error marshaling message to json: %v"
+	ErrKafkaRespond   = "error kafka respond: %v"
 )
 
 var (
@@ -38,10 +35,6 @@ func NewProducer(address string) (*Producer, error) {
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": address,
 		"acks":              acks,
-		//if we want acks -1 uncomment config below
-		// "retries":           retries,
-		// "retry.backoff.ms": retryBackoffMs,
-		// "enable.idempotence": enableIdempotence,
 	}
 
 	prod, err := kafka.NewProducer(config)
@@ -52,7 +45,7 @@ func NewProducer(address string) (*Producer, error) {
 	return &Producer{producer: prod}, nil
 }
 
-func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32, t time.Time) error {
+func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32, t time.Time) {
 	message := Message{
 		Type:      dto.Type,
 		Service:   dto.Service,
@@ -66,7 +59,7 @@ func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32
 
 	jsonMsg, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf(ErrMarshallMsg, err)
+		log.Printf(ErrMarshallMsg, err)
 	}
 
 	kafkaMessage := &kafka.Message{
@@ -81,18 +74,20 @@ func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32
 
 	kafkaChan := make(chan kafka.Event)
 	if err := p.producer.Produce(kafkaMessage, kafkaChan); err != nil {
-		return fmt.Errorf(ErrSendMsg, err)
+		log.Printf(ErrSendMsg, err)
 	}
 
-	event := <-kafkaChan
-	switch e := event.(type) {
-	case *kafka.Message:
-		return nil
-	case kafka.Error:
-		return e
-	default:
-		return ErrUnknownType
-	}
+	go func() {
+		event := <-kafkaChan
+		switch e := event.(type) {
+		case *kafka.Message:
+			log.Println("succes kafka message send")
+		case kafka.Error:
+			log.Printf(ErrKafkaRespond, e)
+		default:
+			log.Println(ErrUnknownType)
+		}
+	}()
 }
 
 func (p *Producer) Close() {

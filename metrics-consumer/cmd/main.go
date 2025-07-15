@@ -2,11 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
 	"metrics-consumer/internal/app"
-	"metrics-consumer/internal/config"
 )
 
 var (
@@ -19,14 +17,9 @@ func main() {
 	flag.StringVar(&env, "env", "prod", `There are 2 env: 1 - "prod", 2 - "local"`)
 	flag.Parse()
 
-	if env == "local" {
-		if err := config.LoadConfig(".env"); err != nil {
-			err = fmt.Errorf(ErrLoadEnv, err)
-			log.Fatalf(ErrLoadEnv, err)
-		}
-	}
+	env = ".env." + env
 
-	err := app.RunApp()
+	err := app.RunApp(env)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	} else {

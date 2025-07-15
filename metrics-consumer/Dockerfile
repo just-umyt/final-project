@@ -1,38 +1,21 @@
-FROM golang:1.24-alpine
+FROM golang:1.24-alpine AS builder
 
-RUN apk add --no-cache \
-    librdkafka-dev \
-    pkgconf \
-    build-base
+RUN apk add --no-progress --no-cache gcc musl-dev
 
 WORKDIR /app
 
 COPY . .
 
-ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
+ENV GOPROXY=https://goproxy.cn
 
 RUN go mod tidy
 
+RUN go build -tags musl -ldflags '-extldflags "-static"' -o metrics cmd/main.go
 
-RUN go build -o metrics cmd/main.go
+FROM alpine:3.20
+
+WORKDIR /app
+
+COPY --from=builder /app/metrics .
 
 CMD [ "./metrics" ]
-
-# FROM golang:1.24-alpine AS builder
-
-
-# WORKDIR /app
-# COPY . .
-# RUN go mod download
-
-# RUN GOOS=linux GOARCH=amd64 go build -tags musl -o /app/bin/main .
-
-# FROM ubuntu
-
-# RUN  sudo apt install -y librdkafka-dev pkg-config build-essential
-
-# WORKDIR /app
-
-# COPY --from=builder /app/bin/main /app/bin/main
-
-# ENTRYPOINT ["/app/bin/main"]

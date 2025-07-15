@@ -22,7 +22,7 @@ type IStockService interface {
 }
 
 type IProducer interface {
-	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) error
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
 }
 
 type CartUsecase struct {
@@ -48,7 +48,6 @@ const (
 var (
 	ErrNotFound       error = errors.New("not found")
 	ErrNotEnoughStock error = errors.New("not enough stock")
-	ErrKafkaProduce         = "error kafka produce: %v"
 )
 
 func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService, kafkaPr IProducer) *CartUsecase {
@@ -81,10 +80,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		messageDTO.Status = eventStatusFailed
 		messageDTO.Reason = ErrNotEnoughStock.Error()
 
-		err = u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
-		if err != nil {
-			log.Println(err)
-		}
+		u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
 
 		return ErrNotEnoughStock
 	}
@@ -111,9 +107,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
-	if err = u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now()); err != nil {
-		log.Printf(ErrKafkaProduce, err)
-	}
+	u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
 
 	return nil
 }

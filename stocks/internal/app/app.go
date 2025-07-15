@@ -79,6 +79,7 @@ func RunApp(env string) error {
 	stockRepo := repository.NewStockRepository(dbPool)
 
 	address := os.Getenv("KAFKA_BROKERS")
+
 	kafkaProducer, err := producer.NewProducer(address)
 	if err != nil {
 		return err

@@ -35,7 +35,7 @@ func TestAddItem(t *testing.T) {
 		serviceMock.MinimockFinish()
 	})
 
-	kafkaMock.ProduceMock.Return(nil)
+	kafkaMock.ProduceMock.Return()
 
 	repoMock.GetCartIDMock.Return(1, nil)
 

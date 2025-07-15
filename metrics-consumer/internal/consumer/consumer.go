@@ -49,25 +49,29 @@ func NewConsumer(handler IHandler, address string, topic, consumerGroup string) 
 }
 
 func (c *Consumer) Start(ctx context.Context) {
-	for ctx.Err() == nil {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			kafkaMsg, err := c.consumer.ReadMessage(readTimeoutMs)
+			if err != nil {
+				if err.Error() == kafka.ErrTimedOut.String() {
+					continue
+				}
+				log.Printf("error kafka read message: %v", err)
+			}
 
-		kafkaMsg, err := c.consumer.ReadMessage(readTimeoutMs)
-		if err != nil {
-			if err.Error() == kafka.ErrTimedOut.String() {
+			if kafkaMsg == nil {
 				continue
 			}
-			log.Printf("error kafka read message: %v", err)
-		}
 
-		if kafkaMsg == nil {
-			continue
-		}
+			c.handler.HandleMessage(kafkaMsg.Value, kafkaMsg.TopicPartition.Offset, kafkaMsg.TopicPartition.Partition)
 
-		c.handler.HandleMessage(kafkaMsg.Value, kafkaMsg.TopicPartition.Offset, kafkaMsg.TopicPartition.Partition)
-
-		if _, err := c.consumer.StoreMessage(kafkaMsg); err != nil {
-			log.Printf("error kafka store message: %v", err)
-			continue
+			if _, err := c.consumer.StoreMessage(kafkaMsg); err != nil {
+				log.Printf("error kafka store message: %v", err)
+				continue
+			}
 		}
 	}
 }
