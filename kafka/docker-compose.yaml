@@ -2,12 +2,14 @@ version: "3.8"
 
 services:
   metrics-consumer:
-    image: umyt/metrics-consumer:hw9
+    image: umyt/metrics-consumer1:hw9
+    container_name: metrics-consumer
     networks:
       - shared-net
-  #   environment:
-  #     - KAFKA_BROKERS=kafka1:29091,kafka2:29092
-  #     - TOPIC=metrics
+    depends_on:
+      - zookeeper
+      - kafka1
+      - kafka2
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.1

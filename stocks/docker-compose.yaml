@@ -1,6 +1,6 @@
 services:
   stocks_service:
-    image: umyt/stocks:hw7
+    image: umyt/stocks:hw9
     depends_on:
       stocks_db:
         condition: service_healthy
