@@ -81,6 +81,7 @@ func TestIntegration_AddItem(t *testing.T) {
 
 			resp, err := http.Post(init.Server.URL+AddItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
+
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tt.wantCode {
@@ -132,6 +133,7 @@ func TestIntegration_ListItems(t *testing.T) {
 
 			resp, err := http.Post(init.Server.URL+ListItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
+
 			defer resp.Body.Close()
 
 			if resp.Body == nil {
@@ -191,6 +193,7 @@ func TestIntegration_GetItem(t *testing.T) {
 
 			resp, err := http.Post(init.Server.URL+GetItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
+
 			defer resp.Body.Close()
 
 			if resp.Body == nil {
@@ -270,6 +273,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 
 			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
+
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tt.wantCode {

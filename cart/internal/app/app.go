@@ -2,6 +2,7 @@ package app
 
 import (
 	"cart/internal/config"
+	"cart/internal/producer"
 	myHttp "cart/internal/router/http"
 	"cart/internal/router/http/controller"
 	"log"
@@ -86,7 +87,16 @@ func RunApp(env string) error {
 
 	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
 
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService)
+	address := os.Getenv("KAFKA_BROKERS")
+
+	kafkaProducer, err := producer.NewProducer(address)
+	if err != nil {
+		return err
+	}
+
+	defer kafkaProducer.Close()
+
+	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
 
 	controller := controller.NewCartController(cartUsecase)
 

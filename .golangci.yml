@@ -32,6 +32,7 @@ linters:
     - whitespace
     - govet
     - wsl
+    - wsl_v5
   settings:
     revive:
       rules:
@@ -54,6 +55,15 @@ linters:
       force-err-cuddling: true
     gocognit:
       min-complexity: 36
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+      enable:
+        - err
+      disable:
+        - assign
+        - decl
   exclusions:
     generated: lax
     presets:

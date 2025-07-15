@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"cart/internal/models"
+	"cart/internal/producer"
 	"cart/internal/repository"
 	"cart/internal/services"
 	"context"
 	"errors"
 	"log"
+	"time"
 )
 
 //go:generate mkdir -p mock
@@ -19,19 +21,36 @@ type IStockService interface {
 	GetItemInfo(ctx context.Context, skuID models.SKUID) (services.ItemDTO, error)
 }
 
-type CartUsecase struct {
-	skuService IStockService
-	cartRepo   repository.ICartRepo
-	trManager  IPgTxManager
+type IProducer interface {
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) error
 }
+
+type CartUsecase struct {
+	skuService    IStockService
+	cartRepo      repository.ICartRepo
+	trManager     IPgTxManager
+	kafkaProducer IProducer
+}
+
+const (
+	eventSuccessType = "cart_item_added"
+	eventFailedType  = "cart_item_failed"
+
+	eventStatusOk     = "success"
+	eventStatusFailed = "failed"
+
+	eventService = "cart"
+
+	topic = "metrics"
+)
 
 var (
 	ErrNotFound       error = errors.New("not found")
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService) *CartUsecase {
-	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service}
+func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService, kafkaPr IProducer) *CartUsecase {
+	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service, kafkaProducer: kafkaPr}
 }
 
 func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
@@ -40,24 +59,56 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
+	id, err := u.cartRepo.GetCartID(ctx, addItem.UserID, addItem.SKUID)
+	if err != nil {
+		return err
+	}
+
+	messageDTO := producer.ProducerMessageDTO{
+		Type:      eventSuccessType,
+		Service:   eventService,
+		Timestamp: time.Now(),
+		CartID:    id,
+		SKU:       addItem.SKUID,
+		Count:     addItem.Count,
+		Status:    eventStatusOk,
+	}
+
 	if item.Count < addItem.Count {
+		messageDTO.Type = eventFailedType
+		messageDTO.Status = eventStatusFailed
+		messageDTO.Reason = ErrNotEnoughStock.Error()
+
+		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+
 		return ErrNotEnoughStock
 	}
 
-	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
+	if err = u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		cart := models.Cart{
+			ID:     id,
 			UserID: addItem.UserID,
 			SKUID:  addItem.SKUID,
 			Count:  addItem.Count,
 		}
 
-		err := repo.UpdateItemByUserID(ctx, cart)
-		if errors.Is(err, repository.ErrNotFound) {
-			return repo.AddItem(ctx, cart)
+		if id > 0 {
+			err = repo.UpdateItemByUserID(ctx, cart)
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+
+			return err
 		}
 
+		return repo.AddItem(ctx, cart)
+	}); err != nil {
 		return err
-	})
+	}
+
+	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+
+	return nil
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {

@@ -1,43 +1,42 @@
 services:
   cart_service:
-    image: umyt/cart:hw7
+    image: umyt/cart:hw9
     depends_on:
       cart_db:
         condition: service_healthy
     environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_USER: ${DB_USER}
-      DB_NAME: ${DB_NAME}
-      DB_SSLMODE: ${DB_SSLMODE}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: cart_db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_NAME: cart
+      DB_SSLMODE: disable
+      DB_PASSWORD: password
     ports:
-      - "${SERVER_PORT}:8080"
-    container_name: umyt/cart-service
+      - "8080:8080"
+    container_name: umyt-cart-service
     networks:
-      - public_net
-      - internal_net
+      - public-net
+      - internal-net
 
   cart_db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cart
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cart"]
       interval: 5s
       timeout: 5s
       retries: 3
     ports:
-      - "${DB_PORT}:5432"
-    container_name: umyt/cart-db
+      - "5432:5432"
+    container_name: umyt-cart-db
     networks:
-      - internal_net
+      - internal-net
 
 networks:
-  public_net:
+  public-net:
     external: true
-    name: public-net
-  internal_net:
+  internal-net:
     driver: bridge

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"stocks/internal/config"
+	"stocks/internal/producer"
 	"stocks/internal/repository"
 	myHttp "stocks/internal/router/http"
 	"stocks/internal/router/http/controller"
@@ -77,7 +78,16 @@ func RunApp(env string) error {
 
 	stockRepo := repository.NewStockRepository(dbPool)
 
-	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager)
+	address := os.Getenv("KAFKA_BROKERS")
+
+	kafkaProducer, err := producer.NewProducer(address)
+	if err != nil {
+		return err
+	}
+
+	defer kafkaProducer.Close()
+
+	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager, kafkaProducer)
 
 	stockController := controller.NewStockController(stockUsecase)
 
