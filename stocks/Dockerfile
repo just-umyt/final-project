@@ -6,11 +6,10 @@ WORKDIR /app
 
 COPY . .
 
-# ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
-ENV GOPROXY=https://goproxy.cn,direct
-# ENV GOPROXY=https://goproxy.io,direct
+ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
 
 RUN go mod tidy
+
 
 RUN go build -tags musl -ldflags '-extldflags "-static"' -o stocks cmd/main.go
 
