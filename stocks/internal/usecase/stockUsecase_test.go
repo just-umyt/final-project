@@ -47,7 +47,7 @@ func TestAddStock(t *testing.T) {
 
 	repoMock.UpdateStockMock.Return(nil)
 
-	kafkaMock.ProduceMock.Return()
+	kafkaMock.ProduceMock.Return(nil)
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.IStockRepo) error) (err error) {
 		return fn(repoMock)

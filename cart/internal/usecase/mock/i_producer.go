@@ -17,9 +17,9 @@ type IProducerMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcProduce          func(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
+	funcProduce          func(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) (err error)
 	funcProduceOrigin    string
-	inspectFuncProduce   func(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
+	inspectFuncProduce   func(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time)
 	afterProduceCounter  uint64
 	beforeProduceCounter uint64
 	ProduceMock          mIProducerMockProduce
@@ -60,16 +60,15 @@ type IProducerMockProduceExpectation struct {
 	params             *IProducerMockProduceParams
 	paramPtrs          *IProducerMockProduceParamPtrs
 	expectationOrigins IProducerMockProduceExpectationOrigins
-
-	returnOrigin string
-	Counter      uint64
+	results            *IProducerMockProduceResults
+	returnOrigin       string
+	Counter            uint64
 }
 
 // IProducerMockProduceParams contains parameters of the IProducer.Produce
 type IProducerMockProduceParams struct {
 	messsageDTO producer.ProducerMessageDTO
 	topic       string
-	partionID   int32
 	t           time.Time
 }
 
@@ -77,8 +76,12 @@ type IProducerMockProduceParams struct {
 type IProducerMockProduceParamPtrs struct {
 	messsageDTO *producer.ProducerMessageDTO
 	topic       *string
-	partionID   *int32
 	t           *time.Time
+}
+
+// IProducerMockProduceResults contains results of the IProducer.Produce
+type IProducerMockProduceResults struct {
+	err error
 }
 
 // IProducerMockProduceOrigins contains origins of expectations of the IProducer.Produce
@@ -86,7 +89,6 @@ type IProducerMockProduceExpectationOrigins struct {
 	origin            string
 	originMesssageDTO string
 	originTopic       string
-	originPartionID   string
 	originT           string
 }
 
@@ -101,7 +103,7 @@ func (mmProduce *mIProducerMockProduce) Optional() *mIProducerMockProduce {
 }
 
 // Expect sets up expected params for IProducer.Produce
-func (mmProduce *mIProducerMockProduce) Expect(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) *mIProducerMockProduce {
+func (mmProduce *mIProducerMockProduce) Expect(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) *mIProducerMockProduce {
 	if mmProduce.mock.funcProduce != nil {
 		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Set")
 	}
@@ -114,7 +116,7 @@ func (mmProduce *mIProducerMockProduce) Expect(messsageDTO producer.ProducerMess
 		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by ExpectParams functions")
 	}
 
-	mmProduce.defaultExpectation.params = &IProducerMockProduceParams{messsageDTO, topic, partionID, t}
+	mmProduce.defaultExpectation.params = &IProducerMockProduceParams{messsageDTO, topic, t}
 	mmProduce.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
 	for _, e := range mmProduce.expectations {
 		if minimock.Equal(e.params, mmProduce.defaultExpectation.params) {
@@ -171,31 +173,8 @@ func (mmProduce *mIProducerMockProduce) ExpectTopicParam2(topic string) *mIProdu
 	return mmProduce
 }
 
-// ExpectPartionIDParam3 sets up expected param partionID for IProducer.Produce
-func (mmProduce *mIProducerMockProduce) ExpectPartionIDParam3(partionID int32) *mIProducerMockProduce {
-	if mmProduce.mock.funcProduce != nil {
-		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Set")
-	}
-
-	if mmProduce.defaultExpectation == nil {
-		mmProduce.defaultExpectation = &IProducerMockProduceExpectation{}
-	}
-
-	if mmProduce.defaultExpectation.params != nil {
-		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Expect")
-	}
-
-	if mmProduce.defaultExpectation.paramPtrs == nil {
-		mmProduce.defaultExpectation.paramPtrs = &IProducerMockProduceParamPtrs{}
-	}
-	mmProduce.defaultExpectation.paramPtrs.partionID = &partionID
-	mmProduce.defaultExpectation.expectationOrigins.originPartionID = minimock.CallerInfo(1)
-
-	return mmProduce
-}
-
-// ExpectTParam4 sets up expected param t for IProducer.Produce
-func (mmProduce *mIProducerMockProduce) ExpectTParam4(t time.Time) *mIProducerMockProduce {
+// ExpectTParam3 sets up expected param t for IProducer.Produce
+func (mmProduce *mIProducerMockProduce) ExpectTParam3(t time.Time) *mIProducerMockProduce {
 	if mmProduce.mock.funcProduce != nil {
 		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Set")
 	}
@@ -218,7 +197,7 @@ func (mmProduce *mIProducerMockProduce) ExpectTParam4(t time.Time) *mIProducerMo
 }
 
 // Inspect accepts an inspector function that has same arguments as the IProducer.Produce
-func (mmProduce *mIProducerMockProduce) Inspect(f func(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)) *mIProducerMockProduce {
+func (mmProduce *mIProducerMockProduce) Inspect(f func(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time)) *mIProducerMockProduce {
 	if mmProduce.mock.inspectFuncProduce != nil {
 		mmProduce.mock.t.Fatalf("Inspect function is already set for IProducerMock.Produce")
 	}
@@ -229,7 +208,7 @@ func (mmProduce *mIProducerMockProduce) Inspect(f func(messsageDTO producer.Prod
 }
 
 // Return sets up results that will be returned by IProducer.Produce
-func (mmProduce *mIProducerMockProduce) Return() *IProducerMock {
+func (mmProduce *mIProducerMockProduce) Return(err error) *IProducerMock {
 	if mmProduce.mock.funcProduce != nil {
 		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Set")
 	}
@@ -237,13 +216,13 @@ func (mmProduce *mIProducerMockProduce) Return() *IProducerMock {
 	if mmProduce.defaultExpectation == nil {
 		mmProduce.defaultExpectation = &IProducerMockProduceExpectation{mock: mmProduce.mock}
 	}
-
+	mmProduce.defaultExpectation.results = &IProducerMockProduceResults{err}
 	mmProduce.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
 	return mmProduce.mock
 }
 
 // Set uses given function f to mock the IProducer.Produce method
-func (mmProduce *mIProducerMockProduce) Set(f func(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)) *IProducerMock {
+func (mmProduce *mIProducerMockProduce) Set(f func(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) (err error)) *IProducerMock {
 	if mmProduce.defaultExpectation != nil {
 		mmProduce.mock.t.Fatalf("Default expectation is already set for the IProducer.Produce method")
 	}
@@ -259,14 +238,14 @@ func (mmProduce *mIProducerMockProduce) Set(f func(messsageDTO producer.Producer
 
 // When sets expectation for the IProducer.Produce which will trigger the result defined by the following
 // Then helper
-func (mmProduce *mIProducerMockProduce) When(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) *IProducerMockProduceExpectation {
+func (mmProduce *mIProducerMockProduce) When(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) *IProducerMockProduceExpectation {
 	if mmProduce.mock.funcProduce != nil {
 		mmProduce.mock.t.Fatalf("IProducerMock.Produce mock is already set by Set")
 	}
 
 	expectation := &IProducerMockProduceExpectation{
 		mock:               mmProduce.mock,
-		params:             &IProducerMockProduceParams{messsageDTO, topic, partionID, t},
+		params:             &IProducerMockProduceParams{messsageDTO, topic, t},
 		expectationOrigins: IProducerMockProduceExpectationOrigins{origin: minimock.CallerInfo(1)},
 	}
 	mmProduce.expectations = append(mmProduce.expectations, expectation)
@@ -274,8 +253,8 @@ func (mmProduce *mIProducerMockProduce) When(messsageDTO producer.ProducerMessag
 }
 
 // Then sets up IProducer.Produce return parameters for the expectation previously defined by the When method
-
-func (e *IProducerMockProduceExpectation) Then() *IProducerMock {
+func (e *IProducerMockProduceExpectation) Then(err error) *IProducerMock {
+	e.results = &IProducerMockProduceResults{err}
 	return e.mock
 }
 
@@ -301,17 +280,17 @@ func (mmProduce *mIProducerMockProduce) invocationsDone() bool {
 }
 
 // Produce implements mm_usecase.IProducer
-func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time) {
+func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) (err error) {
 	mm_atomic.AddUint64(&mmProduce.beforeProduceCounter, 1)
 	defer mm_atomic.AddUint64(&mmProduce.afterProduceCounter, 1)
 
 	mmProduce.t.Helper()
 
 	if mmProduce.inspectFuncProduce != nil {
-		mmProduce.inspectFuncProduce(messsageDTO, topic, partionID, t)
+		mmProduce.inspectFuncProduce(messsageDTO, topic, t)
 	}
 
-	mm_params := IProducerMockProduceParams{messsageDTO, topic, partionID, t}
+	mm_params := IProducerMockProduceParams{messsageDTO, topic, t}
 
 	// Record call args
 	mmProduce.ProduceMock.mutex.Lock()
@@ -321,7 +300,7 @@ func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO,
 	for _, e := range mmProduce.ProduceMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return
+			return e.results.err
 		}
 	}
 
@@ -330,7 +309,7 @@ func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO,
 		mm_want := mmProduce.ProduceMock.defaultExpectation.params
 		mm_want_ptrs := mmProduce.ProduceMock.defaultExpectation.paramPtrs
 
-		mm_got := IProducerMockProduceParams{messsageDTO, topic, partionID, t}
+		mm_got := IProducerMockProduceParams{messsageDTO, topic, t}
 
 		if mm_want_ptrs != nil {
 
@@ -344,11 +323,6 @@ func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO,
 					mmProduce.ProduceMock.defaultExpectation.expectationOrigins.originTopic, *mm_want_ptrs.topic, mm_got.topic, minimock.Diff(*mm_want_ptrs.topic, mm_got.topic))
 			}
 
-			if mm_want_ptrs.partionID != nil && !minimock.Equal(*mm_want_ptrs.partionID, mm_got.partionID) {
-				mmProduce.t.Errorf("IProducerMock.Produce got unexpected parameter partionID, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-					mmProduce.ProduceMock.defaultExpectation.expectationOrigins.originPartionID, *mm_want_ptrs.partionID, mm_got.partionID, minimock.Diff(*mm_want_ptrs.partionID, mm_got.partionID))
-			}
-
 			if mm_want_ptrs.t != nil && !minimock.Equal(*mm_want_ptrs.t, mm_got.t) {
 				mmProduce.t.Errorf("IProducerMock.Produce got unexpected parameter t, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
 					mmProduce.ProduceMock.defaultExpectation.expectationOrigins.originT, *mm_want_ptrs.t, mm_got.t, minimock.Diff(*mm_want_ptrs.t, mm_got.t))
@@ -359,15 +333,17 @@ func (mmProduce *IProducerMock) Produce(messsageDTO producer.ProducerMessageDTO,
 				mmProduce.ProduceMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		return
-
+		mm_results := mmProduce.ProduceMock.defaultExpectation.results
+		if mm_results == nil {
+			mmProduce.t.Fatal("No results are set for the IProducerMock.Produce")
+		}
+		return (*mm_results).err
 	}
 	if mmProduce.funcProduce != nil {
-		mmProduce.funcProduce(messsageDTO, topic, partionID, t)
-		return
+		return mmProduce.funcProduce(messsageDTO, topic, t)
 	}
-	mmProduce.t.Fatalf("Unexpected call to IProducerMock.Produce. %v %v %v %v", messsageDTO, topic, partionID, t)
-
+	mmProduce.t.Fatalf("Unexpected call to IProducerMock.Produce. %v %v %v", messsageDTO, topic, t)
+	return
 }
 
 // ProduceAfterCounter returns a count of finished IProducerMock.Produce invocations

@@ -22,7 +22,7 @@ type IStockService interface {
 }
 
 type IProducer interface {
-	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) error
 }
 
 type CartUsecase struct {
@@ -41,8 +41,7 @@ const (
 
 	eventService = "cart"
 
-	topic             = "metrics"
-	partitionID int32 = 0
+	topic = "metrics"
 )
 
 var (
@@ -80,7 +79,9 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		messageDTO.Status = eventStatusFailed
 		messageDTO.Reason = ErrNotEnoughStock.Error()
 
-		u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
+		go func() {
+			log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+		}()
 
 		return ErrNotEnoughStock
 	}
@@ -107,7 +108,9 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
-	u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
+	go func() {
+		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+	}()
 
 	return nil
 }

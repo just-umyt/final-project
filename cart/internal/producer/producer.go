@@ -45,7 +45,7 @@ func NewProducer(address string) (*Producer, error) {
 	return &Producer{producer: prod}, nil
 }
 
-func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32, t time.Time) {
+func (p *Producer) Produce(dto ProducerMessageDTO, topic string, t time.Time) error {
 	message := Message{
 		Type:      dto.Type,
 		Service:   dto.Service,
@@ -79,18 +79,16 @@ func (p *Producer) Produce(dto ProducerMessageDTO, topic string, partionID int32
 		log.Printf(ErrSendMsg, err)
 	}
 
-	go func() {
-		event := <-kafkaChan
+	event := <-kafkaChan
 
-		switch e := event.(type) {
-		case *kafka.Message:
-			log.Println("succes kafka message send")
-		case kafka.Error:
-			log.Printf(ErrKafkaRespond, e)
-		default:
-			log.Println(ErrUnknownType)
-		}
-	}()
+	switch e := event.(type) {
+	case *kafka.Message:
+		return nil
+	case kafka.Error:
+		return fmt.Errorf(ErrKafkaRespond, e)
+	default:
+		return ErrUnknownType
+	}
 }
 
 func (p *Producer) Close() {

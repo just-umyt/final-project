@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log"
 	"stocks/internal/models"
 	"stocks/internal/producer"
 	"stocks/internal/repository"
@@ -16,7 +17,7 @@ type IPgTxManager interface {
 }
 
 type IProducer interface {
-	Produce(messsageDTO producer.ProducerMessageDTO, topic string, partionID int32, t time.Time)
+	Produce(messsageDTO producer.ProducerMessageDTO, topic string, t time.Time) error
 }
 
 type StockUsecase struct {
@@ -100,7 +101,9 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 		return err
 	}
 
-	u.kafkaProducer.Produce(messageDTO, topic, partitionID, time.Now())
+	go func() {
+		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+	}()
 
 	return nil
 }
