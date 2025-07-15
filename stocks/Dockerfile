@@ -6,7 +6,8 @@ WORKDIR /app
 
 COPY . .
 
-ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
+# ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
+
 
 RUN go mod tidy
 

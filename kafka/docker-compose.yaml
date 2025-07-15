@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   metrics-consumer:
-    image: umyt/metrics-consumer:hw9
+    image: umyt/metrics:hw9
     container_name: metrics-consumer
     networks:
       - shared-net
