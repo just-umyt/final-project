@@ -16,6 +16,6 @@ FROM alpine:3.20
 
 WORKDIR /app
 
-COPY --from=builder /app/metrics .
+COPY --from=builder /app/metrics /app/.env.prod ./
 
 CMD [ "./metrics" ]
