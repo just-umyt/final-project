@@ -79,16 +79,20 @@ func (p *Producer) Produce(dto ProducerMessageDTO, topic string, t time.Time) er
 		log.Printf(ErrSendMsg, err)
 	}
 
-	event := <-kafkaChan
+	go func() {
+		event := <-kafkaChan
 
-	switch e := event.(type) {
-	case *kafka.Message:
-		return nil
-	case kafka.Error:
-		return fmt.Errorf(ErrKafkaRespond, e)
-	default:
-		return ErrUnknownType
-	}
+		switch e := event.(type) {
+		case *kafka.Message:
+			err = nil
+		case kafka.Error:
+			err = fmt.Errorf(ErrKafkaRespond, e)
+		default:
+			err = ErrUnknownType
+		}
+	}()
+
+	return err
 }
 
 func (p *Producer) Close() {

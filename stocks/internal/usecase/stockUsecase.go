@@ -101,9 +101,7 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 		return err
 	}
 
-	go func() {
-		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
-	}()
+	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
 
 	return nil
 }

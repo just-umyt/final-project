@@ -14,4 +14,4 @@ RUN go mod tidy
 
 RUN go build -tags musl -ldflags '-extldflags "-static"' -o cart cmd/main.go
 
-CMD [ "./cart" ]
+CMD [ "./cart",  "-env=prod"]

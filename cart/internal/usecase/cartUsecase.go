@@ -79,9 +79,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		messageDTO.Status = eventStatusFailed
 		messageDTO.Reason = ErrNotEnoughStock.Error()
 
-		go func() {
-			log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
-		}()
+		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
 
 		return ErrNotEnoughStock
 	}
@@ -108,9 +106,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
-	go func() {
-		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
-	}()
+	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
 
 	return nil
 }
