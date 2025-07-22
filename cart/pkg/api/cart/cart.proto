@@ -5,8 +5,7 @@ package api;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/just-umyt/homework_all-just-umyt/cart/pkg/api";
-
+option go_package = "github.com/just-umyt/homework_all-just-umyt/cart/pkg/api/cart";
 
 service CartService {
     rpc AddItem(CartAddItemRequest) returns (google.protobuf.Empty) {

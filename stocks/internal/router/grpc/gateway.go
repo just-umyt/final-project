@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	pb "stocks/pkg/api"
+	pb "stocks/pkg/api/stock"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"

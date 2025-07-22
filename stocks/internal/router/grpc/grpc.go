@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"stocks/internal/models"
 	"stocks/internal/usecase"
-	pb "stocks/pkg/api"
+	pb "stocks/pkg/api/stock"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,7 +29,7 @@ func NewStockServer(us IStockUsecase) *StockServer {
 	return &StockServer{stockUsecase: us}
 }
 
-func (s *StockServer) AddItem(ctx context.Context, req *pb.StockAddIemRequest) (*emptypb.Empty, error) {
+func (s *StockServer) AddItem(ctx context.Context, req *pb.StockAddItemRequest) (*emptypb.Empty, error) {
 	count, err := models.Uint32ToUint16(req.Count)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

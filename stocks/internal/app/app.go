@@ -19,7 +19,7 @@ import (
 
 	myGrpc "stocks/internal/router/grpc"
 
-	pb "stocks/pkg/api"
+	pb "stocks/pkg/api/stock"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

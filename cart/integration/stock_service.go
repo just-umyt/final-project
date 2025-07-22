@@ -1,10 +1,10 @@
 package integration
 
 import (
+	spb "cart/pkg/api/stock"
 	"context"
 	"log"
 	"net"
-	spb "stocks/pkg/api"
 
 	"google.golang.org/grpc"
 )

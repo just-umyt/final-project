@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.21.12
-// source: stock_service.proto
+// source: stock.proto
 
-package api
+package stock
 
 import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
@@ -23,7 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type StockAddIemRequest struct {
+type StockAddItemRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Sku           uint32                 `protobuf:"varint,2,opt,name=sku,proto3" json:"sku,omitempty"`
@@ -34,21 +34,21 @@ type StockAddIemRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StockAddIemRequest) Reset() {
-	*x = StockAddIemRequest{}
-	mi := &file_stock_service_proto_msgTypes[0]
+func (x *StockAddItemRequest) Reset() {
+	*x = StockAddItemRequest{}
+	mi := &file_stock_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StockAddIemRequest) String() string {
+func (x *StockAddItemRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StockAddIemRequest) ProtoMessage() {}
+func (*StockAddItemRequest) ProtoMessage() {}
 
-func (x *StockAddIemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[0]
+func (x *StockAddItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,40 +59,40 @@ func (x *StockAddIemRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StockAddIemRequest.ProtoReflect.Descriptor instead.
-func (*StockAddIemRequest) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use StockAddItemRequest.ProtoReflect.Descriptor instead.
+func (*StockAddItemRequest) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *StockAddIemRequest) GetUserId() int64 {
+func (x *StockAddItemRequest) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
 	return 0
 }
 
-func (x *StockAddIemRequest) GetSku() uint32 {
+func (x *StockAddItemRequest) GetSku() uint32 {
 	if x != nil {
 		return x.Sku
 	}
 	return 0
 }
 
-func (x *StockAddIemRequest) GetCount() uint32 {
+func (x *StockAddItemRequest) GetCount() uint32 {
 	if x != nil {
 		return x.Count
 	}
 	return 0
 }
 
-func (x *StockAddIemRequest) GetPrice() uint32 {
+func (x *StockAddItemRequest) GetPrice() uint32 {
 	if x != nil {
 		return x.Price
 	}
 	return 0
 }
 
-func (x *StockAddIemRequest) GetLocation() string {
+func (x *StockAddItemRequest) GetLocation() string {
 	if x != nil {
 		return x.Location
 	}
@@ -109,7 +109,7 @@ type StockDeleteItemRequest struct {
 
 func (x *StockDeleteItemRequest) Reset() {
 	*x = StockDeleteItemRequest{}
-	mi := &file_stock_service_proto_msgTypes[1]
+	mi := &file_stock_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -121,7 +121,7 @@ func (x *StockDeleteItemRequest) String() string {
 func (*StockDeleteItemRequest) ProtoMessage() {}
 
 func (x *StockDeleteItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[1]
+	mi := &file_stock_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -134,7 +134,7 @@ func (x *StockDeleteItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockDeleteItemRequest.ProtoReflect.Descriptor instead.
 func (*StockDeleteItemRequest) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{1}
+	return file_stock_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *StockDeleteItemRequest) GetUserId() int64 {
@@ -163,7 +163,7 @@ type StockListItemRequest struct {
 
 func (x *StockListItemRequest) Reset() {
 	*x = StockListItemRequest{}
-	mi := &file_stock_service_proto_msgTypes[2]
+	mi := &file_stock_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -175,7 +175,7 @@ func (x *StockListItemRequest) String() string {
 func (*StockListItemRequest) ProtoMessage() {}
 
 func (x *StockListItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[2]
+	mi := &file_stock_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -188,7 +188,7 @@ func (x *StockListItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockListItemRequest.ProtoReflect.Descriptor instead.
 func (*StockListItemRequest) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{2}
+	return file_stock_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *StockListItemRequest) GetUserId() int64 {
@@ -228,7 +228,7 @@ type StockGetItemRequest struct {
 
 func (x *StockGetItemRequest) Reset() {
 	*x = StockGetItemRequest{}
-	mi := &file_stock_service_proto_msgTypes[3]
+	mi := &file_stock_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +240,7 @@ func (x *StockGetItemRequest) String() string {
 func (*StockGetItemRequest) ProtoMessage() {}
 
 func (x *StockGetItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[3]
+	mi := &file_stock_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +253,7 @@ func (x *StockGetItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockGetItemRequest.ProtoReflect.Descriptor instead.
 func (*StockGetItemRequest) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{3}
+	return file_stock_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *StockGetItemRequest) GetSku() uint32 {
@@ -274,7 +274,7 @@ type StockListItemResponse struct {
 
 func (x *StockListItemResponse) Reset() {
 	*x = StockListItemResponse{}
-	mi := &file_stock_service_proto_msgTypes[4]
+	mi := &file_stock_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +286,7 @@ func (x *StockListItemResponse) String() string {
 func (*StockListItemResponse) ProtoMessage() {}
 
 func (x *StockListItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[4]
+	mi := &file_stock_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +299,7 @@ func (x *StockListItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockListItemResponse.ProtoReflect.Descriptor instead.
 func (*StockListItemResponse) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{4}
+	return file_stock_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StockListItemResponse) GetItems() []*StockItemResponse {
@@ -338,7 +338,7 @@ type StockItemResponse struct {
 
 func (x *StockItemResponse) Reset() {
 	*x = StockItemResponse{}
-	mi := &file_stock_service_proto_msgTypes[5]
+	mi := &file_stock_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +350,7 @@ func (x *StockItemResponse) String() string {
 func (*StockItemResponse) ProtoMessage() {}
 
 func (x *StockItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_service_proto_msgTypes[5]
+	mi := &file_stock_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +363,7 @@ func (x *StockItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockItemResponse.ProtoReflect.Descriptor instead.
 func (*StockItemResponse) Descriptor() ([]byte, []int) {
-	return file_stock_service_proto_rawDescGZIP(), []int{5}
+	return file_stock_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StockItemResponse) GetSku() uint32 {
@@ -415,12 +415,12 @@ func (x *StockItemResponse) GetUserId() int64 {
 	return 0
 }
 
-var File_stock_service_proto protoreflect.FileDescriptor
+var File_stock_proto protoreflect.FileDescriptor
 
-const file_stock_service_proto_rawDesc = "" +
+const file_stock_proto_rawDesc = "" +
 	"\n" +
-	"\x13stock_service.proto\x12\x03api\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x87\x01\n" +
-	"\x12StockAddIemRequest\x12\x17\n" +
+	"\vstock.proto\x12\x03api\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x88\x01\n" +
+	"\x13StockAddItemRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x10\n" +
 	"\x03sku\x18\x02 \x01(\rR\x03sku\x12\x14\n" +
 	"\x05count\x18\x03 \x01(\rR\x05count\x12\x14\n" +
@@ -449,29 +449,29 @@ const file_stock_service_proto_rawDesc = "" +
 	"\x05count\x18\x04 \x01(\rR\x05count\x12\x14\n" +
 	"\x05price\x18\x05 \x01(\rR\x05price\x12\x1a\n" +
 	"\blocation\x18\x06 \x01(\tR\blocation\x12\x17\n" +
-	"\auser_id\x18\a \x01(\x03R\x06userId2\xfb\x02\n" +
-	"\fStockService\x12W\n" +
-	"\aAddItem\x12\x17.api.StockAddIemRequest\x1a\x16.google.protobuf.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/stocks/item/add\x12a\n" +
+	"\auser_id\x18\a \x01(\x03R\x06userId2\xfc\x02\n" +
+	"\fStockService\x12X\n" +
+	"\aAddItem\x12\x18.api.StockAddItemRequest\x1a\x16.google.protobuf.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/stocks/item/add\x12a\n" +
 	"\n" +
 	"DeleteItem\x12\x1b.api.StockDeleteItemRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/stocks/item/delete\x12Z\n" +
 	"\bListItem\x12\x19.api.StockListItemRequest\x1a\x1a.api.StockListItemResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/stocks/list\x12S\n" +
-	"\aGetItem\x12\x18.api.StockGetItemRequest\x1a\x16.api.StockItemResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/stocks/getB<Z:github.com/just-umyt/homework_all-just-umyt/stocks/pkg/apib\x06proto3"
+	"\aGetItem\x12\x18.api.StockGetItemRequest\x1a\x16.api.StockItemResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/stocks/getB\x0fZ\rpkg/api/stockb\x06proto3"
 
 var (
-	file_stock_service_proto_rawDescOnce sync.Once
-	file_stock_service_proto_rawDescData []byte
+	file_stock_proto_rawDescOnce sync.Once
+	file_stock_proto_rawDescData []byte
 )
 
-func file_stock_service_proto_rawDescGZIP() []byte {
-	file_stock_service_proto_rawDescOnce.Do(func() {
-		file_stock_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_stock_service_proto_rawDesc), len(file_stock_service_proto_rawDesc)))
+func file_stock_proto_rawDescGZIP() []byte {
+	file_stock_proto_rawDescOnce.Do(func() {
+		file_stock_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_stock_proto_rawDesc), len(file_stock_proto_rawDesc)))
 	})
-	return file_stock_service_proto_rawDescData
+	return file_stock_proto_rawDescData
 }
 
-var file_stock_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_stock_service_proto_goTypes = []any{
-	(*StockAddIemRequest)(nil),     // 0: api.StockAddIemRequest
+var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_stock_proto_goTypes = []any{
+	(*StockAddItemRequest)(nil),    // 0: api.StockAddItemRequest
 	(*StockDeleteItemRequest)(nil), // 1: api.StockDeleteItemRequest
 	(*StockListItemRequest)(nil),   // 2: api.StockListItemRequest
 	(*StockGetItemRequest)(nil),    // 3: api.StockGetItemRequest
@@ -479,9 +479,9 @@ var file_stock_service_proto_goTypes = []any{
 	(*StockItemResponse)(nil),      // 5: api.StockItemResponse
 	(*emptypb.Empty)(nil),          // 6: google.protobuf.Empty
 }
-var file_stock_service_proto_depIdxs = []int32{
+var file_stock_proto_depIdxs = []int32{
 	5, // 0: api.StockListItemResponse.items:type_name -> api.StockItemResponse
-	0, // 1: api.StockService.AddItem:input_type -> api.StockAddIemRequest
+	0, // 1: api.StockService.AddItem:input_type -> api.StockAddItemRequest
 	1, // 2: api.StockService.DeleteItem:input_type -> api.StockDeleteItemRequest
 	2, // 3: api.StockService.ListItem:input_type -> api.StockListItemRequest
 	3, // 4: api.StockService.GetItem:input_type -> api.StockGetItemRequest
@@ -496,26 +496,26 @@ var file_stock_service_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_stock_service_proto_init() }
-func file_stock_service_proto_init() {
-	if File_stock_service_proto != nil {
+func init() { file_stock_proto_init() }
+func file_stock_proto_init() {
+	if File_stock_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stock_service_proto_rawDesc), len(file_stock_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stock_proto_rawDesc), len(file_stock_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_stock_service_proto_goTypes,
-		DependencyIndexes: file_stock_service_proto_depIdxs,
-		MessageInfos:      file_stock_service_proto_msgTypes,
+		GoTypes:           file_stock_proto_goTypes,
+		DependencyIndexes: file_stock_proto_depIdxs,
+		MessageInfos:      file_stock_proto_msgTypes,
 	}.Build()
-	File_stock_service_proto = out.File
-	file_stock_service_proto_goTypes = nil
-	file_stock_service_proto_depIdxs = nil
+	File_stock_proto = out.File
+	file_stock_proto_goTypes = nil
+	file_stock_proto_depIdxs = nil
 }

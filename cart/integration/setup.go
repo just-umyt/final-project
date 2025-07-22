@@ -16,7 +16,7 @@ import (
 	"os"
 
 	myGrpc "cart/internal/router/grpc"
-	pb "cart/pkg/api"
+	pb "cart/pkg/api/cart"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"

@@ -5,6 +5,7 @@ import (
 	"cart/internal/producer"
 	myGrpc "cart/internal/router/grpc"
 	"cart/internal/services"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 	"cart/internal/repository"
 	"cart/internal/usecase"
-	pb "cart/pkg/api"
+	pb "cart/pkg/api/cart"
 	"cart/pkg/postgres"
 	"context"
 	"fmt"
@@ -121,7 +122,7 @@ func RunApp(env string) error {
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			log.Printf("failed to serve: %v", err)
 		}
 	}()
 
@@ -141,8 +142,8 @@ func RunApp(env string) error {
 	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
-		if err := gatewayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("error listen and serve : %v", err)
+		if err := gatewayServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("error listen and serve : %v", err)
 		}
 	}()
 

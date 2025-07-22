@@ -14,7 +14,7 @@ import (
 	"stocks/pkg/postgres"
 
 	myGrpc "stocks/internal/router/grpc"
-	pb "stocks/pkg/api"
+	pb "stocks/pkg/api/stock"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"

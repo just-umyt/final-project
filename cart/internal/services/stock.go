@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "stocks/pkg/api"
+	pb "cart/pkg/api/stock"
 )
 
 type StockService struct {

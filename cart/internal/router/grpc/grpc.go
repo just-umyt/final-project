@@ -10,7 +10,7 @@ import (
 
 	"cart/internal/models"
 	"cart/internal/usecase"
-	pb "cart/pkg/api"
+	pb "cart/pkg/api/cart"
 )
 
 type ICartUsecase interface {

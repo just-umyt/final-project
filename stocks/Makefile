@@ -41,8 +41,9 @@ test-unit:
 
 protoc:
 	@echo "Generating proto files"
-	@protoc -I pkg/api \
-  --go_out=pkg/api --go_opt=paths=source_relative \
-  --go-grpc_out=pkg/api --go-grpc_opt=paths=source_relative \
-  --grpc-gateway_out=pkg/api --grpc-gateway_opt=paths=source_relative \
-  stock_service.proto
+	@protoc -I ../proto/stock \
+  --go_out=pkg/api/stock --go_opt=paths=source_relative \
+  --go-grpc_out=pkg/api/stock --go-grpc_opt=paths=source_relative \
+  --grpc-gateway_out=pkg/api/stock --grpc-gateway_opt=paths=source_relative \
+  stock.proto
+  

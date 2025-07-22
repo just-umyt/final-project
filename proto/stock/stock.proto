@@ -5,10 +5,10 @@ package api;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/just-umyt/homework_all-just-umyt/stocks/pkg/api";
+option go_package = "pkg/api/stock/";
 
 service StockService{
-    rpc AddItem(StockAddIemRequest) returns(google.protobuf.Empty){
+    rpc AddItem(StockAddItemRequest) returns(google.protobuf.Empty){
         option (google.api.http) = {
             post: "/stocks/item/add"
             body: "*"
@@ -34,7 +34,7 @@ service StockService{
     }
 }
 
-message StockAddIemRequest {
+message StockAddItemRequest {
     int64 user_id = 1;
     uint32 sku = 2;
     uint32 count = 3;
