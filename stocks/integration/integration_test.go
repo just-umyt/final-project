@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"stocks/internal/config"
-	"stocks/internal/router/http/controller"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,8 +15,8 @@ import (
 var (
 	AddItemHttpReqURL    = "/stocks/item/add"
 	DeleteItemHttpReqURL = "/stocks/item/delete"
-	ListItemHttpReqURL   = "/stocks/list/location"
-	GetItemHttpReqURL    = "/stocks/item/get"
+	ListItemHttpReqURL   = "/stocks/list"
+	GetItemHttpReqURL    = "/stocks/get"
 
 	TestSuccessName = "Succes"
 	TesNotFoundName = "NotFound"
@@ -50,7 +49,7 @@ func TestIntegration_AddItem(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddStockRequest{
+			body: AddStockRequest{
 
 				SKUID:    1001,
 				UserID:   1,
@@ -62,7 +61,7 @@ func TestIntegration_AddItem(t *testing.T) {
 		},
 		{
 			name: TesNotFoundName,
-			body: controller.AddStockRequest{
+			body: AddStockRequest{
 
 				SKUID:    1000,
 				UserID:   1,
@@ -79,7 +78,7 @@ func TestIntegration_AddItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+AddItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+AddItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -116,7 +115,7 @@ func TestIntegration_ListItems(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.GetItemsByLocRequest{
+			body: GetItemsByLocRequest{
 				UserID:      1,
 				Location:    "AG",
 				PageSize:    1,
@@ -131,7 +130,7 @@ func TestIntegration_ListItems(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+ListItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+ListItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -172,14 +171,14 @@ func TestIntegration_GetItem(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.GetItemBySKURequest{
+			body: GetItemBySKURequest{
 				SKU: 1001,
 			},
 			wantCode: http.StatusOK,
 		},
 		{
 			name: TesNotFoundName,
-			body: controller.GetItemBySKURequest{
+			body: GetItemBySKURequest{
 				SKU: 1000,
 			},
 			wantCode: http.StatusNotFound,
@@ -191,7 +190,7 @@ func TestIntegration_GetItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+GetItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+GetItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -233,7 +232,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddStockRequest{
+			body: AddStockRequest{
 
 				SKUID:    1001,
 				UserID:   1,
@@ -246,7 +245,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 		},
 		{
 			name: "Succes",
-			body: controller.DeleteStockRequest{
+			body: DeleteStockRequest{
 
 				SKUID:  1001,
 				UserID: 1,
@@ -256,7 +255,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 		},
 		{
 			name: "NotFound",
-			body: controller.DeleteStockRequest{
+			body: DeleteStockRequest{
 
 				SKUID:  1001,
 				UserID: 1,
@@ -271,7 +270,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()

@@ -3,22 +3,27 @@ package app
 import (
 	"cart/internal/config"
 	"cart/internal/producer"
-	myHttp "cart/internal/router/http"
-	"cart/internal/router/http/controller"
+	myGrpc "cart/internal/router/grpc"
+	"cart/internal/services"
 	"log"
+	"net"
+	"net/http"
+	"strconv"
+	"time"
 
 	"cart/internal/repository"
-	"cart/internal/services"
 	"cart/internal/usecase"
+	pb "cart/pkg/api"
 	"cart/pkg/postgres"
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
-	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -79,13 +84,13 @@ func RunApp(env string) error {
 
 	trxManager := postgres.NewPgTxManager(dbPool)
 
-	timeOut, err := strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
+	conn, err := grpc.NewClient(os.Getenv("CLIENT_URL"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		err = fmt.Errorf(ErrLoadClientTimeOut, err)
 		return err
 	}
+	defer conn.Close()
 
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, os.Getenv("CLIENT_URL"))
+	stockService := services.NewStockClient(conn)
 
 	address := os.Getenv("KAFKA_BROKERS")
 
@@ -98,29 +103,46 @@ func RunApp(env string) error {
 
 	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
 
-	controller := controller.NewCartController(cartUsecase)
+	//grpc listener
+	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
 
-	newMux := myHttp.NewMux(controller)
-
-	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
-
-	serverTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
+	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
 	if err != nil {
-		err = fmt.Errorf(ErrLoadServerReadTimeOut, err)
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	srv := myGrpc.NewCartServer(cartUsecase)
+
+	s := grpc.NewServer()
+
+	reflection.Register(s)
+
+	pb.RegisterCartServiceServer(s, srv)
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	//gateway listener
+	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
+
+	mux, err := myGrpc.NewMux(ctx, grpcServerAddress)
+	if err != nil {
 		return err
 	}
 
-	serverConfig := &myHttp.ServerConfig{
-		Address:           serverAddress,
-		Handler:           newMux,
-		ReadHeaderTimeout: time.Duration(serverTimeOut) * time.Second,
+	serverConfig := &myGrpc.ServerConfig{
+		Address: serverAddress,
+		Handler: mux,
 	}
 
-	server := myHttp.NewServer(serverConfig)
+	server := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Error listen and serve : %v", err)
+			log.Fatalf("error listen and serve : %v", err)
 		}
 	}()
 
@@ -130,7 +152,9 @@ func RunApp(env string) error {
 
 	log.Println("shutting down server gracefully...")
 
-	shutdownTimer, err := strconv.Atoi(os.Getenv("SERVER_SHUTDOWN_TIMEOUT"))
+	s.GracefulStop()
+
+	shutdownTimer, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
 		err = fmt.Errorf(ErrLoadServerShutdown, err)
 		return err

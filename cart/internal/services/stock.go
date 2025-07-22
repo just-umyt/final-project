@@ -1,80 +1,48 @@
 package services
 
 import (
-	"bytes"
 	"cart/internal/models"
 	"context"
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
-	"time"
+	"fmt"
+	"log"
+
+	"google.golang.org/grpc"
+
+	pb "stocks/pkg/api"
 )
 
 type StockService struct {
-	httpClient *http.Client
-	baseUrl    string
+	client *grpc.ClientConn
 }
 
-func NewStockService(timeoutDur time.Duration, url string) *StockService {
-	httpClient := &http.Client{
-		Timeout: timeoutDur,
+func NewStockClient(cl *grpc.ClientConn) *StockService {
+	return &StockService{
+		client: cl,
 	}
-
-	return &StockService{httpClient: httpClient, baseUrl: url}
 }
 
 func (s *StockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (ItemDTO, error) {
-	reqData := getSKUIDRequest{
-		SKUID: skuID,
-	}
+	client := pb.NewStockServiceClient(s.client)
+	req := pb.StockGetItemRequest{Sku: uint32(skuID)}
 
-	body, err := json.Marshal(&reqData)
+	resp, err := client.GetItem(ctx, &req)
 	if err != nil {
+		log.Println(err)
 		return ItemDTO{}, err
 	}
 
-	reqBody := bytes.NewBuffer(body)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseUrl, reqBody)
+	count, err := models.Uint32ToUint16(resp.Count)
 	if err != nil {
-		return ItemDTO{}, err
+		return ItemDTO{}, fmt.Errorf("failed to convert stock count: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return ItemDTO{}, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return ItemDTO{}, errors.New("status code is not ok")
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ItemDTO{}, err
-	}
-	defer resp.Body.Close()
-
-	var respData httpResponse
-
-	err = json.Unmarshal(respBody, &respData)
-	if err != nil {
-		return ItemDTO{}, err
-	}
-
-	stock := respData.Message
-	item := ItemDTO{
-		SKUID:    models.SKUID(stock.SKUID),
-		Name:     stock.Name,
-		Type:     stock.Type,
-		Count:    stock.Count,
-		Price:    stock.Price,
-		Location: stock.Location,
-		UserID:   models.UserID(stock.UserID),
-	}
-
-	return item, nil
+	return ItemDTO{
+		SKUID:    models.SKUID(resp.Sku),
+		Name:     resp.Name,
+		Type:     resp.Type,
+		Count:    count,
+		Price:    resp.Price,
+		Location: resp.Location,
+		UserID:   models.UserID(resp.UserId),
+	}, nil
 }

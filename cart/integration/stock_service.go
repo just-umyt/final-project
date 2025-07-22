@@ -1,42 +1,89 @@
 package integration
 
 import (
-	"encoding/json"
+	"context"
 	"log"
-	"net/http"
-	"net/http/httptest"
+	"net"
+	spb "stocks/pkg/api"
+
+	"google.golang.org/grpc"
 )
 
 const (
-	stockCount = 10
+	stockSku      = 1001
+	stockCount    = 10
+	stockTestNums = 1
 )
 
-func testStockService() *httptest.Server {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /", getItemBySKU)
-
-	return httptest.NewServer(mux)
+type StockServer struct {
+	spb.UnimplementedStockServiceServer
 }
 
-func getItemBySKU(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+func NewStockServer() *StockServer {
+	return &StockServer{}
+}
 
-	item := struct {
-		Count uint16
-	}{
-		Count: stockCount,
+func (s *StockServer) GetItem(ctx context.Context, req *spb.StockGetItemRequest) (*spb.StockItemResponse, error) {
+	resp := &spb.StockItemResponse{
+		Sku:      stockSku,
+		Name:     "test name",
+		Type:     "test type",
+		Count:    stockCount,
+		Price:    stockTestNums,
+		Location: "test loc",
+		UserId:   stockTestNums,
 	}
 
-	res := struct {
-		Message any `json:"message"`
-	}{
-		Message: item,
-	}
+	return resp, nil
+}
 
-	err := json.NewEncoder(w).Encode(res)
+func startFakeStockService(addr string) (*grpc.Server, error) {
+	stockListener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
+
+	grpcServer := grpc.NewServer()
+
+	stockServer := NewStockServer()
+
+	spb.RegisterStockServiceServer(grpcServer, stockServer)
+
+	go func() {
+		if err := grpcServer.Serve(stockListener); err != nil {
+			log.Fatalf("failed to serve stock:% v", err)
+		}
+	}()
+
+	return grpcServer, nil
 }
+
+// func testStockService() *httptest.Server {
+// 	mux := http.NewServeMux()
+
+// 	mux.HandleFunc("POST /", getItemBySKU)
+
+// 	return httptest.NewServer(mux)
+// }
+
+// func getItemBySKU(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+
+// 	item := struct {
+// 		Count uint16
+// 	}{
+// 		Count: stockCount,
+// 	}
+
+// 	res := struct {
+// 		Message any `json:"message"`
+// 	}{
+// 		Message: item,
+// 	}
+
+// 	err := json.NewEncoder(w).Encode(res)
+// 	if err != nil {
+// 		log.Println(err)
+// 	}
+// }

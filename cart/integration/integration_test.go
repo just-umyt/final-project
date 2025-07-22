@@ -3,7 +3,8 @@ package integration
 import (
 	"bytes"
 	"cart/internal/config"
-	"cart/internal/router/http/controller"
+	"log"
+
 	"encoding/json"
 	"io"
 	"net/http"
@@ -27,6 +28,7 @@ var (
 
 func TestIntegration_AddItem(t *testing.T) {
 	if os.Getenv("INTEGRATION_TEST") == "" {
+		log.Println("skipped")
 		t.Skip("integration test is not set")
 	}
 
@@ -50,7 +52,7 @@ func TestIntegration_AddItem(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddItemRequest{
+			body: AddItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 				Count:  9,
@@ -59,12 +61,12 @@ func TestIntegration_AddItem(t *testing.T) {
 		},
 		{
 			name: "NotEnoughStock",
-			body: controller.AddItemRequest{
+			body: AddItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 				Count:  11,
 			},
-			wantCode: http.StatusPreconditionFailed,
+			wantCode: http.StatusConflict,
 		},
 	}
 
@@ -73,7 +75,7 @@ func TestIntegration_AddItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+AddItemHttpReqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+AddItemHttpReqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -112,7 +114,7 @@ func TestIntegration_CartList(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddItemRequest{
+			body: AddItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 				Count:  9,
@@ -123,7 +125,7 @@ func TestIntegration_CartList(t *testing.T) {
 		},
 		{
 			name: TestSuccessName,
-			body: controller.DeleteItemRequest{
+			body: DeleteItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 			},
@@ -138,7 +140,7 @@ func TestIntegration_CartList(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -180,7 +182,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddItemRequest{
+			body: AddItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 				Count:  9,
@@ -190,7 +192,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 		},
 		{
 			name: TestSuccessName,
-			body: controller.DeleteItemRequest{
+			body: DeleteItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 			},
@@ -199,7 +201,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 		},
 		{
 			name: TesNotFoundName,
-			body: controller.DeleteItemRequest{
+			body: DeleteItemRequest{
 				UserID: 2,
 				SKUID:  1001,
 			},
@@ -213,7 +215,7 @@ func TestIntegration_DeleteItem(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -251,7 +253,7 @@ func TestIntegration_ClearCart(t *testing.T) {
 	}{
 		{
 			name: TestSuccessName,
-			body: controller.AddItemRequest{
+			body: AddItemRequest{
 				UserID: 1,
 				SKUID:  1001,
 				Count:  9,
@@ -261,7 +263,7 @@ func TestIntegration_ClearCart(t *testing.T) {
 		},
 		{
 			name: TestSuccessName,
-			body: controller.UserIDRequest{
+			body: UserIDRequest{
 				UserID: 1,
 			},
 			reqURL:   ClearCartHttpReqURL,
@@ -269,7 +271,7 @@ func TestIntegration_ClearCart(t *testing.T) {
 		},
 		{
 			name: TesNotFoundName,
-			body: controller.UserIDRequest{
+			body: UserIDRequest{
 				UserID: 2,
 			},
 			reqURL:   ClearCartHttpReqURL,
@@ -282,7 +284,7 @@ func TestIntegration_ClearCart(t *testing.T) {
 			reqBody, err := createReqBody(tt.body)
 			require.NoError(t, err)
 
-			resp, err := http.Post(init.Server.URL+tt.reqURL, "application/json", reqBody)
+			resp, err := http.Post(init.Gateway.URL+tt.reqURL, "application/json", reqBody)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()

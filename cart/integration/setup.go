@@ -3,29 +3,36 @@ package integration
 import (
 	"cart/internal/producer"
 	"cart/internal/repository"
-	"cart/internal/router/http/controller"
 	"cart/internal/services"
+	"fmt"
+	"log"
+	"net"
+
 	"cart/internal/usecase"
 	"cart/pkg/postgres"
 	"context"
 	"database/sql"
 	"net/http/httptest"
 	"os"
-	"strconv"
-	"time"
 
-	myHttp "cart/internal/router/http"
+	myGrpc "cart/internal/router/grpc"
+	pb "cart/pkg/api"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 )
 
 type testAppConfig struct {
-	DB          *sql.DB
-	Migration   *migrate.Migrate
-	DBPool      *pgxpool.Pool
-	Server      *httptest.Server
-	StockServer *httptest.Server
+	DB            *sql.DB
+	Migration     *migrate.Migrate
+	DBPool        *pgxpool.Pool
+	Gateway       *httptest.Server
+	CartGRPC      *grpc.Server
+	FakeStockGRPC *grpc.Server
+	StockClient   *grpc.ClientConn
 }
 
 func (t *testAppConfig) Setup(ctx context.Context) error {
@@ -63,17 +70,16 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 	trxManager := postgres.NewPgTxManager(t.DBPool)
 
 	cartRepo := repository.NewCartRepository(t.DBPool)
-	var timeOut int
 
-	timeOut, err = strconv.Atoi(os.Getenv("CLIENT_TIMEOUT"))
+	//stock client
+	t.StockClient, err = grpc.NewClient(os.Getenv("CLIENT_URL"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
 
-	t.StockServer = testStockService()
+	stockService := services.NewStockClient(t.StockClient)
 
-	stockService := services.NewStockService(time.Duration(timeOut)*time.Second, t.StockServer.URL)
-
+	//kafka
 	kafkaProducer, err := producer.NewProducer(os.Getenv("KAFKA_BROKERS"))
 	if err != nil {
 		return err
@@ -81,11 +87,41 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 
 	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
 
-	cartController := controller.NewCartController(cartUsecase)
+	//grpc listener
+	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
 
-	newMux := myHttp.NewMux(cartController)
+	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
-	t.Server = httptest.NewServer(newMux)
+	srv := myGrpc.NewCartServer(cartUsecase)
+
+	t.CartGRPC = grpc.NewServer()
+
+	reflection.Register(t.CartGRPC)
+
+	pb.RegisterCartServiceServer(t.CartGRPC, srv)
+
+	go func() {
+		if err := t.CartGRPC.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	//gateway
+	mux, err := myGrpc.NewMux(ctx, grpcServerAddress)
+	if err != nil {
+		return err
+	}
+
+	t.Gateway = httptest.NewServer(mux)
+
+	//fake stock Service
+	t.FakeStockGRPC, err = startFakeStockService(os.Getenv("CLIENT_URL"))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -93,8 +129,10 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 func (t *testAppConfig) Close() error {
 	t.DB.Close()
 	t.DBPool.Close()
-	t.Server.Close()
-	t.StockServer.Close()
+	t.Gateway.Close()
+	t.CartGRPC.GracefulStop()
+	t.FakeStockGRPC.GracefulStop()
+	t.StockClient.Close()
 
 	return t.Migration.Down()
 }
