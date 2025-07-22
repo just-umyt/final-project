@@ -111,22 +111,22 @@ func RunApp(env string) error {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := myGrpc.NewCartServer(cartUsecase)
+	cartService := myGrpc.NewCartServer(cartUsecase)
 
-	s := grpc.NewServer()
+	grpcServer := grpc.NewServer()
 
-	reflection.Register(s)
+	reflection.Register(grpcServer)
 
-	pb.RegisterCartServiceServer(s, srv)
+	pb.RegisterCartServiceServer(grpcServer, cartService)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
 	//gateway listener
-	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
+	gatewayAddr := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
 
 	mux, err := myGrpc.NewMux(ctx, grpcServerAddress)
 	if err != nil {
@@ -134,25 +134,25 @@ func RunApp(env string) error {
 	}
 
 	serverConfig := &myGrpc.ServerConfig{
-		Address: serverAddress,
+		Address: gatewayAddr,
 		Handler: mux,
 	}
 
-	server := myGrpc.NewGatewayServer(serverConfig)
+	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := gatewayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("error listen and serve : %v", err)
 		}
 	}()
 
-	log.Printf("listening in  %s", serverAddress)
+	log.Printf("listening in  %s", gatewayAddr)
 
 	<-ctx.Done()
 
 	log.Println("shutting down server gracefully...")
 
-	s.GracefulStop()
+	grpcServer.GracefulStop()
 
 	shutdownTimer, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
@@ -163,7 +163,7 @@ func RunApp(env string) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimer)*time.Second)
 	defer cancel()
 
-	if err = server.Shutdown(shutdownCtx); err != nil {
+	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
 		err = fmt.Errorf(ErrShutdown, err)
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"stocks/internal/config"
+	"stocks/internal/producer"
 	"stocks/internal/repository"
 	"stocks/internal/usecase"
 	"stocks/pkg/postgres"
@@ -83,20 +84,18 @@ func RunApp(env string) error {
 
 	stockRepo := repository.NewStockRepository(dbPool)
 
-	// address := os.Getenv("KAFKA_BROKERS")
+	address := os.Getenv("KAFKA_BROKERS")
 
-	// kafkaProducer, err := producer.NewProducer(address)
-	// if err != nil {
-	// 	return err
-	// }
+	kafkaProducer, err := producer.NewProducer(address)
+	if err != nil {
+		return err
+	}
 
-	// defer kafkaProducer.Close()
-	var kafkaProducer usecase.IProducer
+	defer kafkaProducer.Close()
 
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager, kafkaProducer)
 
-	// stockController := controller.NewStockController(stockUsecase)
-
+	//grpc
 	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
 
 	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
@@ -104,21 +103,22 @@ func RunApp(env string) error {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := myGrpc.NewStockServer(stockUsecase)
+	stockService := myGrpc.NewStockServer(stockUsecase)
 
-	s := grpc.NewServer()
+	grpcServer := grpc.NewServer()
 
-	reflection.Register(s)
+	reflection.Register(grpcServer)
 
-	pb.RegisterStockServiceServer(s, srv)
+	pb.RegisterStockServiceServer(grpcServer, stockService)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
-	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
+	//gateway
+	gatewayAddr := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
 
 	mux, err := myGrpc.NewMux(ctx, grpcServerAddress)
 	if err != nil {
@@ -126,25 +126,25 @@ func RunApp(env string) error {
 	}
 
 	serverConfig := &myGrpc.ServerConfig{
-		Address: serverAddress,
+		Address: gatewayAddr,
 		Handler: mux,
 	}
 
-	server := myGrpc.NewGatewayServer(serverConfig)
+	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := gatewayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Error listen and serve : %v", err)
 		}
 	}()
 
-	log.Printf("listening in  %s\n", serverAddress)
+	log.Printf("listening in  %s\n", gatewayAddr)
 
 	<-ctx.Done()
 
 	log.Println("shutting down server gracefully...")
 
-	s.GracefulStop()
+	grpcServer.GracefulStop()
 
 	shutdown, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
@@ -155,7 +155,7 @@ func RunApp(env string) error {
 
 	defer cancel()
 
-	if err = server.Shutdown(shutdownCtx); err != nil {
+	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
 		err = fmt.Errorf(ErrShutdown, err)
 
 		return err
