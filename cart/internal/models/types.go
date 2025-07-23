@@ -21,3 +21,11 @@ func Int64ToUint32(v int64) (uint32, error) {
 
 	return uint32(v), nil
 }
+
+func Uint32ToUint16(v uint32) (uint16, error) {
+	if v > math.MaxUint16 {
+		return 0, fmt.Errorf("%d out of uint16 range", v)
+	}
+
+	return uint16(v), nil
+}

@@ -2,21 +2,28 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"stocks/internal/config"
 	"stocks/internal/producer"
 	"stocks/internal/repository"
-	myHttp "stocks/internal/router/http"
-	"stocks/internal/router/http/controller"
 	"stocks/internal/usecase"
 	"stocks/pkg/postgres"
 	"strconv"
 	"syscall"
 	"time"
+
+	myGrpc "stocks/internal/router/grpc"
+
+	pb "stocks/pkg/api/stock"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -27,6 +34,7 @@ var (
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
+	ErrListener              = "failed to listen: %v"
 )
 
 func RunApp(env string) error {
@@ -35,8 +43,7 @@ func RunApp(env string) error {
 
 	err := config.LoadConfig(env)
 	if err != nil {
-		err = fmt.Errorf(ErrLoadEnv, err)
-		return err
+		return fmt.Errorf(ErrLoadEnv, err)
 	}
 
 	dbConfig := &postgres.PostgresConfig{
@@ -50,27 +57,23 @@ func RunApp(env string) error {
 
 	db, err := postgres.NewDB(dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer db.Close()
 
 	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
 	if err != nil {
-		err = fmt.Errorf(ErrMigration, err)
-		return err
+		return fmt.Errorf(ErrMigration, err)
 	}
 
 	err = postgres.MigrationUp(migration)
 	if err != nil {
-		err = fmt.Errorf(ErrMigrationUp, err)
-		return err
+		return fmt.Errorf(ErrMigrationUp, err)
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer dbPool.Close()
 
@@ -87,53 +90,71 @@ func RunApp(env string) error {
 
 	defer kafkaProducer.Close()
 
+	// var kafkaProducer usecase.IProducer
+
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager, kafkaProducer)
 
-	stockController := controller.NewStockController(stockUsecase)
+	//grpc
+	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
 
-	newMux := myHttp.NewMux(stockController)
-
-	serverAddress := fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"))
-
-	readHeaderTimeOut, err := strconv.Atoi(os.Getenv("SERVER_READ_HEADER_TIMEOUT"))
+	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
 	if err != nil {
-		err = fmt.Errorf(ErrLoadServerReadTimeOut, err)
-		return err
+		return fmt.Errorf(ErrListener, err)
 	}
 
-	serverConfig := &myHttp.ServerConfig{
-		Address:           serverAddress,
-		Handler:           newMux,
-		ReadHeaderTimeout: time.Duration(readHeaderTimeOut) * time.Second,
-	}
+	stockService := myGrpc.NewStockServer(stockUsecase)
 
-	server := myHttp.NewServer(serverConfig)
+	grpcServer := grpc.NewServer()
+
+	reflection.Register(grpcServer)
+
+	pb.RegisterStockServiceServer(grpcServer, stockService)
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Error listen and serve : %v", err)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v", err)
 		}
 	}()
 
-	log.Printf("listening in  %s\n", serverAddress)
+	//gateway
+	gatewayAddr := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
+
+	mux, err := myGrpc.NewMux(ctx, grpcServerAddress)
+	if err != nil {
+		return err
+	}
+
+	serverConfig := &myGrpc.ServerConfig{
+		Address: gatewayAddr,
+		Handler: mux,
+	}
+
+	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
+
+	go func() {
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("error listen and serve : %v", err)
+		}
+	}()
+
+	log.Printf("listening in  %s\n", gatewayAddr)
 
 	<-ctx.Done()
 
 	log.Println("shutting down server gracefully...")
 
-	shutdown, err := strconv.Atoi(os.Getenv("SERVER_SHUTDOWN_TIMEOUT"))
+	grpcServer.GracefulStop()
+
+	shutdown, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
-		err = fmt.Errorf(ErrLoadServerShutdown, err)
-		return err
+		return fmt.Errorf(ErrLoadServerShutdown, err)
 	}
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdown)*time.Second)
 
 	defer cancel()
 
-	if err = server.Shutdown(shutdownCtx); err != nil {
-		err = fmt.Errorf(ErrShutdown, err)
-
-		return err
+	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf(ErrShutdown, err)
 	}
 
 	return nil

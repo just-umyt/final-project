@@ -38,3 +38,11 @@ test-unit:
 	@echo "Testing unit tests..."
 	@go test -v -cover  ./internal/router/http/controller/
 	@go test -v -cover  ./internal/usecase/
+
+protoc:
+	@echo "Generating proto files"
+	@protoc -I ../proto/stock \
+  --go_out=pkg/api/stock --go_opt=paths=source_relative \
+  --go-grpc_out=pkg/api/stock --go-grpc_opt=paths=source_relative \
+  --grpc-gateway_out=pkg/api/stock --grpc-gateway_opt=paths=source_relative \
+  stock.proto

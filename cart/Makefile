@@ -39,3 +39,17 @@ test-unit:
 	@go test -v -cover  ./internal/router/http/controller/
 	@go test -v -cover  ./internal/usecase/
 
+protoc:
+	@echo "Generating proto files"
+	@protoc -I pkg/api/cart \
+  --go_out=pkg/api/cart --go_opt=paths=source_relative \
+  --go-grpc_out=pkg/api/cart --go-grpc_opt=paths=source_relative \
+  --grpc-gateway_out=pkg/api/cart --grpc-gateway_opt=paths=source_relative \
+  cart.proto
+
+protoc-client:
+	@echo "Generating client files"
+	@protoc -I ../proto/stock \
+  --go_out=pkg/api/stock --go_opt=paths=source_relative \
+  --go-grpc_out=pkg/api/stock --go-grpc_opt=paths=source_relative \
+  stock.proto

@@ -1,0 +1,75 @@
+syntax="proto3";
+
+package api;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "pkg/api/stock/";
+
+service StockService{
+    rpc AddItem(StockAddItemRequest) returns(google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/stocks/item/add"
+            body: "*"
+        };
+    }
+    rpc DeleteItem(StockDeleteItemRequest) returns(google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/stocks/item/delete"
+            body: "*"
+        };
+    }
+    rpc ListItem(StockListItemRequest) returns(StockListItemResponse){
+        option (google.api.http) = {
+            post: "/stocks/list"
+            body: "*"
+        };
+    }
+    rpc GetItem(StockGetItemRequest) returns(StockItemResponse){
+        option (google.api.http) = {
+            post: "/stocks/get"
+            body: "*"
+        };
+    }
+}
+
+message StockAddItemRequest {
+    int64 user_id = 1;
+    uint32 sku = 2;
+    uint32 count = 3;
+    uint32 price = 4;
+    string location = 5;
+}
+
+message StockDeleteItemRequest {
+    int64 user_id = 1;
+    uint32 sku = 2;
+}
+
+message StockListItemRequest {
+    int64 user_id = 1;
+    string location = 2;
+    int64 page_size = 3;
+    int64 current_page = 4;
+}
+
+message StockGetItemRequest {
+    uint32 sku = 1;
+}
+
+message StockListItemResponse{
+    repeated StockItemResponse items = 1;
+    int32 total_count = 2;
+    int64 page_number = 3;
+}
+
+message StockItemResponse{
+    uint32 sku = 1;
+    string name = 2;
+    string type = 3;
+    uint32 count = 4;
+    uint32 price = 5;
+    string location = 6;
+    int64 user_id = 7;
+}
