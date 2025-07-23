@@ -57,33 +57,3 @@ func startFakeStockService(addr string) (*grpc.Server, error) {
 
 	return grpcServer, nil
 }
-
-// func testStockService() *httptest.Server {
-// 	mux := http.NewServeMux()
-
-// 	mux.HandleFunc("POST /", getItemBySKU)
-
-// 	return httptest.NewServer(mux)
-// }
-
-// func getItemBySKU(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-
-// 	item := struct {
-// 		Count uint16
-// 	}{
-// 		Count: stockCount,
-// 	}
-
-// 	res := struct {
-// 		Message any `json:"message"`
-// 	}{
-// 		Message: item,
-// 	}
-
-// 	err := json.NewEncoder(w).Encode(res)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// }

@@ -92,7 +92,7 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 
 	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
 	srv := myGrpc.NewCartServer(cartUsecase)
@@ -105,7 +105,7 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 
 	go func() {
 		if err := t.CartGRPC.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			log.Printf("failed to serve: %v", err)
 		}
 	}()
 

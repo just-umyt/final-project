@@ -46,4 +46,3 @@ protoc:
   --go-grpc_out=pkg/api/stock --go-grpc_opt=paths=source_relative \
   --grpc-gateway_out=pkg/api/stock --grpc-gateway_opt=paths=source_relative \
   stock.proto
-  

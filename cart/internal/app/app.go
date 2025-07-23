@@ -36,6 +36,7 @@ var (
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
+	ErrListener              = "failed to listen: %v"
 )
 
 func RunApp(env string) error {
@@ -58,26 +59,22 @@ func RunApp(env string) error {
 
 	db, err := postgres.NewDB(dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 
 	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
 	if err != nil {
-		err = fmt.Errorf(ErrMigration, err)
-		return err
+		return fmt.Errorf(ErrMigration, err)
 	}
 
 	err = postgres.MigrationUp(migration)
 	if err != nil {
-		err = fmt.Errorf(ErrMigrationUp, err)
-		return err
+		return fmt.Errorf(ErrMigrationUp, err)
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer dbPool.Close()
 
@@ -93,9 +90,9 @@ func RunApp(env string) error {
 
 	stockService := services.NewStockClient(conn)
 
-	address := os.Getenv("KAFKA_BROKERS")
+	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 
-	kafkaProducer, err := producer.NewProducer(address)
+	kafkaProducer, err := producer.NewProducer(kafkaBrokers)
 	if err != nil {
 		return err
 	}
@@ -109,7 +106,7 @@ func RunApp(env string) error {
 
 	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return fmt.Errorf(ErrListener, err)
 	}
 
 	cartService := myGrpc.NewCartServer(cartUsecase)
@@ -142,8 +139,8 @@ func RunApp(env string) error {
 	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
-		if err := gatewayServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("error listen and serve : %v", err)
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("error listen and serve : %v", err)
 		}
 	}()
 
@@ -157,16 +154,14 @@ func RunApp(env string) error {
 
 	shutdownTimer, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
-		err = fmt.Errorf(ErrLoadServerShutdown, err)
-		return err
+		return fmt.Errorf(ErrLoadServerShutdown, err)
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimer)*time.Second)
 	defer cancel()
 
 	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
-		err = fmt.Errorf(ErrShutdown, err)
-		return err
+		return fmt.Errorf(ErrShutdown, err)
 	}
 
 	return nil

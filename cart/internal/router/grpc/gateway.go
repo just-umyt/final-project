@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"net/http"
+	"time"
 
 	pb "cart/pkg/api/cart"
 
@@ -24,7 +25,7 @@ func NewGatewayServer(serverConfig *ServerConfig) *http.Server {
 	server := &http.Server{
 		Addr:              serverConfig.Address,
 		Handler:           serverConfig.Handler,
-		ReadHeaderTimeout: readHeaderTimeout,
+		ReadHeaderTimeout: readHeaderTimeout * time.Second,
 	}
 
 	return server

@@ -5,10 +5,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"google.golang.org/grpc"
 
 	pb "cart/pkg/api/stock"
+)
+
+const (
+	ctxTimeout = 5
 )
 
 type StockService struct {
@@ -25,7 +30,10 @@ func (s *StockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (Ite
 	client := pb.NewStockServiceClient(s.client)
 	req := pb.StockGetItemRequest{Sku: uint32(skuID)}
 
-	resp, err := client.GetItem(ctx, &req)
+	grpcCtx, cancel := context.WithTimeout(ctx, ctxTimeout*time.Second)
+	defer cancel()
+
+	resp, err := client.GetItem(grpcCtx, &req)
 	if err != nil {
 		log.Println(err)
 		return ItemDTO{}, err

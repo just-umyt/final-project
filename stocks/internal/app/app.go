@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -33,6 +34,7 @@ var (
 	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
 	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
 	ErrShutdown              = "shutdown error: %v"
+	ErrListener              = "failed to listen: %v"
 )
 
 func RunApp(env string) error {
@@ -41,8 +43,7 @@ func RunApp(env string) error {
 
 	err := config.LoadConfig(env)
 	if err != nil {
-		err = fmt.Errorf(ErrLoadEnv, err)
-		return err
+		return fmt.Errorf(ErrLoadEnv, err)
 	}
 
 	dbConfig := &postgres.PostgresConfig{
@@ -56,27 +57,23 @@ func RunApp(env string) error {
 
 	db, err := postgres.NewDB(dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer db.Close()
 
 	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
 	if err != nil {
-		err = fmt.Errorf(ErrMigration, err)
-		return err
+		return fmt.Errorf(ErrMigration, err)
 	}
 
 	err = postgres.MigrationUp(migration)
 	if err != nil {
-		err = fmt.Errorf(ErrMigrationUp, err)
-		return err
+		return fmt.Errorf(ErrMigrationUp, err)
 	}
 
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
-		err = fmt.Errorf(ErrDBConnect, err)
-		return err
+		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer dbPool.Close()
 
@@ -93,6 +90,8 @@ func RunApp(env string) error {
 
 	defer kafkaProducer.Close()
 
+	// var kafkaProducer usecase.IProducer
+
 	stockUsecase := usecase.NewStockUsecase(stockRepo, trxManager, kafkaProducer)
 
 	//grpc
@@ -100,7 +99,7 @@ func RunApp(env string) error {
 
 	lis, err := net.Listen(os.Getenv("GRPC_NETWORK"), grpcServerAddress)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return fmt.Errorf(ErrListener, err)
 	}
 
 	stockService := myGrpc.NewStockServer(stockUsecase)
@@ -113,7 +112,7 @@ func RunApp(env string) error {
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			log.Printf("failed to serve: %v", err)
 		}
 	}()
 
@@ -133,8 +132,8 @@ func RunApp(env string) error {
 	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
 	go func() {
-		if err := gatewayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Error listen and serve : %v", err)
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("error listen and serve : %v", err)
 		}
 	}()
 
@@ -148,17 +147,14 @@ func RunApp(env string) error {
 
 	shutdown, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
 	if err != nil {
-		err = fmt.Errorf(ErrLoadServerShutdown, err)
-		return err
+		return fmt.Errorf(ErrLoadServerShutdown, err)
 	}
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdown)*time.Second)
 
 	defer cancel()
 
 	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
-		err = fmt.Errorf(ErrShutdown, err)
-
-		return err
+		return fmt.Errorf(ErrShutdown, err)
 	}
 
 	return nil
