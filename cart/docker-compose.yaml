@@ -13,6 +13,7 @@ services:
       DB_PASSWORD: password
     ports:
       - "8080:8080"
+      - "8090:8090"
     container_name: umyt-cart-service
     networks:
       - public-net
