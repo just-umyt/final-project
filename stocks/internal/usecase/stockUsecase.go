@@ -9,6 +9,28 @@ import (
 	"time"
 
 	myLog "stocks/internal/observability/log"
+
+	"go.opentelemetry.io/otel"
+)
+
+const (
+	eventSKUCreateType   = "sku_created"
+	eventStockChangeType = "stock_changed"
+
+	eventService = "stock"
+
+	topic = "metrics"
+
+	tracingServiceName = "stock-service"
+	addSpanName        = "stock-add-usecase"
+	delSpanName        = "stock-del-usecase"
+	listSpanName       = "stock-list-usecase"
+	getSpanName        = "stock-get-usecase"
+)
+
+var (
+	ErrNotFound error = errors.New("not found")
+	ErrUserID   error = errors.New("user id is not matched")
 )
 
 //go:generate mkdir -p mock
@@ -28,25 +50,14 @@ type StockUsecase struct {
 	logger        myLog.Logger
 }
 
-const (
-	eventSKUCreateType   = "sku_created"
-	eventStockChangeType = "stock_changed"
-
-	eventService = "stock"
-
-	topic = "metrics"
-)
-
-var (
-	ErrNotFound error = errors.New("not found")
-	ErrUserID   error = errors.New("user id is not matched")
-)
-
 func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager, kafkaPr IProducer, logg myLog.Logger) *StockUsecase {
 	return &StockUsecase{stockRepo: repo, trManager: trManager, kafkaProducer: kafkaPr, logger: logg}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, addSpanName)
+	defer span.End()
+
 	messageDTO := producer.ProducerMessageDTO{
 		Service:   eventService,
 		Timestamp: time.Now(),
@@ -108,6 +119,9 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 }
 
 func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStockDTO) error {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, delSpanName)
+	defer span.End()
+
 	err := u.stockRepo.DeleteStock(ctx, delStock.SKUID, delStock.UserID)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound
@@ -117,6 +131,9 @@ func (u *StockUsecase) DeleteStockBySKU(ctx context.Context, delStock DeleteStoc
 }
 
 func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByLocDTO) (ItemsByLocDTO, error) {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, listSpanName)
+	defer span.End()
+
 	var items ItemsByLocDTO
 
 	limit := param.PageSize
@@ -161,6 +178,9 @@ func (u *StockUsecase) GetStocksByLocation(ctx context.Context, param GetItemByL
 }
 
 func (u *StockUsecase) GetItemBySKU(ctx context.Context, sku models.SKUID) (StockDTO, error) {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, getSpanName)
+	defer span.End()
+
 	var stockDTO StockDTO
 	err := u.trManager.WithTx(ctx, func(repo repository.IStockRepo) error {
 		item, err := repo.GetItemBySKU(ctx, sku)

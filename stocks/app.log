@@ -17,3 +17,16 @@
 {"level":"info","ts":"2025-07-31T18:23:36.811+0500","msg":"shutting down server gracefully..."}
 {"level":"info","ts":"2025-07-31T18:23:41.853+0500","msg":"shutdown succes"}
 {"level":"error","ts":"2025-07-31T18:23:41.860+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:16:03.138+0500","msg":"listening in localhost:8081\n"}
+{"level":"info","ts":"2025-07-31T22:16:37.875+0500","msg":"shutting down server gracefully..."}
+{"level":"info","ts":"2025-07-31T22:16:42.943+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:16:42.949+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:17:09.699+0500","msg":"listening in localhost:8081\n"}
+{"level":"info","ts":"2025-07-31T22:17:27.513+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"fa8fe9966406c7d2b9ccf0bf5ce2d1e8"}
+{"level":"info","ts":"2025-07-31T22:17:41.051+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T22:17:41.051+0500","msg":"request success","method":"/api.StockService/AddItem","trace_id":"623e8be7cf24b90c2222b4c23a1fcf56"}
+{"level":"info","ts":"2025-07-31T22:17:43.744+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"7e992c305e73a24e791dd879cfb4fa60"}
+{"level":"info","ts":"2025-07-31T22:19:46.926+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"397ffb3a2889736060ca0d9b69cd764d"}
+{"level":"info","ts":"2025-07-31T22:20:06.083+0500","msg":"shutting down server gracefully..."}
+{"level":"info","ts":"2025-07-31T22:20:11.103+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:20:11.109+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}

@@ -10,9 +10,9 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     # if you want to run local uncomment network_mode(only linux)
-    # network_mode: "host"
-    networks:
-      - public-net
+    network_mode: "host"
+    # networks:
+    #   - public-net
 
   prometheus:
     image: prom/prometheus
@@ -22,9 +22,9 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     # if you want to run local uncomment network_mode(only linux)
-    # network_mode: "host"
-    networks:
-      - public-net
+    network_mode: "host"
+    # networks:
+    #   - public-net
   grafana:
     image: grafana/grafana:10.4.1
     container_name: grafana
@@ -36,9 +36,9 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     # if you want to run local uncomment network_mode(only linux)
-    # network_mode: "host"
-    networks:
-      - public-net
+    network_mode: "host"
+    # networks:
+    #   - public-net
 
 networks:
   public-net:

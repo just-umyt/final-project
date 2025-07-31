@@ -333,3 +333,17 @@
 {"level":"info","ts":"2025-07-31T18:23:36.414+0500","msg":"shutting down server  gracefully..."}
 {"level":"info","ts":"2025-07-31T18:23:41.465+0500","msg":"shutdown succes"}
 {"level":"error","ts":"2025-07-31T18:23:41.471+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:15:52.405+0500","msg":"gateway listening in localhost:8080"}
+{"level":"info","ts":"2025-07-31T22:16:37.379+0500","msg":"shutting down server  gracefully..."}
+{"level":"info","ts":"2025-07-31T22:16:42.428+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:16:42.434+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:17:08.414+0500","msg":"gateway listening in localhost:8080"}
+{"level":"warn","ts":"2025-07-31T22:17:27.516+0500","msg":"kafka%!(EXTRA log.Field=)"}
+{"level":"error","ts":"2025-07-31T22:17:27.516+0500","msg":"request failed","error":"rpc error: code = Aborted desc = not enough stock","method":"/api.CartService/AddItem","trace_id":"5906385af20b442ab5bc45d0012a78a6"}
+{"level":"info","ts":"2025-07-31T22:17:43.751+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T22:17:43.751+0500","msg":"request success","method":"/api.CartService/AddItem","trace_id":"f141117a70806c78bbf382caf6b94f9e"}
+{"level":"info","ts":"2025-07-31T22:19:46.926+0500","msg":"request success","method":"/api.CartService/ListItem","trace_id":"3ef5200f76706dea8b843f2d5ff93fd1"}
+{"level":"info","ts":"2025-07-31T22:19:49.909+0500","msg":"request success","method":"/api.CartService/ClearCart","trace_id":"6c3ea97b3d4ea4b86d01ec917e8ae777"}
+{"level":"info","ts":"2025-07-31T22:20:05.657+0500","msg":"shutting down server  gracefully..."}
+{"level":"info","ts":"2025-07-31T22:20:10.715+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:20:10.721+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
