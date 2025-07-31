@@ -21,7 +21,7 @@ func InitTracer(ctx context.Context, endpoint, serviceName string) (*trace.Trace
 		return nil, err
 	}
 
-	tracerprovider := trace.NewTracerProvider(
+	tracerProvider := trace.NewTracerProvider(
 		trace.WithBatcher(
 			exporter,
 			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
@@ -36,7 +36,7 @@ func InitTracer(ctx context.Context, endpoint, serviceName string) (*trace.Trace
 		),
 	)
 
-	otel.SetTracerProvider(tracerprovider)
+	otel.SetTracerProvider(tracerProvider)
 
-	return tracerprovider, nil
+	return tracerProvider, nil
 }

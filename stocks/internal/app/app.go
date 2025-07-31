@@ -147,21 +147,21 @@ func RunApp(env string, logger myLog.Logger) error {
 	//grpc ListenAndServe
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			logger.Errorf(ErrListenGRPC, err)
+			logger.Error(ErrListenGRPC, myLog.Error(err))
 		}
 	}()
 
 	//gateway ListenAndServe
 	go func() {
 		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatalf(ErrListenGateway, err)
+			logger.Error(ErrListenGateway, myLog.Error(err))
 		}
 	}()
 
 	//metrics ListenAndServe
 	go func() {
 		if err := metrics.ListenAndServe(os.Getenv("PROMETHEUS"), metricsTimeout); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatal(ErrListenMetrics, myLog.Error(err))
+			logger.Error(ErrListenMetrics, myLog.Error(err))
 		}
 	}()
 
