@@ -1,6 +1,6 @@
 services:
   cart_service:
-    image: umyt/cart:hw10
+    image: umyt/cart:hw11
     depends_on:
       cart_db:
         condition: service_healthy
