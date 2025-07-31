@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -11,6 +12,13 @@ import (
 	"cart/internal/models"
 	"cart/internal/usecase"
 	pb "cart/pkg/api/cart"
+)
+
+const (
+	addSpanName   = "cart-add-grpc"
+	delSpanName   = "cart-del-grpc"
+	listSpanName  = "cart-list-grpc"
+	clearSpanName = "cart-clear-grpc"
 )
 
 type ICartUsecase interface {
@@ -22,14 +30,18 @@ type ICartUsecase interface {
 
 type CartServer struct {
 	cartUsecase ICartUsecase
+	tracer      trace.Tracer
 	pb.UnimplementedCartServiceServer
 }
 
-func NewCartServer(us ICartUsecase) *CartServer {
-	return &CartServer{cartUsecase: us}
+func NewCartServer(us ICartUsecase, tracer trace.Tracer) *CartServer {
+	return &CartServer{cartUsecase: us, tracer: tracer}
 }
 
 func (c *CartServer) AddItem(ctx context.Context, req *pb.CartAddItemRequest) (*emptypb.Empty, error) {
+	ctx, span := c.tracer.Start(ctx, addSpanName)
+	defer span.End()
+
 	count, err := models.Uint32ToUint16(req.Count)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -53,6 +65,9 @@ func (c *CartServer) AddItem(ctx context.Context, req *pb.CartAddItemRequest) (*
 }
 
 func (c *CartServer) DeleteItem(ctx context.Context, req *pb.CartDeleteItemRequest) (*emptypb.Empty, error) {
+	ctx, span := c.tracer.Start(ctx, delSpanName)
+	defer span.End()
+
 	deleteItemDTO := usecase.DeleteItemDTO{
 		UserID: models.UserID(req.UserId),
 		SKUID:  models.SKUID(req.Sku),
@@ -70,6 +85,9 @@ func (c *CartServer) DeleteItem(ctx context.Context, req *pb.CartDeleteItemReque
 }
 
 func (c *CartServer) ListItem(ctx context.Context, req *pb.CartUserIDRequest) (*pb.CartListItemResponse, error) {
+	ctx, span := c.tracer.Start(ctx, listSpanName)
+	defer span.End()
+
 	listDTO, err := c.cartUsecase.GetItemsByUserID(ctx, models.UserID(req.UserId))
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
@@ -92,6 +110,9 @@ func (c *CartServer) ListItem(ctx context.Context, req *pb.CartUserIDRequest) (*
 }
 
 func (c *CartServer) ClearCart(ctx context.Context, req *pb.CartUserIDRequest) (*emptypb.Empty, error) {
+	ctx, span := c.tracer.Start(ctx, clearSpanName)
+	defer span.End()
+
 	if err := c.cartUsecase.ClearCartByUserID(ctx, models.UserID(req.UserId)); err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())

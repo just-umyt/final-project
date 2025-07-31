@@ -2,8 +2,12 @@ package main
 
 import (
 	"flag"
-	"log"
 	"stocks/internal/app"
+	myZap "stocks/pkg/zap"
+)
+
+const (
+	logFilePath = "././app.log"
 )
 
 func main() {
@@ -14,10 +18,16 @@ func main() {
 
 	env = ".env." + env
 
-	err := app.RunApp(env)
+	logger, cleanup, err := myZap.NewLogger(logFilePath)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		logger.Errorf("error NewLogger: %v", err)
+	}
+	defer cleanup()
+
+	err = app.RunApp(env, logger)
+	if err != nil {
+		logger.Fatalf("error: %v", err)
 	} else {
-		log.Print("shutdown succes")
+		logger.Info("shutdown succes")
 	}
 }

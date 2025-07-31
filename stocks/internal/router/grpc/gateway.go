@@ -12,18 +12,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const readHeaderTimeout = 3
-
 type ServerConfig struct {
-	Address string
-	Handler http.Handler
+	Address           string
+	Handler           http.Handler
+	ReadHeaderTimeout time.Duration
 }
 
 func NewGatewayServer(serverConfig *ServerConfig) *http.Server {
 	server := &http.Server{
 		Addr:              serverConfig.Address,
 		Handler:           serverConfig.Handler,
-		ReadHeaderTimeout: readHeaderTimeout * time.Second,
+		ReadHeaderTimeout: serverConfig.ReadHeaderTimeout,
 	}
 
 	return server

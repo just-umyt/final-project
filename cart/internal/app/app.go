@@ -6,11 +6,13 @@ import (
 	myGrpc "cart/internal/router/grpc"
 	"cart/internal/services"
 	"errors"
-	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
+
+	myLog "cart/internal/observability/log"
+	"cart/internal/observability/metrics"
+	"cart/internal/observability/tracer"
 
 	"cart/internal/repository"
 	"cart/internal/usecase"
@@ -27,69 +29,81 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var (
-	ErrLoadEnv               = "error loading .env file: %v"
-	ErrDBConnect             = "error connecting to database: %v"
-	ErrMigration             = "error migration: %v"
-	ErrMigrationUp           = "error migration up: %v"
-	ErrLoadClientTimeOut     = "error loading CLIENT_TIMEOUT: %v"
-	ErrLoadServerReadTimeOut = "error loading SERVER_READ_HEADER_TIMEOUT: %v"
-	ErrLoadServerShutdown    = "error loading SERVER_SHUTDOWN_TIMEOUT: %v"
-	ErrShutdown              = "shutdown error: %v"
-	ErrListener              = "failed to listen: %v"
+const (
+	ErrLoadEnv           = "error loading .env file: %v"
+	ErrDBConnect         = "error connecting to database: %v"
+	ErrMigration         = "error migration: %v"
+	ErrMigrationUp       = "error migration up: %v"
+	ErrLoadClientTimeOut = "error loading CLIENT_TIMEOUT: %v"
+	ErrShutdown          = "shutdown error: %v"
+	ErrListener          = "failed to listen: %v"
+	ErrListenGRPC        = "failed to serve grpc server"
+	ErrListenGateway     = "failed to serve gateway server"
+	ErrListenMetrics     = "failed to serve metrics server"
+	ErrTracerShutdown    = "failed to shutdown tracer: %v"
+
+	tracingServiceName = "cart-service"
+
+	metricsTimeout           = 5 * time.Second
+	gatewayShutdownTimeout   = 5 * time.Second
+	gatewayReadHeaderTimeout = 3 * time.Second
 )
 
-func RunApp(env string) error {
+func RunApp(env string, logger myLog.Logger) error {
+	//context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	//load config
 	if err := config.LoadConfig(env); err != nil {
 		err = fmt.Errorf(ErrLoadEnv, err)
 		return err
 	}
 
+	//tracer
+	tracing, err := tracer.InitTracer(ctx, os.Getenv("JAEGER_ENDPOINT"), tracingServiceName)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err := tracing.Shutdown(ctx)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			logger.Errorf(ErrTracerShutdown, err)
+		}
+	}()
+
+	//database config
 	dbConfig := &postgres.PostgresConfig{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
-		Dbname:   os.Getenv("DB_NAME"),
+		DBname:   os.Getenv("DB_NAME"),
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
-	db, err := postgres.NewDB(dbConfig)
+	//migration up
+	err = migrationUp(dbConfig)
 	if err != nil {
-		return fmt.Errorf(ErrDBConnect, err)
+		return err
 	}
 
-	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
-	if err != nil {
-		return fmt.Errorf(ErrMigration, err)
-	}
-
-	err = postgres.MigrationUp(migration)
-	if err != nil {
-		return fmt.Errorf(ErrMigrationUp, err)
-	}
-
+	//database Pool
 	dbPool, err := postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		return fmt.Errorf(ErrDBConnect, err)
 	}
 	defer dbPool.Close()
 
-	cartRepo := repository.NewCartRepository(dbPool)
-
-	trxManager := postgres.NewPgTxManager(dbPool)
-
+	//stock service
 	conn, err := grpc.NewClient(os.Getenv("CLIENT_URL"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	stockService := services.NewStockClient(conn)
-
+	//kafka
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 
 	kafkaProducer, err := producer.NewProducer(kafkaBrokers)
@@ -99,8 +113,6 @@ func RunApp(env string) error {
 
 	defer kafkaProducer.Close()
 
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
-
 	//grpc listener
 	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
 
@@ -109,19 +121,23 @@ func RunApp(env string) error {
 		return fmt.Errorf(ErrListener, err)
 	}
 
-	cartService := myGrpc.NewCartServer(cartUsecase)
+	cartRepo := repository.NewCartRepository(dbPool)
+	trxManager := postgres.NewPgTxManager(dbPool)
+	stockService := services.NewStockClient(conn)
+	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer, logger)
+	cartService := myGrpc.NewCartServer(cartUsecase, tracing.Tracer(tracingServiceName))
+	metric := metrics.RegisterMetrics()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(
+		myGrpc.LoggingInterceptor(
+			logger,
+			metric,
+			tracing.Tracer(tracingServiceName),
+		),
+	))
 
-	grpcServer := grpc.NewServer()
-
+	//grpc register
 	reflection.Register(grpcServer)
-
 	pb.RegisterCartServiceServer(grpcServer, cartService)
-
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Printf("failed to serve: %v", err)
-		}
-	}()
 
 	//gateway listener
 	gatewayAddr := fmt.Sprintf("%s:%s", os.Getenv("GATEWAY_SERVER_HOST"), os.Getenv("GATEWAY_SERVER_PORT"))
@@ -132,36 +148,69 @@ func RunApp(env string) error {
 	}
 
 	serverConfig := &myGrpc.ServerConfig{
-		Address: gatewayAddr,
-		Handler: mux,
+		Address:             gatewayAddr,
+		Handler:             mux,
+		ReaderHeaderTimeout: gatewayReadHeaderTimeout,
 	}
 
 	gatewayServer := myGrpc.NewGatewayServer(serverConfig)
 
+	//grpc ListenAndServe
 	go func() {
-		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("error listen and serve : %v", err)
+		if err := grpcServer.Serve(lis); err != nil {
+			logger.Error(ErrListenGRPC, myLog.Error(err))
 		}
 	}()
 
-	log.Printf("listening in  %s", gatewayAddr)
+	//gateway ListenAndServe
+	go func() {
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal(ErrListenGateway, myLog.Error(err))
+		}
+	}()
 
+	//metrics ListenAndServe
+	go func() {
+		if err := metrics.ListenAndServe(os.Getenv("PROMETHEUS"), metricsTimeout); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal(ErrListenMetrics, myLog.Error(err))
+		}
+	}()
+
+	logger.Infof("gateway listening in %s", gatewayAddr)
+
+	//gracefull shutdown
 	<-ctx.Done()
 
-	log.Println("shutting down server gracefully...")
+	logger.Info("shutting down server  gracefully...")
 
 	grpcServer.GracefulStop()
 
-	shutdownTimer, err := strconv.Atoi(os.Getenv("GATEWAY_SERVER_SHUTDOWN_TIMEOUT"))
-	if err != nil {
-		return fmt.Errorf(ErrLoadServerShutdown, err)
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimer)*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), gatewayShutdownTimeout)
 	defer cancel()
 
 	if err = gatewayServer.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf(ErrShutdown, err)
+	}
+
+	return nil
+}
+
+func migrationUp(dbConfig *postgres.PostgresConfig) error {
+	//database for migration
+	db, err := postgres.NewDB(dbConfig)
+	if err != nil {
+		return fmt.Errorf(ErrDBConnect, err)
+	}
+
+	//migration
+	migration, err := postgres.NewMigration(db, os.Getenv("MIGRATION_SOURCE_URL"))
+	if err != nil {
+		return fmt.Errorf(ErrMigration, err)
+	}
+
+	err = postgres.MigrationUp(migration)
+	if err != nil {
+		return fmt.Errorf(ErrMigrationUp, err)
 	}
 
 	return nil

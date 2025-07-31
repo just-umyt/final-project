@@ -4,6 +4,7 @@ import (
 	"cart/internal/producer"
 	"cart/internal/repository"
 	"cart/internal/services"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -15,14 +16,23 @@ import (
 	"net/http/httptest"
 	"os"
 
+	myLog "cart/internal/observability/log"
+	"cart/internal/observability/tracer"
 	myGrpc "cart/internal/router/grpc"
 	pb "cart/pkg/api/cart"
+	myZap "cart/pkg/zap"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+)
+
+const (
+	tracingServiceName = "cart-service"
+	appLogPath         = "../app.log"
 )
 
 type testAppConfig struct {
@@ -33,25 +43,43 @@ type testAppConfig struct {
 	CartGRPC      *grpc.Server
 	FakeStockGRPC *grpc.Server
 	StockClient   *grpc.ClientConn
+	Logger        myLog.Logger
+	LoggerCleanup func()
+	Tracer        *trace.TracerProvider
 }
 
 func (t *testAppConfig) Setup(ctx context.Context) error {
 	var err error
 
+	//logger
+	t.Logger, t.LoggerCleanup, err = myZap.NewLogger(appLogPath)
+	if err != nil {
+		return err
+	}
+
+	//tracing
+	t.Tracer, err = tracer.InitTracer(ctx, os.Getenv("JAEGER_ENDPOINT"), tracingServiceName)
+	if err != nil {
+		return err
+	}
+
+	//db config
 	dbConfig := &postgres.PostgresConfig{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
-		Dbname:   os.Getenv("DB_NAME"),
+		DBname:   os.Getenv("DB_NAME"),
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
+	//db
 	t.DB, err = postgres.NewDB(dbConfig)
 	if err != nil {
 		return err
 	}
 
+	//migration
 	t.Migration, err = postgres.NewMigration(t.DB, os.Getenv("MIGRATION_SOURCE_URL"))
 	if err != nil {
 		return err
@@ -62,14 +90,11 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 		return err
 	}
 
+	//db pool
 	t.DBPool, err = postgres.NewDBPool(ctx, dbConfig)
 	if err != nil {
 		return err
 	}
-
-	trxManager := postgres.NewPgTxManager(t.DBPool)
-
-	cartRepo := repository.NewCartRepository(t.DBPool)
 
 	//stock client
 	t.StockClient, err = grpc.NewClient(os.Getenv("CLIENT_URL"), grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -77,15 +102,11 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 		return err
 	}
 
-	stockService := services.NewStockClient(t.StockClient)
-
 	//kafka
 	kafkaProducer, err := producer.NewProducer(os.Getenv("KAFKA_BROKERS"))
 	if err != nil {
 		return err
 	}
-
-	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer)
 
 	//grpc listener
 	grpcServerAddress := fmt.Sprintf("%s:%s", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"))
@@ -95,10 +116,13 @@ func (t *testAppConfig) Setup(ctx context.Context) error {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	srv := myGrpc.NewCartServer(cartUsecase)
+	trxManager := postgres.NewPgTxManager(t.DBPool)
+	cartRepo := repository.NewCartRepository(t.DBPool)
+	stockService := services.NewStockClient(t.StockClient)
+	cartUsecase := usecase.NewCartUsecase(cartRepo, trxManager, stockService, kafkaProducer, t.Logger)
+	srv := myGrpc.NewCartServer(cartUsecase, t.Tracer.Tracer("cart-service"))
 
 	t.CartGRPC = grpc.NewServer()
-
 	reflection.Register(t.CartGRPC)
 
 	pb.RegisterCartServiceServer(t.CartGRPC, srv)
@@ -133,6 +157,12 @@ func (t *testAppConfig) Close() error {
 	t.CartGRPC.GracefulStop()
 	t.FakeStockGRPC.GracefulStop()
 	t.StockClient.Close()
+	t.LoggerCleanup()
+
+	err := t.Tracer.Shutdown(context.Background())
+	if err != nil && !errors.Is(err, context.Canceled) {
+		t.Logger.Errorf("failed to shutdown tracer: %v", err)
+	}
 
 	return t.Migration.Down()
 }

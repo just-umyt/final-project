@@ -4,14 +4,8 @@ services:
     depends_on:
       stocks_db:
         condition: service_healthy
-    environment:
-      DB_HOST: stocks_db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_NAME: stocks
-      DB_SSLMODE: disable
-      DB_PASSWORD: password
     ports:
+      - "8071:8071"
       - "8081:8081"
       - "8091:8091"
     container_name: umyt-stocks-service

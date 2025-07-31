@@ -3,11 +3,12 @@ package usecase
 import (
 	"context"
 	"errors"
-	"log"
 	"stocks/internal/models"
 	"stocks/internal/producer"
 	"stocks/internal/repository"
 	"time"
+
+	myLog "stocks/internal/observability/log"
 )
 
 //go:generate mkdir -p mock
@@ -24,16 +25,16 @@ type StockUsecase struct {
 	stockRepo     repository.IStockRepo
 	trManager     IPgTxManager
 	kafkaProducer IProducer
+	logger        myLog.Logger
 }
 
 const (
-	eventSKUCreateType  = "sku_created"
-	eventStokChangeType = "stock_changed"
+	eventSKUCreateType   = "sku_created"
+	eventStockChangeType = "stock_changed"
 
 	eventService = "stock"
 
-	topic             = "metrics"
-	partitionID int32 = 0
+	topic = "metrics"
 )
 
 var (
@@ -41,8 +42,8 @@ var (
 	ErrUserID   error = errors.New("user id is not matched")
 )
 
-func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager, kafkaPr IProducer) *StockUsecase {
-	return &StockUsecase{stockRepo: repo, trManager: trManager, kafkaProducer: kafkaPr}
+func NewStockUsecase(repo repository.IStockRepo, trManager IPgTxManager, kafkaPr IProducer, logg myLog.Logger) *StockUsecase {
+	return &StockUsecase{stockRepo: repo, trManager: trManager, kafkaProducer: kafkaPr, logger: logg}
 }
 
 func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
@@ -88,7 +89,7 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 				return ErrNotFound
 			}
 
-			messageDTO.Type = eventSKUCreateType
+			messageDTO.Type = eventStockChangeType
 			messageDTO.SKU = newItem.SKUID
 			messageDTO.Count = newItem.Count
 			messageDTO.Price = newItem.Price
@@ -101,7 +102,7 @@ func (u *StockUsecase) AddStock(ctx context.Context, stock AddStockDTO) error {
 		return err
 	}
 
-	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+	u.logger.Info("kafka", myLog.Error(u.kafkaProducer.Produce(messageDTO, topic, time.Now())))
 
 	return nil
 }

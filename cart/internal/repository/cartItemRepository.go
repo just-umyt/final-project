@@ -10,6 +10,19 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+var (
+	ErrNotFound error = errors.New("not found")
+)
+
+const (
+	getCartIDQuery         = `SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2`
+	updateItemQuery        = `UPDATE cart SET count = count + $1 WHERE id = $2`
+	addItemQuery           = `INSERT INTO cart (user_id, sku_id, count) VALUES ($1, $2, $3)`
+	deleteItemQuery        = `DELETE FROM cart WHERE user_id = $1 AND sku_id = $2`
+	getCartByUserIDQuery   = `SELECT sku_id, count FROM cart WHERE user_id = $1`
+	clearCartByUserIDQuery = `DELETE FROM cart WHERE user_id = $1`
+)
+
 type IDBQuery interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
@@ -31,18 +44,14 @@ type CartRepo struct {
 	db IDBQuery
 }
 
-var ErrNotFound error = errors.New("not found")
-
 func NewCartRepository(db IDBQuery) *CartRepo {
 	return &CartRepo{db: db}
 }
 
 func (c *CartRepo) GetCartID(ctx context.Context, userID models.UserID, skuID models.SKUID) (models.CartID, error) {
-	query := "SELECT id FROM cart WHERE user_id = $1 AND sku_id = $2"
-
 	var id int64
 
-	err := c.db.QueryRow(ctx, query, userID, skuID).Scan(&id)
+	err := c.db.QueryRow(ctx, getCartIDQuery, userID, skuID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil
@@ -60,9 +69,7 @@ func (c *CartRepo) GetCartID(ctx context.Context, userID models.UserID, skuID mo
 }
 
 func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) error {
-	query := `UPDATE cart SET count = count + $1 WHERE id = $2`
-
-	tag, err := c.db.Exec(ctx, query, cart.Count, cart.ID)
+	tag, err := c.db.Exec(ctx, updateItemQuery, cart.Count, cart.ID)
 	if err != nil {
 		return err
 	}
@@ -75,9 +82,7 @@ func (c *CartRepo) UpdateItemByUserID(ctx context.Context, cart models.Cart) err
 }
 
 func (c *CartRepo) AddItem(ctx context.Context, cart models.Cart) error {
-	query := `INSERT INTO cart (user_id, sku_id, count) VALUES ($1, $2, $3)`
-
-	_, err := c.db.Exec(ctx, query, cart.UserID, cart.SKUID, cart.Count)
+	_, err := c.db.Exec(ctx, addItemQuery, cart.UserID, cart.SKUID, cart.Count)
 	if err != nil {
 		return err
 	}
@@ -86,9 +91,7 @@ func (c *CartRepo) AddItem(ctx context.Context, cart models.Cart) error {
 }
 
 func (c *CartRepo) DeleteItem(ctx context.Context, userID models.UserID, skuID models.SKUID) error {
-	query := `DELETE FROM cart WHERE user_id = $1 AND sku_id = $2`
-
-	tag, err := c.db.Exec(ctx, query, userID, skuID)
+	tag, err := c.db.Exec(ctx, deleteItemQuery, userID, skuID)
 	if err != nil {
 		return err
 	}
@@ -101,9 +104,7 @@ func (c *CartRepo) DeleteItem(ctx context.Context, userID models.UserID, skuID m
 }
 
 func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) ([]models.CartItem, error) {
-	query := `SELECT sku_id, count FROM cart WHERE user_id = $1`
-
-	rows, err := c.db.Query(ctx, query, userID)
+	rows, err := c.db.Query(ctx, getCartByUserIDQuery, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,9 +138,7 @@ func (c *CartRepo) GetCartByUserID(ctx context.Context, userID models.UserID) ([
 }
 
 func (c *CartRepo) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
-	query := `DELETE FROM cart WHERE user_id = $1`
-
-	tag, err := c.db.Exec(ctx, query, userID)
+	tag, err := c.db.Exec(ctx, clearCartByUserIDQuery, userID)
 	if err != nil {
 		return err
 	}

@@ -7,8 +7,9 @@ import (
 	"cart/internal/services"
 	"context"
 	"errors"
-	"log"
 	"time"
+
+	myLog "cart/internal/observability/log"
 )
 
 //go:generate mkdir -p mock
@@ -30,6 +31,7 @@ type CartUsecase struct {
 	cartRepo      repository.ICartRepo
 	trManager     IPgTxManager
 	kafkaProducer IProducer
+	logger        myLog.Logger
 }
 
 const (
@@ -42,6 +44,8 @@ const (
 	eventService = "cart"
 
 	topic = "metrics"
+
+	warnCartCountMore = "Warning: user requested %d of SKU %d, but only %d in stock. Adjusting."
 )
 
 var (
@@ -49,8 +53,19 @@ var (
 	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
-func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService, kafkaPr IProducer) *CartUsecase {
-	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service, kafkaProducer: kafkaPr}
+func NewCartUsecase(cartRepo repository.ICartRepo,
+	trManager IPgTxManager,
+	service IStockService,
+	kafkaPr IProducer,
+	l myLog.Logger,
+) *CartUsecase {
+	return &CartUsecase{
+		cartRepo:      cartRepo,
+		trManager:     trManager,
+		skuService:    service,
+		kafkaProducer: kafkaPr,
+		logger:        l,
+	}
 }
 
 func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
@@ -79,7 +94,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		messageDTO.Status = eventStatusFailed
 		messageDTO.Reason = ErrNotEnoughStock.Error()
 
-		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+		u.logger.Warnf("kafka", myLog.Error(u.kafkaProducer.Produce(messageDTO, topic, time.Now())))
 
 		return ErrNotEnoughStock
 	}
@@ -106,7 +121,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
-	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+	u.logger.Info("kafka", myLog.Error(u.kafkaProducer.Produce(messageDTO, topic, time.Now())))
 
 	return nil
 }
@@ -137,8 +152,7 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 		realCount := cart.Count
 
 		if cart.Count > sku.Count {
-			log.Printf("Warning: user requested %d of SKU %d, but only %d in stock. Adjusting.",
-				cart.Count, cart.SKUID, sku.Count)
+			u.logger.Warnf(warnCartCountMore, cart.Count, cart.SKUID, sku.Count)
 			realCount = sku.Count
 		}
 		sku.Count = realCount

@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 
+	logMock "cart/internal/observability/log/mock"
+
 	"testing"
 )
 
@@ -28,6 +30,7 @@ func TestAddItem(t *testing.T) {
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -55,7 +58,10 @@ func TestAddItem(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
+	logger.InfoMock.Return()
+	logger.WarnfMock.Return()
+
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -110,6 +116,7 @@ func TestDeleteItem(t *testing.T) {
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -125,7 +132,7 @@ func TestDeleteItem(t *testing.T) {
 		return nil
 	})
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -169,6 +176,7 @@ func TestGetItemsByUserID(t *testing.T) {
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -186,7 +194,8 @@ func TestGetItemsByUserID(t *testing.T) {
 
 	serviceMock.GetItemInfoMock.Return(services.ItemDTO{}, nil)
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
+	logger.WarnfMock.Return()
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -231,6 +240,7 @@ func TestClearCartByUserID(t *testing.T) {
 	repoMock := repoMock.NewICartRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -248,7 +258,8 @@ func TestClearCartByUserID(t *testing.T) {
 
 	trxMock.WithTxMock.Set(func(ctx context.Context, fn func(repository.ICartRepo) error) (err error) { return fn(repoMock) })
 
-	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock)
+	// logger.InfoMock.Return()
+	cartUsecase := NewCartUsecase(repoMock, trxMock, serviceMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string

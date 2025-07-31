@@ -11,19 +11,23 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	driverName = "postgres"
+)
+
 type PostgresConfig struct {
 	Host     string
 	Port     string
 	User     string
 	Password string
-	Dbname   string
+	DBname   string
 	SSLMode  string
 }
 
 func NewDB(cnfg *PostgresConfig) (*sql.DB, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
+	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=%s", driverName, cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.DBname, cnfg.SSLMode)
 
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +40,7 @@ func NewDB(cnfg *PostgresConfig) (*sql.DB, error) {
 }
 
 func NewDBPool(context context.Context, cnfg *PostgresConfig) (*pgxpool.Pool, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.Dbname, cnfg.SSLMode)
+	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=%s", driverName, cnfg.User, cnfg.Password, cnfg.Host, cnfg.Port, cnfg.DBname, cnfg.SSLMode)
 
 	dbPool, err := pgxpool.New(context, dsn)
 	if err != nil {
