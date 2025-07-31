@@ -1,0 +1,32 @@
+{"level":"info","ts":"2025-07-31T18:13:13.375+0500","msg":"listening in localhost:8081\n"}
+{"level":"info","ts":"2025-07-31T18:13:38.817+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T18:13:38.817+0500","msg":"request success","method":"/api.StockService/AddItem","trace_id":"c4b0b24b9259a777497ee726d3c4cb58"}
+{"level":"info","ts":"2025-07-31T18:13:41.885+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"5e1fbbbf96ee638c1f969cef6657c9de"}
+{"level":"info","ts":"2025-07-31T18:15:58.576+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"57c66235748ef147c70ae1c9bc2cb674"}
+{"level":"info","ts":"2025-07-31T18:16:00.405+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T18:16:00.405+0500","msg":"request success","method":"/api.StockService/AddItem","trace_id":"9874e1cd68638b68508df4859626e347"}
+{"level":"info","ts":"2025-07-31T18:16:02.406+0500","msg":"request success","method":"/api.StockService/DeleteItem","trace_id":"3ed0a50ddb95e1a42105b2b08efbe306"}
+{"level":"info","ts":"2025-07-31T18:16:05.017+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"0b42ba7129717b4ef3d1aff20595d2c2"}
+{"level":"info","ts":"2025-07-31T18:22:58.754+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"645c527b2536e372da6c771c4af26879"}
+{"level":"error","ts":"2025-07-31T18:23:00.488+0500","msg":"request failed","error":"rpc error: code = NotFound desc = not found","method":"/api.StockService/DeleteItem","trace_id":"0397c7da103dfcf1e0df04a38de72c34"}
+{"level":"info","ts":"2025-07-31T18:23:02.117+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"80f691e628be102d9f2c0cdd63af2a6b"}
+{"level":"info","ts":"2025-07-31T18:23:21.911+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T18:23:21.911+0500","msg":"request success","method":"/api.StockService/AddItem","trace_id":"7fb224d1a6fd8ec2a2d5f1983a59b240"}
+{"level":"info","ts":"2025-07-31T18:23:23.672+0500","msg":"request success","method":"/api.StockService/DeleteItem","trace_id":"22e549e98aa9a0cf5367aa8af96a6ba8"}
+{"level":"info","ts":"2025-07-31T18:23:26.066+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"762d96d75e091e59fe2498ff678b76d3"}
+{"level":"info","ts":"2025-07-31T18:23:36.811+0500","msg":"shutting down server gracefully..."}
+{"level":"info","ts":"2025-07-31T18:23:41.853+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T18:23:41.860+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:16:03.138+0500","msg":"listening in localhost:8081\n"}
+{"level":"info","ts":"2025-07-31T22:16:37.875+0500","msg":"shutting down server gracefully..."}
+{"level":"info","ts":"2025-07-31T22:16:42.943+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:16:42.949+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}
+{"level":"info","ts":"2025-07-31T22:17:09.699+0500","msg":"listening in localhost:8081\n"}
+{"level":"info","ts":"2025-07-31T22:17:27.513+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"fa8fe9966406c7d2b9ccf0bf5ce2d1e8"}
+{"level":"info","ts":"2025-07-31T22:17:41.051+0500","msg":"kafka"}
+{"level":"info","ts":"2025-07-31T22:17:41.051+0500","msg":"request success","method":"/api.StockService/AddItem","trace_id":"623e8be7cf24b90c2222b4c23a1fcf56"}
+{"level":"info","ts":"2025-07-31T22:17:43.744+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"7e992c305e73a24e791dd879cfb4fa60"}
+{"level":"info","ts":"2025-07-31T22:19:46.926+0500","msg":"request success","method":"/api.StockService/GetItem","trace_id":"397ffb3a2889736060ca0d9b69cd764d"}
+{"level":"info","ts":"2025-07-31T22:20:06.083+0500","msg":"shutting down server gracefully..."}
+{"level":"info","ts":"2025-07-31T22:20:11.103+0500","msg":"shutdown succes"}
+{"level":"error","ts":"2025-07-31T22:20:11.109+0500","msg":"failed to sync logger: sync /dev/stdout: invalid argument"}

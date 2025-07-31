@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"stocks/internal/models"
+	logMock "stocks/internal/observability/log/mock"
 	"stocks/internal/repository"
 	repositoryMock "stocks/internal/repository/mock"
 	"stocks/internal/usecase/mock"
@@ -24,6 +25,7 @@ func TestAddStock(t *testing.T) {
 	repoMock := repositoryMock.NewIStockRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -53,7 +55,9 @@ func TestAddStock(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
+	logger.InfoMock.Return()
+
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -112,6 +116,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 	repoMock := repositoryMock.NewIStockRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -126,7 +131,7 @@ func TestDeleteStockBySKU(t *testing.T) {
 		return nil
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -165,6 +170,7 @@ func TestGetStockByLocation(t *testing.T) {
 	repoMock := repositoryMock.NewIStockRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -192,7 +198,7 @@ func TestGetStockByLocation(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string
@@ -246,6 +252,7 @@ func TestGetItemBySKU(t *testing.T) {
 	repoMock := repositoryMock.NewIStockRepoMock(t)
 	trxMock := mock.NewIPgTxManagerMock(t)
 	kafkaMock := mock.NewIProducerMock(t)
+	logger := logMock.NewLoggerMock(t)
 
 	t.Cleanup(func() {
 		repoMock.MinimockFinish()
@@ -264,7 +271,7 @@ func TestGetItemBySKU(t *testing.T) {
 		return fn(repoMock)
 	})
 
-	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock)
+	usecase := NewStockUsecase(repoMock, trxMock, kafkaMock, logger)
 
 	tests := []struct {
 		name    string

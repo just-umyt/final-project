@@ -11,11 +11,9 @@ import (
 )
 
 const (
-	acks = 0
-
+	acks         = 0
 	flushTimeout = 5000
-
-	partitionID = 1
+	partitionID  = 1
 
 	ErrCreateProducer = "error creating kafka producer: %v"
 	ErrSendMsg        = "error sending message to kafka: %v"

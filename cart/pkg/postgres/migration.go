@@ -17,7 +17,7 @@ func NewMigration(db *sql.DB, sourceURL string) (*migrate.Migrate, error) {
 
 	migration, err := migrate.NewWithDatabaseInstance(
 		sourceURL,
-		"postgres",
+		driverName,
 		driver,
 	)
 	if err != nil {

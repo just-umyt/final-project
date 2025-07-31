@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -22,11 +23,12 @@ type ICartUsecase interface {
 
 type CartServer struct {
 	cartUsecase ICartUsecase
+	tracer      trace.Tracer
 	pb.UnimplementedCartServiceServer
 }
 
-func NewCartServer(us ICartUsecase) *CartServer {
-	return &CartServer{cartUsecase: us}
+func NewCartServer(us ICartUsecase, tracer trace.Tracer) *CartServer {
+	return &CartServer{cartUsecase: us, tracer: tracer}
 }
 
 func (c *CartServer) AddItem(ctx context.Context, req *pb.CartAddItemRequest) (*emptypb.Empty, error) {

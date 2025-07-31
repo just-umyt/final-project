@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 10s # By default, scrape targets every 15 seconds.
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+
+  # local (only linux)
+  - job_name: "prometheus_local"
+    static_configs:
+      - targets: ["localhost:8070", "localhost:8071"]
+
+  # local
+  # - job_name: "prometheus_local1"
+  #   static_configs:
+  #     - targets: ["host.docker.internal:8070"]
+
+  # production
+  - job_name: "prometheus_prod"
+    static_configs:
+      - targets: ["cart_service:8070", "stocks_service:8071"]

@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	ctxTimeout = 5
+	ctxTimeout             = 5
+	errorConvertStockCount = "failed to convert stock count: %w"
 )
 
 type StockService struct {
@@ -41,7 +42,7 @@ func (s *StockService) GetItemInfo(ctx context.Context, skuID models.SKUID) (Ite
 
 	count, err := models.Uint32ToUint16(resp.Count)
 	if err != nil {
-		return ItemDTO{}, fmt.Errorf("failed to convert stock count: %w", err)
+		return ItemDTO{}, fmt.Errorf(errorConvertStockCount, err)
 	}
 
 	return ItemDTO{

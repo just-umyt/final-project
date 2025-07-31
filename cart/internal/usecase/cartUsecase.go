@@ -7,8 +7,36 @@ import (
 	"cart/internal/services"
 	"context"
 	"errors"
-	"log"
 	"time"
+
+	myLog "cart/internal/observability/log"
+
+	"go.opentelemetry.io/otel"
+)
+
+const (
+	eventSuccessType = "cart_item_added"
+	eventFailedType  = "cart_item_failed"
+
+	eventStatusOk     = "success"
+	eventStatusFailed = "failed"
+
+	eventService = "cart"
+
+	topic = "metrics"
+
+	warnCartCountMore = "Warning: user requested %d of SKU %d, but only %d in stock. Adjusting."
+
+	tracingServiceName = "cart-service"
+	addSpanName        = "cart-add-usecase"
+	delSpanName        = "cart-del-usecase"
+	listSpanName       = "cart-list-usecase"
+	clearSpanName      = "cart-clear-usecase"
+)
+
+var (
+	ErrNotFound       error = errors.New("not found")
+	ErrNotEnoughStock error = errors.New("not enough stock")
 )
 
 //go:generate mkdir -p mock
@@ -30,30 +58,28 @@ type CartUsecase struct {
 	cartRepo      repository.ICartRepo
 	trManager     IPgTxManager
 	kafkaProducer IProducer
+	logger        myLog.Logger
 }
 
-const (
-	eventSuccessType = "cart_item_added"
-	eventFailedType  = "cart_item_failed"
-
-	eventStatusOk     = "success"
-	eventStatusFailed = "failed"
-
-	eventService = "cart"
-
-	topic = "metrics"
-)
-
-var (
-	ErrNotFound       error = errors.New("not found")
-	ErrNotEnoughStock error = errors.New("not enough stock")
-)
-
-func NewCartUsecase(cartRepo repository.ICartRepo, trManager IPgTxManager, service IStockService, kafkaPr IProducer) *CartUsecase {
-	return &CartUsecase{cartRepo: cartRepo, trManager: trManager, skuService: service, kafkaProducer: kafkaPr}
+func NewCartUsecase(cartRepo repository.ICartRepo,
+	trManager IPgTxManager,
+	service IStockService,
+	kafkaPr IProducer,
+	l myLog.Logger,
+) *CartUsecase {
+	return &CartUsecase{
+		cartRepo:      cartRepo,
+		trManager:     trManager,
+		skuService:    service,
+		kafkaProducer: kafkaPr,
+		logger:        l,
+	}
 }
 
 func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, addSpanName)
+	defer span.End()
+
 	item, err := u.skuService.GetItemInfo(ctx, addItem.SKUID)
 	if err != nil {
 		return err
@@ -79,7 +105,7 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		messageDTO.Status = eventStatusFailed
 		messageDTO.Reason = ErrNotEnoughStock.Error()
 
-		log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+		u.logger.Warnf("kafka", myLog.Error(u.kafkaProducer.Produce(messageDTO, topic, time.Now())))
 
 		return ErrNotEnoughStock
 	}
@@ -106,12 +132,15 @@ func (u *CartUsecase) AddItem(ctx context.Context, addItem AddItemDTO) error {
 		return err
 	}
 
-	log.Println(u.kafkaProducer.Produce(messageDTO, topic, time.Now()))
+	u.logger.Info("kafka", myLog.Error(u.kafkaProducer.Produce(messageDTO, topic, time.Now())))
 
 	return nil
 }
 
 func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) error {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, delSpanName)
+	defer span.End()
+
 	err := u.cartRepo.DeleteItem(ctx, delItem.UserID, delItem.SKUID)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound
@@ -121,6 +150,9 @@ func (u *CartUsecase) DeleteItem(ctx context.Context, delItem DeleteItemDTO) err
 }
 
 func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID) (ListItemsDTO, error) {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, listSpanName)
+	defer span.End()
+
 	var list ListItemsDTO
 
 	carts, err := u.cartRepo.GetCartByUserID(ctx, userID)
@@ -137,8 +169,7 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 		realCount := cart.Count
 
 		if cart.Count > sku.Count {
-			log.Printf("Warning: user requested %d of SKU %d, but only %d in stock. Adjusting.",
-				cart.Count, cart.SKUID, sku.Count)
+			u.logger.Warnf(warnCartCountMore, cart.Count, cart.SKUID, sku.Count)
 			realCount = sku.Count
 		}
 		sku.Count = realCount
@@ -150,6 +181,9 @@ func (u *CartUsecase) GetItemsByUserID(ctx context.Context, userID models.UserID
 }
 
 func (u *CartUsecase) ClearCartByUserID(ctx context.Context, userID models.UserID) error {
+	ctx, span := otel.Tracer(tracingServiceName).Start(ctx, clearSpanName)
+	defer span.End()
+
 	return u.trManager.WithTx(ctx, func(repo repository.ICartRepo) error {
 		err := repo.ClearCartByUserID(ctx, userID)
 		if errors.Is(err, repository.ErrNotFound) {

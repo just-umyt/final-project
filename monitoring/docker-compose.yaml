@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317" # OTLP gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    # if you want to run local uncomment network_mode(only linux)
+    # network_mode: "host"
+    networks:
+      - public-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    # if you want to run local uncomment network_mode(only linux)
+    # network_mode: "host"
+    networks:
+      - public-net
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    # if you want to run local uncomment network_mode(only linux)
+    # network_mode: "host"
+    networks:
+      - public-net
+
+networks:
+  public-net:
+    external: true
+
+volumes:
+  grafana-data:
