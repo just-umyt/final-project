@@ -10,7 +10,7 @@ import (
 	"metrics-consumer/internal/handler"
 )
 
-var (
+const (
 	ErrLoadEnv = "error loading .env file: %v"
 )
 

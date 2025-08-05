@@ -1,7 +1,9 @@
+# Kafka Metrics with Partitioned Events and Replication
 
-# Homework 9: Kafka Metrics with Partitioned Events and Replication
+![# Kafka metrics architecture ](docs/img/kafka.png)
 
 ## 📝 Goal
+
 Build a small distributed system with:
 
 - `cart-service` and `stock-service` producing structured metrics events to Kafka.
@@ -19,13 +21,13 @@ Build a small distributed system with:
 ```
 .
 ├── kafka/
-│   └── docker-compose.yml   
+│   └── docker-compose.yml
 │     # Kafka + Zookeeper cluster (2 brokers) + kafka-ui
-│   └── Dockerfile   
+│   └── Dockerfile
 ├── cart/
 │
 ├── stock/
-│   
+│
 ├── metrics-consumer/
 ├── go.work                 # Go workspace to link all modules
 ├── README.md
@@ -34,6 +36,7 @@ Build a small distributed system with:
 ---
 
 ## ⚙️ Kafka setup
+
 - Located under `kafka/docker-compose.yml`.
 - Runs:
   - 2 Kafka brokers
@@ -44,13 +47,17 @@ Build a small distributed system with:
   - **replication.factor=2**
 
 ### 📌 Shared network
+
 Kafka Compose uses:
+
 ```yaml
 networks:
   shared-net:
     external: true
 ```
+
 so your services can join this `shared-net` and reach Kafka by:
+
 ```
 kafka1:9092, kafka2:9092
 ```
@@ -59,28 +66,31 @@ kafka1:9092, kafka2:9092
 
 ## 🚀 Services
 
-| Service           | Description                                    | Writes to Kafka        |
-|-------------------|------------------------------------------------|-------------------------|
-| `cart-service`    | Simulates adding items to cart                 | Always writes to **partition 0** |
-| `stock-service`   | Simulates SKU creation & stock changes         | Always writes to **partition 1** |
-| `metrics-consumer`| Subscribes to `metrics` topic, logs all events | Reads both partitions |
+| Service            | Description                                    | Writes to Kafka                  |
+| ------------------ | ---------------------------------------------- | -------------------------------- |
+| `cart-service`     | Simulates adding items to cart                 | Always writes to **partition 0** |
+| `stock-service`    | Simulates SKU creation & stock changes         | Always writes to **partition 1** |
+| `metrics-consumer` | Subscribes to `metrics` topic, logs all events | Reads both partitions            |
 
 All services run in the same `shared-net`.
 
 ---
 
 ## 📚 Event structure
+
 All Kafka messages must be JSON in this format:
 
-| Field       | Type   | Description                           |
-|-------------|--------|---------------------------------------|
-| `type`      | string | Event type, e.g. `cart_item_added`    |
-| `service`   | string | `"cart"` or `"stock"`                 |
-| `timestamp` | string | ISO8601 UTC timestamp                 |
-| `payload`   | object | Event-specific data                  |
+| Field       | Type   | Description                        |
+| ----------- | ------ | ---------------------------------- |
+| `type`      | string | Event type, e.g. `cart_item_added` |
+| `service`   | string | `"cart"` or `"stock"`              |
+| `timestamp` | string | ISO8601 UTC timestamp              |
+| `payload`   | object | Event-specific data                |
 
 ### 🛒 Cart events
+
 #### `cart_item_added`
+
 ```json
 {
   "type": "cart_item_added",
@@ -94,7 +104,9 @@ All Kafka messages must be JSON in this format:
   }
 }
 ```
+
 #### `cart_item_failed`
+
 ```json
 {
   "type": "cart_item_failed",
@@ -111,7 +123,9 @@ All Kafka messages must be JSON in this format:
 ```
 
 ### 📦 Stock events
+
 #### `sku_created`
+
 ```json
 {
   "type": "sku_created",
@@ -124,7 +138,9 @@ All Kafka messages must be JSON in this format:
   }
 }
 ```
+
 #### `stock_changed`
+
 ```json
 {
   "type": "stock_changed",
@@ -137,53 +153,3 @@ All Kafka messages must be JSON in this format:
   }
 }
 ```
-
----
-
-## 🚀 How to run
-1️⃣ **Start Kafka cluster**
-```bash
-cd kafka
-docker-compose up -d
-```
-Creates brokers, zookeeper, topic `metrics` with 2 partitions & replication=2.
-
-2️⃣ **Start services**
-Each service’s Dockerfile joins the same `shared-net`, connects to Kafka by:
-```
-KAFKA_BROKERS=kafka1:9092,kafka2:9092
-TOPIC=metrics
-```
-```bash
-docker-compose up -d cart stock metrics-consumer
-```
-(Or use `docker run` manually with `--network shared-net`).
-
----
-
-## 🔍 How to test replication
-- After all services are producing & consuming:
-```bash
-docker stop kafka1
-```
-- You should still see metrics flowing thanks to replication on `kafka2`.
-
----
-
-## 📑 What to submit
-✅ Source code for:
-- `cart-service`
-- `stock-service`
-- `metrics-consumer`
-- `kafka/docker-compose.yml` for brokers + topic creation
-
-✅ A short demo log showing:
-- `cart` writes to partition 0, `stock` writes to partition 1
-- `metrics-consumer` prints all events
-
-✅**Note**: Please make sure to update or fix your existing tests after adding the Kafka integration.
-
----
-
-
-🎉 **Good luck!**  

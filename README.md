@@ -1,266 +1,93 @@
-# Cart and stock Services
+# 🎓 Final Project – Backend Development Bootcamp
 
-## Overview
-
-This repository contains two microservices implemented in Go:
-- **Cart Service** (`cart`): Manages shopping cart operations.
-- **Stocks Service** (`stocks`): Manages how many items do we have and it's price.
-
-Both services follow a layered (clean/hexagonal) architecture and communicate via net/http package.
-
-
-## Getting Started
-
-### Build
-
-```bash
-make build
-```
-
-### Run All Services
-
-```bash
-make run
-```
-Starts `cart`, and `stocks` services.
-
-### Run Linter Services
-
-```bash
-make lint
-```
-
-### Service Endpoints
-
-Both services expose HTTP endpoints on port 8080 (`cart`) and 8081 (`stocks`).
-
-
-### Inter-Service Communication
-
-- Uses HTTP
-
-## Testing
-
-- Unit tests for core business logic:
-  ```bash
-  make test 
-  ```
-
-## Documentation
-
-Create service skeletons for cart and stocks services according to the [documentation](docs/README.md).
+This is my final project for the **Backend Development Bootcamp** at **Baky Tylla**.  
+It consists of multiple microservices written in Go, integrated with modern backend technologies.
 
 ---
 
-## Homework 7
+## 🏗️ General Architecture
 
-### 1. Write a Dockerfile
+![General service architecture](docs/img/General%20Project%20Architecture.png)
 
-- Must build and run your application (e.g., cart, stock, etc.)
+This project is composed of the following services:
 
-- Should expose the correct internal port via EXPOSE
+- **🛒 Cart Service** (`cart`) – Manages user shopping cart operations.
+- **📦 Stocks Service** (`stocks`) – Manages product inventory and prices.
+- **🌀 Kafka** (`kafka`) – Handles message brokering, ZooKeeper, and cluster configuration.
+- **📊 Metrics Consumer** (`metrics-consumer`) – Consumes Kafka events and logs them.
+- **🧪 Monitoring** (`monitoring`) – Provides logging, tracing, and metrics with Prometheus, Grafana, and Jaeger.
 
-- Must define CMD or ENTRYPOINT to start the app
+Each service has its own documentation and instructions on how it works and how to test it.  
+_📁 Note: You’ll also find a `proto/` folder used for gRPC – no need to focus on it._
 
-### 2. Write a docker-compose.yml
+---
 
-- Should run your app and any required dependencies (e.g., PostgreSQL)
+## ⚙️ Technologies Used
 
-- All containers must start and communicate correctly
+This project leverages a wide range of technologies:
 
-### 3. Push your app's Docker image to a public registry
+- **Programming**: Go (Golang)
+- **Communication**: gRPC
+- **Database**: PostgreSQL
+- **Message Broker**: Apache Kafka
+- **Containerization**: Docker, Docker Compose
+- **Monitoring & Observability**:
+  - Prometheus (metrics)
+  - Grafana (visualization)
+  - Jaeger (distributed tracing)
+  - OpenTelemetry
+- **Logging**: Zap
+- **Testing**: Minimock (for mocking)
 
-- Use Docker Hub or another accessible container registry
-
-- Tag the image like:
-```bash
-    docker tag my-app username/my-app:hw7
-    docker push username/my-app:hw7
-```
-
-I should be able to pull your image using:
-```bash
-    docker pull username/my-app:hw7
-```
-
-### 4. Document the following in every service's README:
-
-- The Docker image name & tag
-
-- App port (e.g. 8080)
-
-- Required environment variables (e.g., DB_HOST, DB_PORT, etc.)
-
-- Sample requests or endpoints if available
-
-
-## Homework 8
-
-### Requirements:
-- Cover the handlers and use cases with unit tests. Minimum coverage: 40%. 
-- Cover the handlers with integration tests. Minimum test cases: successful execution and (receiving an error due to invalid input data or receiving not found error).
-```bash
-  INTEGRATION_TEST=1
-```
-Prepare a Makefile for each service that includes the following commands:
-
-  - starting the test environment using docker-compose, 
-  - running integration tests, 
-  - running unit tests.
-
-After completing all changes, don’t forget to update your Docker Hub images.
-
-
-## Homework 9
-- [Kafka-service](metrics-consumer/README.md)
-
-## Homework 10
-
-### ✅ Task Overview
-
-- Replacing all HTTP handlers with **gRPC** service definitions.
-- Compatible with tools like [grpcui](https://github.com/fullstorydev/grpcui).
-- (Bonus) Adding **gRPC-Gateway** support to allow access via both **HTTP/REST** and **gRPC** clients.
-
-### 🧱 Project Structure
+📂 Project Structure:
 
 ```
+
 .
-├── pkg/
-│   └── api/                     # Generated gRPC & Gateway code
-│       ├── service.proto
-|       |   service.pb.go
-│       ├── service_grpc.pb.go
-│       └── service.pb.gw.go
-├── internal/
-│   ├── service/                 # Business logic
-│   └── server/
-│       ├── grpc.go              # gRPC server setup
-│       └── gateway.go           # gRPC-Gateway HTTP server setup
-├── cmd/
-│   └── main.go                  # Entrypoint
-├── go.mod
-└── README.md                    # You are here
+├── cart/
+├── stock/
+├── kafka/
+├── metrics-consumer/
+├── monitoring/
+└── proto/
+
 ```
 
-### 🧪 How to Generate Code from `.proto`
+📊 Technologies overview:
 
-Install protoc plugins if not already:
-
-```bash
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
-```
-
-Then generate the code:
-
-```bash
-protoc -I proto \
-  --go_out=pkg/api --go_opt=paths=source_relative \
-  --go-grpc_out=pkg/api --go-grpc_opt=paths=source_relative \
-  --grpc-gateway_out=pkg/api --grpc-gateway_opt=paths=source_relative \
-  proto/service.proto
-```
-
-
-### 🧰 Testing the Service
-
-### gRPC Call (CLI)
-
-```bash
-grpcurl -plaintext localhost:9090 list
-```
-
-### Bonus HTTP Call (REST via gRPC-Gateway)
-
-```bash
-curl "http://localhost:8080/v1/data?id=123"
-```
-
-### UI Test (gRPC UI)
-
-```bash
-grpcui -plaintext localhost:9090
-```
-
-Then open the browser at: [http://localhost:8080](http://localhost:9090)
-
-### 🧾 Notes
-
-- All proto definitions and generated Go code are stored in `pkg/api/`.
-- This project supports both gRPC and REST clients.
-- Fully testable with [grpcurl](https://github.com/fullstorydev/grpcurl) and [grpcui](https://github.com/fullstorydev/grpcui).
-
-
-### 🐳 Docker Instructions
-
-Make sure to rebuild your Docker images after applying the gRPC and gRPC-Gateway changes:
-
-```bash
-# Example Docker build for the service
-docker build -t service_name:hw10 .
-```
-
-> ⚠️ Don’t forget to update your Dockerfile to install.
-
-
-
----
-## Homework 11: Logging, Tracing, and Metrics
-
-### Overview
-
-In this assignment, we focused on improving observability in our services by implementing:
-
-1. **Structured Logging** using a logging library.
-2. **Distributed Tracing** for tracking requests through the system.
-3. **Prometheus Metrics**:
-   - `failed_requests_total`: Count of failed requests.
-   - `response_time_seconds`: Duration of each request.
+![All technologies](docs/img/All%20techs.png)
 
 ---
 
-### Objectives
+## 🧪 How to Run the Project
 
-#### Logging
-- Used a structured logger (e.g., **Zap**) to log meaningful events.
-- Included contextual information like:
-  - HTTP method, path
-  - Request ID or trace ID
-  - Error messages (if any)
+1. Create a Docker network (only once):
 
-#### Tracing
-- Added trace support (e.g., **OpenTelemetry**, **Jaeger**).
-- Propagated trace context across services.
-- Every request should have:
-  - A **trace ID**
-  - Optional **span names** for internal operations
+```bash
+docker network create public-net
+```
 
-#### Metrics
-1. `failed_requests_total`  
-   - Type: Counter  
-   - Increments on every failed HTTP request
+2. Start all services using `make`:
 
-2. `response_time_seconds`  
-   - Type: Histogram  
-   - Measures response time of each HTTP request
+```bash
+make docker-up
+```
+
+3. Access services on the following ports:
+
+| Service          | Description                   | Port    |
+| ---------------- | ----------------------------- | ------- |
+| 🛒 Cart Service  | HTTP Gateway                  | `8080`  |
+| 📦 Stock Service | HTTP Gateway                  | `8081`  |
+| 📈 Prometheus    | Monitoring (metrics)          | `9090`  |
+| 📉 Grafana       | Dashboards & visualization    | `3000`  |
+| 🧭 Jaeger UI     | Distributed tracing interface | `16686` |
 
 ---
 
-## 💡 Example
+## Monitoring
 
-A log entry:
-```json
-{
-  "level": "error",
-  "msg": "Request failed",
-  "method": "GET",
-  "path": "/products",
-  "status": 500,
-  "trace_id": "abc123",
-  "error": "database connection failed"
-}
-```
+## 🙏 Acknowledgments
 
-> ⚠️ Don’t forget to update your Docker images with tag hw11.
+I would like to express my sincere gratitude to **Baky Tylla Education Center** and the entire team for their guidance and support during the Backend Development Bootcamp.
+Thank you for helping me learn and apply these powerful backend technologies!

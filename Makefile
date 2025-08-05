@@ -42,3 +42,19 @@ test:
 clean:
 	@$(MAKE) -C cart clean
 	@$(MAKE) -C stocks clean
+
+docker-up:
+	@echo "Docker compose up..."
+	@cd cart && docker-compose up -d
+	@cd stocks && docker-compose up -d 
+	@cd kafka && docker-compose up -d
+	@cd monitoring && docker-compose up -d
+	@docker run -it --name metrics umyt/metrics-consumer:hw9
+
+docker-down:
+	@echo "Docker compose down..."
+	@cd cart && docker-compose down
+	@cd stocks && docker-compose down
+	@cd kafka && docker-compose down
+	@cd monitoring && docker-compose down
+	@docker rm metrics

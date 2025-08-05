@@ -1,41 +1,31 @@
 # 🛒 Cart Service
 
-## 📦 Docker Image
+A microservice that manages user shopping carts.
 
-```bash
-docker pull umyt/my-cart-app:hw7
-```
+---
 
 ## 🚀 Application Ports
 
-Make sure the following ports are accessible, or you can change it on your own free ports:
+Ensure the following ports are accessible. You can change them to free ports in the Docker Compose file if necessary:
 
-- App port: `SERVER_PORT=8080`
-- PostgreSQL port: `DB_PORT=5433`
-
----
-
-### ‼️ Don't Modify
-
-- SERVER_HOST
-- DB_HOST
-- CLIENT_URL
-
-Other things you can modify on your own info.
+- `8070`: Application monitoring
+- `8080`: Application gateway (HTTP)
+- `8090`: gRPC service
+- `5432`: PostgreSQL (internal)
 
 ---
 
-## 🧪 How to Test the Service
+## 🧪 How to Run and Test
 
-### ✅ Docker Compose
+### ✅ Using Docker Compose
 
-1. You need create a new docker network. If you already created, no need to create again.
+1. Create a Docker network (only once):
 
 ```bash
 docker network create public-net
 ```
 
-2. Run:
+2. Start the service:
 
 ```bash
 docker compose up
@@ -43,13 +33,15 @@ docker compose up
 
 ---
 
-## 📬 Sample Requests (Endpoints)
+## 📬 API Endpoints
 
-> All requests use the `POST` method.
+> All endpoints use the `POST` method.
 
 ### ➕ Add Item to Cart
 
-`POST /cart/item/add`
+Adds an item to the user's cart after validating stock availability.
+
+- **Endpoint**: `POST /cart/item/add`
 
 ```json
 {
@@ -59,11 +51,15 @@ docker compose up
 }
 ```
 
+![Add Item](docs/img/cart_add.png)
+
 ---
 
 ### ➖ Remove Item from Cart
 
-`POST /cart/item/delete`
+Removes a specific item (by SKU) from the user's cart.
+
+- **Endpoint**: `POST /cart/item/delete`
 
 ```json
 {
@@ -72,26 +68,58 @@ docker compose up
 }
 ```
 
+![Remove Item](docs/img/cart_delete.png)
+
 ---
 
 ### 📦 List Cart Items
 
-`POST /cart/list`
+Returns a list of all items in the user's cart, with real-time prices fetched from the Stocks service.
+
+- **Endpoint**: `POST /cart/list`
 
 ```json
 {
   "userId": 1
 }
 ```
+
+![List Cart](docs/img/cart_list.png)
 
 ---
 
 ### 🧹 Clear Cart
 
-`POST /cart/clear`
+Removes all items from the user's cart.
+
+- **Endpoint**: `POST /cart/clear`
 
 ```json
 {
   "userId": 1
 }
 ```
+
+![Clear Cart](docs/img/cart_clear.png)
+
+---
+
+## ⚙️ Cart Service Operations Summary
+
+- `POST /cart/item/add`
+  Add a specified quantity of an item (by SKU) to the user's cart
+  Validations:
+
+  - Item existence
+  - Available stock (via Stocks service)
+
+- `POST /cart/item/delete`
+  Remove an item (by SKU) from the user's cart
+
+- `POST /cart/list`
+  List all cart items
+
+  - Fetch product names and prices in real-time from the Stocks service
+
+- `POST /cart/clear`
+  Remove all items from the user's cart
